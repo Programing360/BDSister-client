@@ -1,8 +1,23 @@
-export default function Page() {
+import React from "react";
+import type { Metadata } from "next";
+import { requireServerSession } from "@/lib/auth/session";
+import { getProfileByUserId } from "@/lib/services/profile-service";
+import { SkillsManager } from "@/features/profile/components";
+
+export const metadata: Metadata = {
+  title: "Skills & Expertise | BDSisters Member",
+  description: "Manage your professional skills, expertise level, languages, and community interest tags.",
+};
+
+export default async function MemberSkillsPage() {
+  const session = await requireServerSession("/member/skills");
+  const profile = await getProfileByUserId(session.user.id);
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Skills Exchange</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
+    <SkillsManager
+      initialSkills={profile.skills}
+      initialInterests={profile.interests}
+      initialLanguages={profile.languages}
+    />
   );
 }

@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/providers";
 import "@/styles/globals.css";
+import { Geist, Inter } from "next/font/google";
+
+
+const geist = Geist({
+  subsets: ['latin'],
+})
+const inter = Inter({
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background text-foreground font-sans antialiased">
+      <body className={`min-h-screen bg-background text-foreground font-sans antialiased ${inter.className}`}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

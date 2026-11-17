@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Profile Management</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { Metadata } from "next";
+import { ProfilesListView } from "@/features/admin/profiles/components/profiles-list-view";
+
+export const metadata: Metadata = {
+  title: "Member Profile Management | BDSisters Admin",
+  description: "Audit, review, approve, and spotlight registered artisan and professional sister profiles.",
+};
+
+export default function AdminProfilesPage() {
+  return <ProfilesListView />;
 }

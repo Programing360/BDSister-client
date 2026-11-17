@@ -1,8 +1,14 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Create Business</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import React from "react";
+import type { Metadata } from "next";
+import { requireServerSession } from "@/lib/auth/session";
+import { BusinessRegistrationWizard } from "@/features/business/components";
+
+export const metadata: Metadata = {
+  title: "Register Business | BDSisters Member",
+  description: "Register your women-led business profile to receive verified vendor status and marketplace access.",
+};
+
+export default async function RegisterBusinessPage() {
+  await requireServerSession("/member/business/create");
+  return <BusinessRegistrationWizard />;
 }

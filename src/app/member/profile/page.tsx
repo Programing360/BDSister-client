@@ -1,8 +1,28 @@
-export default function Page() {
+import React from "react";
+import type { Metadata } from "next";
+import { requireServerSession } from "@/lib/auth/session";
+import { getProfileByUserId, calculateDetailedProfileCompletion } from "@/lib/services/profile-service";
+import { ProfileOverviewView } from "@/features/profile/components";
+
+export const metadata: Metadata = {
+  title: "My Profile | BDSisters",
+  description: "View and manage your BDSisters professional profile, portfolio, and sisterhood presence.",
+};
+
+export default async function MemberProfilePage() {
+  const session = await requireServerSession("/member/profile");
+  const profile = await getProfileByUserId(session.user.id, {
+    displayName: session.user.name,
+    avatar: session.user.image,
+  });
+
+  const completion = calculateDetailedProfileCompletion(session.user, profile);
+
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
+    <ProfileOverviewView
+      user={session.user}
+      profile={profile}
+      completion={completion}
+    />
   );
 }

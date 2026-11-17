@@ -5,6 +5,8 @@ import { MarketplaceView } from "@/features/public/marketplace/components/market
 import { publicService } from "@/features/public/services/public-service";
 import { ShoppingBag, ShieldCheck, HeartHandshake, Sparkles } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Artisan Marketplace | BDSisters.org",
   description:

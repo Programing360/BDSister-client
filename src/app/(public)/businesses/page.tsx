@@ -5,6 +5,8 @@ import { BusinessDirectoryView } from "@/features/public/businesses/components/b
 import { publicService } from "@/features/public/services/public-service";
 import { Briefcase, Sparkles, ShieldCheck, Award } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Women-Led Business Directory | BDSisters.org",
   description:

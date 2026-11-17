@@ -21,6 +21,8 @@ export function MarketplaceView({
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const [maxPrice, setMaxPrice] = useState<number | "">("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 8;
 
@@ -42,16 +44,25 @@ export function MarketplaceView({
       result = result.filter((p) => p.category === selectedCategory);
     }
 
+    if (inStockOnly) {
+      result = result.filter((p) => p.inStock);
+    }
+
+    if (typeof maxPrice === "number" && maxPrice > 0) {
+      result = result.filter((p) => p.price <= maxPrice);
+    }
+
     result.sort((a, b) => {
       if (sortBy === "featured") return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
       if (sortBy === "price_asc") return a.price - b.price;
       if (sortBy === "price_desc") return b.price - a.price;
       if (sortBy === "rating") return b.rating - a.rating;
+      if (sortBy === "newest") return b.id.localeCompare(a.id);
       return 0;
     });
 
     return result;
-  }, [initialProducts, search, selectedCategory, sortBy]);
+  }, [initialProducts, search, selectedCategory, sortBy, inStockOnly, maxPrice]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = useMemo(() => {
@@ -59,12 +70,18 @@ export function MarketplaceView({
     return filtered.slice(start, start + pageSize);
   }, [filtered, currentPage, pageSize]);
 
-  const hasActiveFilters = search !== "" || selectedCategory !== "all";
+  const hasActiveFilters =
+    search !== "" ||
+    selectedCategory !== "all" ||
+    inStockOnly ||
+    (typeof maxPrice === "number" && maxPrice > 0);
 
   const handleReset = () => {
     setSearch("");
     setSelectedCategory("all");
     setSortBy("featured");
+    setInStockOnly(false);
+    setMaxPrice("");
     setCurrentPage(1);
   };
 
@@ -132,6 +149,7 @@ export function MarketplaceView({
             className="w-full appearance-none rounded-2xl border border-border bg-white px-3.5 py-2.5 text-xs sm:text-sm font-medium text-text-primary focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="featured">Featured Curations</option>
+            <option value="newest">Newest Arrivals</option>
             <option value="price_asc">Price: Low to High</option>
             <option value="price_desc">Price: High to Low</option>
             <option value="rating">Top Customer Rating</option>
@@ -148,6 +166,36 @@ export function MarketplaceView({
               <RotateCcw className="h-4 w-4" />
             </Button>
           )}
+        </div>
+
+        {/* Secondary In-Stock & Price Filter Strip */}
+        <div className="md:col-span-12 flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/60 text-xs">
+          <label className="inline-flex items-center gap-2 cursor-pointer text-text-secondary hover:text-text-primary font-medium">
+            <input
+              type="checkbox"
+              checked={inStockOnly}
+              onChange={(e) => {
+                setInStockOnly(e.target.checked);
+                setCurrentPage(1);
+              }}
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            />
+            <span>In-Stock Items Only</span>
+          </label>
+
+          <div className="flex items-center gap-2">
+            <span className="text-text-secondary">Max Price (BDT):</span>
+            <input
+              type="number"
+              placeholder="e.g. 5000"
+              value={maxPrice}
+              onChange={(e) => {
+                setMaxPrice(e.target.value === "" ? "" : Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="w-24 rounded-xl border border-border bg-white px-2.5 py-1 text-xs font-medium text-text-primary focus:border-primary focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 

@@ -1,8 +1,10 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Member Management</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { MembersListView } from "@/features/admin/members/components/members-list-view";
+
+export const metadata = {
+  title: "Member Management | BDSisters Admin",
+  description: "Manage registered BDSisters platform members, inspect profile health, and audit account statuses.",
+};
+
+export default function AdminMembersPage() {
+  return <MembersListView />;
 }

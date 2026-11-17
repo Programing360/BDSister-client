@@ -1,13 +1,22 @@
+import { Metadata } from "next";
+import { CustomerOrderDetailView } from "@/features/ecommerce/components/customer-order-detail-view";
+
+export const metadata: Metadata = {
+  title: "Order Details | BDSisters.org",
+  description: "View order tracking, delivery address, and payment information.",
+};
+
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-export default async function Page({ params }: Props) {
+export default async function MemberOrderDetailPage({ params }: Props) {
   const { id } = await params;
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Order Details: {id}</h1>
-      <p className="text-gray-500">Coming soon.</p>
+    <div className="py-6">
+      <CustomerOrderDetailView orderId={id} />
     </div>
   );
 }

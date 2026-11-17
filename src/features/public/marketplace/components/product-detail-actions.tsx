@@ -2,22 +2,25 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Minus,
   ShoppingCart,
   ShieldCheck,
   Heart,
-  MessageCircle,
   Truck,
   RotateCcw,
   Sparkles,
   ArrowRight,
   Check,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface ProductDetailActionsProps {
+  productId?: string;
   price: number;
   originalPrice?: number;
   inStock: boolean;
@@ -27,6 +30,7 @@ interface ProductDetailActionsProps {
 }
 
 export function ProductDetailActions({
+  productId,
   price,
   originalPrice,
   inStock,
@@ -34,9 +38,13 @@ export function ProductDetailActions({
   businessName,
   sellerSlug,
 }: ProductDetailActionsProps) {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [addedSuccess, setAddedSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const increment = () => setQuantity((q) => q + 1);
   const decrement = () => setQuantity((q) => (q > 1 ? q - 1 : 1));
@@ -45,6 +53,48 @@ export function ProductDetailActions({
     originalPrice && originalPrice > price
       ? Math.round(((originalPrice - price) / originalPrice) * 100)
       : null;
+
+  const handleAddToCart = async (directCheckout = false) => {
+    if (!productId) {
+      router.push("/cart");
+      return;
+    }
+
+    if (directCheckout) {
+      setIsBuyingNow(true);
+    } else {
+      setIsAddingToCart(true);
+    }
+    setErrorMessage(null);
+
+    try {
+      const res = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId,
+          quantity,
+        }),
+      });
+
+      const json = await res.json();
+      if (res.ok && json.success) {
+        if (directCheckout) {
+          router.push("/checkout");
+        } else {
+          setAddedSuccess(true);
+          setTimeout(() => setAddedSuccess(false), 4000);
+        }
+      } else {
+        setErrorMessage(json.message || "Failed to add product to cart.");
+      }
+    } catch (err) {
+      setErrorMessage("Network error while updating cart.");
+    } finally {
+      setIsAddingToCart(false);
+      setIsBuyingNow(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -124,17 +174,75 @@ export function ProductDetailActions({
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
+      {addedSuccess && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-xs font-semibold text-emerald-800 shadow-sm animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            <span>Added {quantity} × item to your shopping cart!</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/cart"
+              className="rounded-xl bg-white px-3 py-1.5 font-bold text-emerald-800 border border-emerald-200/80 shadow-xs hover:bg-emerald-100"
+            >
+              View Cart
+            </Link>
+            <Link
+              href="/checkout"
+              className="rounded-xl bg-[#5B46F6] px-3.5 py-1.5 font-bold text-white shadow-xs hover:bg-[#4a36e2]"
+            >
+              Checkout Now
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3">
         <Button
           variant="primary"
           size="lg"
-          className="flex-1 justify-center gap-2.5 shadow-button hover:shadow-card-hover font-bold text-base py-3.5"
-          onClick={() => setShowOrderModal(true)}
-          disabled={!inStock}
+          className="flex-1 justify-center gap-2.5 shadow-button hover:shadow-card-hover font-bold text-base py-3.5 bg-[#5B46F6] text-white hover:bg-[#4a36e2]"
+          onClick={() => handleAddToCart(false)}
+          disabled={!inStock || isAddingToCart}
         >
-          <ShoppingCart className="h-5 w-5" />
-          <span>{inStock ? "Order Direct from Maker" : "Item Sold Out"}</span>
+          {isAddingToCart ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Adding to Cart...</span>
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-5 w-5" />
+              <span>{inStock ? "Add to Cart" : "Item Sold Out"}</span>
+            </>
+          )}
+        </Button>
+
+        <Button
+          variant="outline"
+          size="lg"
+          className="justify-center gap-2 font-bold text-sm py-3.5 border-purple-200 bg-purple-50/70 text-[#5B46F6] hover:bg-purple-100"
+          onClick={() => handleAddToCart(true)}
+          disabled={!inStock || isBuyingNow}
+        >
+          {isBuyingNow ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Proceeding...</span>
+            </>
+          ) : (
+            <>
+              <span>Instant Checkout</span>
+              <ArrowRight className="h-4 w-4" />
+            </>
+          )}
         </Button>
 
         <button
@@ -169,73 +277,6 @@ export function ProductDetailActions({
           </div>
         </div>
       </div>
-
-      {/* Sister Direct Order Modal */}
-      {showOrderModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg rounded-3xl border border-border bg-white p-6 sm:p-8 shadow-floating">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Sparkles className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-text-primary">
-                  Order Direct from {businessName}
-                </h3>
-                <p className="text-xs text-text-secondary">
-                  Fair Trade & Zero Intermediary Commission
-                </p>
-              </div>
-            </div>
-
-            <p className="text-sm text-text-secondary leading-relaxed mb-6">
-              BDSisters.org provides direct marketplace access to verified Bangladeshi women entrepreneurs.
-              100% of your payment of{" "}
-              <strong className="text-text-primary font-bold">
-                ৳{(price * quantity).toLocaleString("en-BD")}
-              </strong>{" "}
-              goes directly to the artisan team via bKash, Nagad, or Bank Transfer.
-            </p>
-
-            <div className="space-y-3 rounded-2xl bg-surface/80 p-4 border border-border mb-6 text-xs text-text-secondary">
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Verified sister entrepreneur business entity</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Direct communication via verified phone or WhatsApp</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>Secure payment proof upload in your member dashboard</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/register" className="flex-1">
-                <Button variant="primary" className="w-full justify-center gap-2 font-bold py-3">
-                  <span>Register Free Account</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link href="/login" className="flex-1">
-                <Button variant="outline" className="w-full justify-center font-semibold py-3">
-                  <span>Sign In</span>
-                </Button>
-              </Link>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowOrderModal(false)}
-              className="mt-4 block w-full text-center text-xs text-neutral hover:text-text-primary transition-colors"
-            >
-              Close and continue browsing
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -21,6 +21,8 @@ import {
   Award,
 } from "lucide-react";
 
+export const dynamic = "force-dynamic";
+
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -191,6 +193,7 @@ export default async function ProductDetailPage({
 
               {/* Interactive Purchase and Pricing Actions */}
               <ProductDetailActions
+                productId={product.id}
                 price={product.price}
                 originalPrice={product.originalPrice}
                 inStock={product.inStock}

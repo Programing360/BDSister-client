@@ -9,6 +9,7 @@ import {
   Store,
   ShoppingBag,
   Package,
+  Boxes,
   Heart,
   Users,
   MessageSquare,
@@ -86,6 +87,16 @@ export const memberNavGroups: MemberNavGroup[] = [
         icon: Store,
       },
       {
+        label: "My Products",
+        href: "/member/products",
+        icon: Package,
+      },
+      {
+        label: "Inventory",
+        href: "/member/products/inventory",
+        icon: Boxes,
+      },
+      {
         label: "Marketplace",
         href: "/member/marketplace",
         icon: ShoppingBag,
@@ -94,6 +105,11 @@ export const memberNavGroups: MemberNavGroup[] = [
         label: "My Orders",
         href: "/member/orders",
         icon: Package,
+      },
+      {
+        label: "Merchant Orders",
+        href: "/member/seller/orders",
+        icon: Receipt,
       },
       {
         label: "Saved Wishlist",

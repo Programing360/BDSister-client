@@ -77,19 +77,100 @@ function normalizeTeamMember(m: TeamMember): TeamMember {
   };
 }
 
+// Fast timeout helper for build time and disconnected DB states
+function withTimeout<T>(promise: Promise<T>, ms = 1500): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout of ${ms}ms exceeded`)), ms)
+    ),
+  ]);
+}
+
 // ----------------------------------------------------------------------
 // Public Data Access Service
 // ----------------------------------------------------------------------
 
 export async function getBusinesses(): Promise<Business[]> {
+  try {
+    const { getDatabase } = await import("@/lib/db/mongodb");
+    const db = await withTimeout(getDatabase());
+    const realDocs = await withTimeout(
+      db.collection("businesses").find({ status: "APPROVED", visibility: "PUBLIC" }).toArray()
+    );
+    if (realDocs && realDocs.length > 0) {
+      const realNormalized: Business[] = realDocs.map((doc: any) => ({
+        id: doc.id,
+        slug: doc.slug,
+        name: doc.name,
+        tagline: doc.shortDescription,
+        description: doc.fullDescription || doc.shortDescription,
+        category: doc.category,
+        location: `${doc.location?.city || ""}, ${doc.location?.division || ""}`,
+        district: doc.location?.district,
+        logo: doc.logo,
+        coverImage: doc.coverImage,
+        isVerified: doc.verificationStatus === "VERIFIED",
+        verified: doc.verificationStatus === "VERIFIED",
+        ownerName: doc.ownerName || "BDSisters Entrepreneur",
+        founder: doc.ownerName,
+        rating: 5.0,
+        reviewCount: 0,
+        contactEmail: doc.contact?.email,
+        phone: doc.contact?.phone,
+        website: doc.contact?.website,
+        tags: [doc.category, doc.businessType].filter(Boolean),
+        establishedYear: doc.yearEstablished,
+      }));
+      return [...realNormalized, ...MOCK_BUSINESSES.map(normalizeBusiness)];
+    }
+  } catch {
+    // fallback
+  }
   return MOCK_BUSINESSES.map(normalizeBusiness);
 }
 
 export async function getFeaturedBusinesses(): Promise<Business[]> {
-  return MOCK_BUSINESSES.slice(0, 3).map(normalizeBusiness);
+  const all = await getBusinesses();
+  return all.slice(0, 3);
 }
 
 export async function getBusinessBySlug(slug: string): Promise<Business | null> {
+  try {
+    const { getDatabase } = await import("@/lib/db/mongodb");
+    const db = await withTimeout(getDatabase());
+    const doc: any = await withTimeout(
+      db.collection("businesses").findOne({ slug })
+    );
+    if (doc) {
+      return normalizeBusiness({
+        id: doc.id,
+        slug: doc.slug,
+        name: doc.name,
+        tagline: doc.shortDescription,
+        description: doc.fullDescription || doc.shortDescription,
+        category: doc.category,
+        location: `${doc.location?.city || ""}, ${doc.location?.division || ""}`,
+        district: doc.location?.district,
+        logo: doc.logo,
+        coverImage: doc.coverImage,
+        isVerified: doc.verificationStatus === "VERIFIED",
+        verified: doc.verificationStatus === "VERIFIED",
+        ownerName: doc.ownerName || "BDSisters Entrepreneur",
+        founder: doc.ownerName,
+        rating: 5.0,
+        reviewCount: 0,
+        contactEmail: doc.contact?.email,
+        phone: doc.contact?.phone,
+        website: doc.contact?.website,
+        tags: [doc.category, doc.businessType].filter(Boolean),
+        establishedYear: doc.yearEstablished,
+      });
+    }
+  } catch {
+    // fallback
+  }
+
   const item = MOCK_BUSINESSES.find((b) => b.slug === slug);
   return item ? normalizeBusiness(item) : null;
 }
@@ -106,19 +187,98 @@ export async function getBusinessLocations(): Promise<string[]> {
 
 // --- Products ---
 export async function getProducts(): Promise<Product[]> {
+  try {
+    const { getDatabase } = await import("@/lib/db/mongodb");
+    const db = await withTimeout(getDatabase());
+    const realDocs = await withTimeout(
+      db
+        .collection("products")
+        .find({ status: "ACTIVE", visibility: "PUBLIC" })
+        .toArray()
+    );
+
+    if (realDocs && realDocs.length > 0) {
+      const realNormalized: Product[] = realDocs.map((doc: any) => ({
+        id: doc.id,
+        slug: doc.slug,
+        name: doc.name,
+        description: doc.shortDescription || doc.description,
+        price: doc.pricing?.salePrice || doc.pricing?.regularPrice || 0,
+        originalPrice: doc.pricing?.salePrice ? doc.pricing?.regularPrice : undefined,
+        currency: "BDT",
+        category: doc.category,
+        sellerName: doc.businessName,
+        businessName: doc.businessName,
+        sellerSlug: doc.businessSlug,
+        images: doc.images?.map((i: any) => i.url) || [doc.primaryImage],
+        inStock: doc.inventory?.trackInventory === false ? true : (doc.inventory?.quantity || 0) > 0,
+        stockCount: doc.inventory?.quantity || 0,
+        tags: doc.tags || [],
+        rating: doc.rating || 5.0,
+        reviewsCount: doc.reviewsCount || 0,
+        featured: doc.featured || false,
+      }));
+      return [...realNormalized, ...MOCK_PRODUCTS.map(normalizeProduct)];
+    }
+  } catch {
+    // Fallback on DB disconnect
+  }
   return MOCK_PRODUCTS.map(normalizeProduct);
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
-  return MOCK_PRODUCTS.slice(0, 4).map(normalizeProduct);
+  const all = await getProducts();
+  return all.slice(0, 4);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
+  try {
+    const { getDatabase } = await import("@/lib/db/mongodb");
+    const db = await withTimeout(getDatabase());
+    const doc: any = await withTimeout(
+      db.collection("products").findOne({ slug })
+    );
+
+    if (doc) {
+      return normalizeProduct({
+        id: doc.id,
+        slug: doc.slug,
+        name: doc.name,
+        description: doc.description || doc.shortDescription,
+        price: doc.pricing?.salePrice || doc.pricing?.regularPrice || 0,
+        originalPrice: doc.pricing?.salePrice ? doc.pricing?.regularPrice : undefined,
+        currency: "BDT",
+        category: doc.category,
+        sellerName: doc.businessName,
+        businessName: doc.businessName,
+        sellerSlug: doc.businessSlug,
+        images: doc.images?.map((i: any) => i.url) || [doc.primaryImage],
+        inStock: doc.inventory?.trackInventory === false ? true : (doc.inventory?.quantity || 0) > 0,
+        stockCount: doc.inventory?.quantity || 0,
+        tags: doc.tags || [],
+        rating: doc.rating || 5.0,
+        reviewsCount: doc.reviewsCount || 0,
+        featured: doc.featured || false,
+      });
+    }
+  } catch {
+    // Fallback on DB disconnect
+  }
+
   const item = MOCK_PRODUCTS.find((p) => p.slug === slug);
   return item ? normalizeProduct(item) : null;
 }
 
 export async function getProductCategories(): Promise<string[]> {
+  try {
+    const { getCategories } = await import("@/lib/services/category-service");
+    const dbCats = await getCategories();
+    if (dbCats && dbCats.length > 0) {
+      return dbCats.map((c) => c.name);
+    }
+  } catch {
+    // Fallback
+  }
   const set = new Set(MOCK_PRODUCTS.map((p) => p.category));
   return Array.from(set);
 }

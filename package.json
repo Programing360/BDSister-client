@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/unit/auth.test.ts tests/unit/member.test.ts"
+    "test": "node --experimental-strip-types --test tests/unit/auth.test.ts tests/unit/member.test.ts tests/unit/profile.test.ts tests/unit/business.test.ts tests/unit/product.test.ts tests/unit/ecommerce.test.ts tests/unit/admin.test.ts"
   },
   "dependencies": {
     "@heroui/react": "^3.2.7",

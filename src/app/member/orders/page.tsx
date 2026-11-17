@@ -1,8 +1,17 @@
-export default function Page() {
+import { Metadata } from "next";
+import { CustomerOrdersView } from "@/features/ecommerce/components/customer-orders-view";
+
+export const metadata: Metadata = {
+  title: "My Orders | BDSisters.org",
+  description: "View and track your purchases on BDSisters.org.",
+};
+
+export const dynamic = "force-dynamic";
+
+export default function MemberOrdersPage() {
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-      <p className="text-gray-500">Coming soon.</p>
+    <div className="py-6">
+      <CustomerOrdersView />
     </div>
   );
 }

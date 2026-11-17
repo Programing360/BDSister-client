@@ -1,8 +1,10 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Member Verifications</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { VerificationsListView } from "@/features/admin/verifications/components/verifications-list-view";
+
+export const metadata = {
+  title: "Identity Verifications | BDSisters Admin",
+  description: "Review member identity documents, national IDs, passports, and audit compliance submissions.",
+};
+
+export default function AdminVerificationsPage() {
+  return <VerificationsListView />;
 }
