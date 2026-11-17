@@ -13,13 +13,22 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
+    "noUncheckedIndexedAccess": true,
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/config/*": ["./src/config/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/providers/*": ["./src/providers/*"],
+      "@/styles/*": ["./src/styles/*"]
     }
   },
   "include": [
@@ -30,5 +39,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "tests"]
 }

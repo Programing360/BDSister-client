@@ -1,0 +1,13 @@
+<svg width="600" height="750" viewBox="0 0 600 750" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#10B981" stop-opacity="0.8" />
+          <stop offset="100%" stop-color="#EAE6F7" />
+        </linearGradient>
+      </defs>
+      <rect width="600" height="750" fill="url(#grad)" />
+      <circle cx="300" cy="280" r="130" fill="#ffffff" opacity="0.3" />
+      <path d="M 120 620 C 120 460, 480 460, 480 620 Z" fill="#ffffff" opacity="0.3" />
+      <text x="300" y="660" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#111827" text-anchor="middle">Fatema Tuz Zohra</text>
+      <text x="300" y="700" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#4B5563" text-anchor="middle">Director of Entrepreneurship</text>
+    </svg>

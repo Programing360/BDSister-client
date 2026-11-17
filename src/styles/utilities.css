@@ -1,0 +1,134 @@
+/* ============================================================
+   BDSisters.org — Design System Utilities, Semantics & Glassmorphism
+   ============================================================ */
+
+/* Semantic Color Utilities */
+.bg-background { background-color: var(--color-background); }
+.bg-primary { background-color: var(--color-primary); }
+.bg-primary-hover:hover { background-color: var(--color-primary-hover); }
+.bg-primary-active:active { background-color: var(--color-primary-active); }
+.bg-primary-soft { background-color: var(--color-primary-soft); }
+.bg-surface { background-color: var(--color-surface); }
+.bg-muted { background-color: var(--color-muted); }
+
+.text-foreground { color: var(--color-text-primary); }
+.text-primary { color: var(--color-primary); }
+.text-primary-foreground { color: var(--color-button-text); }
+.text-heading-accent { color: var(--color-heading-accent); }
+.text-text-primary { color: var(--color-text-primary); }
+.text-text-secondary { color: var(--color-text-secondary); }
+.text-text-muted { color: var(--color-text-muted); }
+
+.border-border { border-color: var(--color-border); }
+.border-border-subtle { border-color: var(--color-border-subtle); }
+.border-primary { border-color: var(--color-primary); }
+
+.bg-success-soft { background-color: var(--color-success-soft); }
+.bg-warning-soft { background-color: var(--color-warning-soft); }
+.bg-danger-soft { background-color: var(--color-danger-soft); }
+.bg-info-soft { background-color: var(--color-info-soft); }
+
+.text-success { color: var(--color-success); }
+.text-warning { color: var(--color-warning); }
+.text-danger { color: var(--color-danger); }
+.text-info { color: var(--color-info); }
+
+/* Glassmorphism Cards & Panels */
+.glass-card {
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow-card);
+}
+
+.glass-card-premium {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-premium);
+}
+
+.glass-header {
+  background: rgba(234, 230, 247, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.glass-sidebar {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-right: 1px solid var(--color-border);
+}
+
+/* Depth & Shadow Utilities */
+.shadow-soft { box-shadow: var(--shadow-soft); }
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-card-hover { box-shadow: var(--shadow-card-hover); }
+.shadow-premium { box-shadow: var(--shadow-premium); }
+.shadow-floating { box-shadow: var(--shadow-floating); }
+.shadow-button { box-shadow: var(--shadow-button); }
+
+/* Premium Gradients & Accents */
+.text-gradient-primary {
+  background: linear-gradient(135deg, #5B46F6 0%, #7366F7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-radial-glow {
+  background: radial-gradient(circle 600px at 50% 20%, rgba(91, 70, 246, 0.12), transparent 70%);
+}
+
+.hero-mesh-bg {
+  background: 
+    radial-gradient(circle at 15% 25%, rgba(115, 102, 247, 0.14) 0%, transparent 45%),
+    radial-gradient(circle at 85% 35%, rgba(91, 70, 246, 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #EAE6F7 0%, #F5F3FC 50%, #FFFFFF 100%);
+}
+
+/* Card Interaction Utility */
+.card-hover-effect {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover-effect:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Gradient Utilities */
+.bg-gradient-brand {
+  background: var(--gradient-primary);
+}
+
+.bg-gradient-lavender {
+  background: var(--gradient-lavender);
+}
+
+.bg-gradient-surface {
+  background: var(--gradient-surface);
+}
+
+.bg-gradient-glass {
+  background: var(--gradient-glass);
+}
+
+/* Accessible Focus Ring */
+.focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Selection Color */
+::selection {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
