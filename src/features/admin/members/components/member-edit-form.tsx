@@ -85,7 +85,7 @@ export function MemberEditForm({ member }: MemberEditFormProps) {
         </div>
 
         {/* Frontend Demo Banner */}
-        <div className="mt-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-3">
+        {/* <div className="mt-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-3">
           <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
           <div>
             <p className="font-semibold">Frontend Simulation Mode</p>
@@ -93,7 +93,7 @@ export function MemberEditForm({ member }: MemberEditFormProps) {
               Changes submitted here are validated and demonstrated in the client-side state. Real backend synchronization will occur in the database integration phase.
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Success banner */}

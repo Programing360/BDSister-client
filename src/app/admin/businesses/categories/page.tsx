@@ -1,16 +1,14 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { BusinessCategoriesView } from "@/features/admin/businesses/components/business-categories-view";
 
 export const metadata = {
   title: "Business Categories | BDSisters Administration",
+  description: "Manage business classifications and artisan craft taxonomy.",
 };
 
 export default function AdminBusinessesCategoriesPage() {
   return (
-    <AdminModulePlaceholder
-      title="Business & Artisan Taxonomies"
-      category="Commerce Taxonomy"
-      description="Manage business categories, trade sectors, and artisan craft classifications"
-      plannedStep="Admin Step 6 (Enterprise Review)"
-    />
+    <div className="space-y-6">
+      <BusinessCategoriesView />
+    </div>
   );
 }

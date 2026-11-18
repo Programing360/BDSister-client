@@ -33,9 +33,9 @@ export function ProfileKpiCards({
       subtext: "Platform directory registrations",
       icon: Users,
       iconColor: "text-[#5B46F6]",
-      iconBg: "bg-indigo-50 dark:bg-indigo-950/40",
+      iconBg: "bg-indigo-50/90 dark:bg-indigo-950/50",
       status: "ALL" as const,
-      link: "/admin/profiles",
+      shadowClass: "shadow-lg shadow-[#5B46F6]/8 hover:shadow-xl hover:shadow-[#5B46F6]/15",
     },
     {
       id: "PUBLISHED",
@@ -44,9 +44,9 @@ export function ProfileKpiCards({
       subtext: "Publicly visible profiles",
       icon: CheckCircle2,
       iconColor: "text-emerald-600",
-      iconBg: "bg-emerald-50 dark:bg-emerald-950/40",
+      iconBg: "bg-emerald-50/90 dark:bg-emerald-950/50",
       status: "PUBLISHED" as const,
-      link: "/admin/profiles/published",
+      shadowClass: "shadow-lg shadow-emerald-500/8 hover:shadow-xl hover:shadow-emerald-500/18",
     },
     {
       id: "PENDING_REVIEW",
@@ -55,10 +55,10 @@ export function ProfileKpiCards({
       subtext: "Awaiting staff decision",
       icon: Clock,
       iconColor: "text-amber-600",
-      iconBg: "bg-amber-50 dark:bg-amber-950/40",
+      iconBg: "bg-amber-50/90 dark:bg-amber-950/50",
       status: "PENDING_REVIEW" as const,
       highlight: true,
-      link: "/admin/profiles/pending",
+      shadowClass: "shadow-lg shadow-amber-500/10 hover:shadow-xl hover:shadow-amber-500/22",
     },
     {
       id: "REJECTED",
@@ -67,9 +67,9 @@ export function ProfileKpiCards({
       subtext: "Guidelines non-compliant",
       icon: XCircle,
       iconColor: "text-rose-600",
-      iconBg: "bg-rose-50 dark:bg-rose-950/40",
+      iconBg: "bg-rose-50/90 dark:bg-rose-950/50",
       status: "REJECTED" as const,
-      link: "/admin/profiles/rejected",
+      shadowClass: "shadow-lg shadow-rose-500/8 hover:shadow-xl hover:shadow-rose-500/18",
     },
     {
       id: "DRAFT",
@@ -78,9 +78,9 @@ export function ProfileKpiCards({
       subtext: "Incomplete / unsubmitted",
       icon: FileEdit,
       iconColor: "text-gray-600",
-      iconBg: "bg-gray-100 dark:bg-gray-800",
+      iconBg: "bg-gray-100/90 dark:bg-gray-800/60",
       status: "DRAFT" as const,
-      link: "/admin/profiles",
+      shadowClass: "shadow-lg shadow-gray-400/8 hover:shadow-xl hover:shadow-gray-400/15",
     },
     {
       id: "REPORTED",
@@ -89,9 +89,9 @@ export function ProfileKpiCards({
       subtext: "Member safety inquiries",
       icon: ShieldAlert,
       iconColor: "text-red-600",
-      iconBg: "bg-red-50 dark:bg-red-950/40",
+      iconBg: "bg-red-50/90 dark:bg-red-950/50",
       status: "ALL" as const,
-      link: "/admin/profiles/reports",
+      shadowClass: "shadow-lg shadow-red-500/10 hover:shadow-xl hover:shadow-red-500/20",
     },
     {
       id: "FEATURED",
@@ -100,15 +100,19 @@ export function ProfileKpiCards({
       subtext: "Homepage pinned sisters",
       icon: Sparkles,
       iconColor: "text-amber-500",
-      iconBg: "bg-amber-50 dark:bg-amber-950/40",
+      iconBg: "bg-amber-50/90 dark:bg-amber-950/50",
       status: "ALL" as const,
-      link: "/admin/profiles/featured",
+      shadowClass: "shadow-lg shadow-amber-500/10 hover:shadow-xl hover:shadow-amber-500/20",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-      {cards.map((card) => {
+    <div
+      data-aos="fade-up"
+      data-aos-delay="100"
+      className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3.5"
+    >
+      {cards.map((card, idx) => {
         const Icon = card.icon;
         const isSelected = activeFilter && activeFilter === card.status;
 
@@ -116,10 +120,10 @@ export function ProfileKpiCards({
           <div
             key={card.label}
             onClick={() => onFilterSelect && onFilterSelect(card.status)}
-            className={`relative p-3.5 rounded-2xl bg-white dark:bg-gray-900 border transition-all duration-200 cursor-pointer ${
+            className={`relative p-4 rounded-2xl bg-white dark:bg-gray-900 border transition-all duration-300 cursor-pointer ${card.shadowClass} ${
               isSelected
-                ? "border-[#5B46F6] ring-2 ring-[#5B46F6]/20 shadow-sm"
-                : "border-gray-200/80 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:shadow-xs"
+                ? "border-[#5B46F6] ring-2 ring-[#5B46F6]/25 translate-y-[-2px]"
+                : "border-gray-200/80 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 hover:translate-y-[-1px]"
             }`}
           >
             <div className="flex items-center justify-between gap-2">
@@ -127,14 +131,14 @@ export function ProfileKpiCards({
                 {card.label}
               </span>
               <div
-                className={`w-7 h-7 rounded-lg ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0`}
+                className={`w-7 h-7 rounded-xl ${card.iconBg} ${card.iconColor} flex items-center justify-center shrink-0 border border-current/15 shadow-xs`}
               >
                 <Icon className="w-3.5 h-3.5" />
               </div>
             </div>
 
-            <div className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <div className="mt-2.5 flex items-baseline gap-1.5">
+              <span className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight">
                 {card.value.toLocaleString()}
               </span>
             </div>
@@ -144,7 +148,7 @@ export function ProfileKpiCards({
             </p>
 
             {card.highlight && (
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-gray-900" />
+              <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-gray-900 animate-pulse" />
             )}
           </div>
         );

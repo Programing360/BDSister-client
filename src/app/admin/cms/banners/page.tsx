@@ -1,16 +1,10 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { BannersListView } from "@/features/admin/cms/components/banners/banners-list-view";
 
 export const metadata = {
-  title: "Promotional Banners | BDSisters Administration",
+  title: "Banners & Announcements | BDSisters CMS",
+  description: "Promotional campaigns, hero takeovers, and sitewide alert banners.",
 };
 
 export default function AdminCmsBannersPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Promotional Banners & Announcements"
-      category="CMS & Content"
-      description="Design and schedule seasonal Eid festival banners, artisan sale announcements, and platform alerts"
-      plannedStep="Admin Step 10 (CMS)"
-    />
-  );
+  return <BannersListView />;
 }

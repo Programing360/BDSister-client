@@ -1,16 +1,10 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { NavigationManagementView } from "@/features/admin/cms/components/navigation/navigation-management-view";
 
 export const metadata = {
-  title: "Menus & Navigation | BDSisters Administration",
+  title: "Menus & Navigation | BDSisters CMS",
+  description: "Centralized site menus management.",
 };
 
 export default function AdminCmsMenusPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Header & Footer Navigation Menus"
-      category="CMS & Content"
-      description="Manage public navigation hierarchy, dropdown categories, and mobile drawer items"
-      plannedStep="Admin Step 10 (CMS)"
-    />
-  );
+  return <NavigationManagementView />;
 }

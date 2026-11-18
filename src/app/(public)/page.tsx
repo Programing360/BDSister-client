@@ -27,7 +27,10 @@ import { ProductCard } from "@/features/public/marketplace/components/product-ca
 import { EventCard } from "@/features/public/events/components/event-card";
 import { LearningCard } from "@/features/public/learning/components/learning-card";
 import { publicService } from "@/features/public/services/public-service";
-import { MOCK_TESTIMONIALS, MOCK_COURSES } from "@/features/public/data/mock-data";
+import {
+  MOCK_TESTIMONIALS,
+  MOCK_COURSES,
+} from "@/features/public/data/mock-data";
 
 export default async function HomePage() {
   const featuredBusinesses = await publicService.getFeaturedBusinesses();
@@ -40,60 +43,63 @@ export default async function HomePage() {
       {/* ============================================================
           1. HERO SECTION — EDITORIAL LAYERED COMPOSITION
           ============================================================ */}
-      <section className="relative overflow-hidden hero-mesh-bg pt-16 pb-20 sm:pt-24 sm:pb-28 lg:pt-32 lg:pb-36 border-b border-border/80">
-        {/* Soft Background Radial Glows */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[550px] w-[550px] rounded-full bg-primary/10 blur-[130px] pointer-events-none" />
-        <div className="absolute top-1/3 -right-20 h-96 w-96 rounded-full bg-heading-accent/15 blur-[120px] pointer-events-none" />
-
+      <section className="relative overflow-hidden bg-white pt-14 pb-20 sm:pt-20 sm:pb-24 lg:pt-28 lg:pb-32 border-b border-border/60">
         <Container size="lg" className="relative z-10">
-          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-16">
-            {/* Left Column: Editorial Headline & Actions */}
-            <div className="lg:col-span-7 flex flex-col items-start text-left">
-              {/* Eyebrow Badge */}
-              <div
+          <div className="grid grid-cols-1 items-center gap-14 lg:grid-cols-12 lg:gap-12">
+            {/* =========================================================
+              LEFT COLUMN: Clean Editorial Hierarchy & Mini Metrics
+             ========================================================= */}
+            <div className="order-1 lg:col-span-6 flex flex-col items-start text-left">
+              {/* Top Lead-in Eyebrow (Matches "We are") */}
+              <span
                 data-aos="fade-down"
-                className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-white/80 px-4 py-1.5 text-xs sm:text-sm font-semibold text-primary backdrop-blur-md shadow-xs mb-6"
+                data-aos-duration="600"
+                className="text-base sm:text-lg font-medium tracking-wide text-text-secondary mb-2"
               >
-                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                <span>The Premier Network for Bangladeshi Women Worldwide</span>
-              </div>
+                The Premier Network for
+              </span>
 
-              {/* Main Headline */}
+              {/* Main Bold Display Headline (Matches "Digital Agency") */}
               <h1
                 data-aos="fade-up"
                 data-aos-delay="100"
-                className="text-4xl font-black tracking-tight text-text-primary sm:text-6xl lg:text-7xl leading-[1.08]"
+                data-aos-duration="700"
+                className="text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-extrabold tracking-tight text-text-primary leading-[1.12]"
               >
-                Where Bangladeshi Women Lead,{" "}
-                <span className="text-gradient-primary">Build &amp; Flourish</span>{" "}
-                Together.
+                Bangladeshi{" "}
+                <span className="text-primary block sm:inline">
+                  Women Leaders
+                </span>
               </h1>
 
-              {/* Supporting Editorial Description */}
+              {/* Supporting Description */}
               <p
                 data-aos="fade-up"
                 data-aos-delay="200"
-                className="mt-6 text-base sm:text-lg text-text-secondary leading-relaxed max-w-2xl font-normal"
+                data-aos-duration="700"
+                className="mt-5 text-sm sm:text-base text-text-secondary leading-relaxed max-w-lg"
               >
-                An elevated digital sanctuary uniting ambitious female entrepreneurs,
-                creatives, professionals, and artisans. Access verified business
-                networking, ethical commerce, masterclasses, and lifelong sisterhood.
+                An elevated digital sanctuary uniting ambitious female
+                entrepreneurs, creatives, and professionals. Access verified
+                networking, ethical commerce, masterclasses, and lifelong
+                sisterhood worldwide.
               </p>
 
-              {/* Dual Action CTAs */}
+              {/* Primary & Secondary Action Buttons */}
               <div
                 data-aos="fade-up"
                 data-aos-delay="300"
+                data-aos-duration="700"
                 className="mt-8 flex flex-wrap items-center gap-4 w-full sm:w-auto"
               >
                 <Link href="/register" className="w-full sm:w-auto">
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full sm:w-auto shadow-button text-base px-7 py-3.5 hover:shadow-card-hover hover:scale-[1.02] transition-all"
+                    className="w-full sm:w-auto rounded-lg px-7 py-3.5 text-sm sm:text-base font-semibold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200"
                   >
-                    <span>Join the Sisterhood Free</span>
-                    <ArrowRight className="h-4 w-4 ml-1.5" />
+                    <span>Join the Sisterhood</span>
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
 
@@ -101,162 +107,118 @@ export default async function HomePage() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="w-full sm:w-auto border-border bg-white/80 text-text-primary backdrop-blur-md hover:bg-white text-base px-6 py-3.5"
+                    className="w-full sm:w-auto rounded-lg border-border px-6 py-3.5 text-sm sm:text-base font-semibold text-text-primary hover:bg-gray-50 transition-all duration-200"
                   >
-                    <span>Discover Our Mission</span>
+                    <span>Our Mission</span>
                   </Button>
                 </Link>
               </div>
 
-              {/* Trust Indicators Pill */}
+              {/* 2-Column Mini Metrics Row (Matches "Upto 15% / Upto 50%" block) */}
               <div
                 data-aos="fade-up"
                 data-aos-delay="400"
-                className="mt-10 flex flex-wrap items-center gap-6 pt-6 border-t border-border/80 w-full text-xs text-text-secondary"
+                data-aos-duration="700"
+                className="mt-12 grid grid-cols-2 gap-8 sm:gap-12 pt-2 w-full max-w-md"
               >
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span className="font-medium text-text-primary">100% Free Membership</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-primary" />
-                  <span className="font-medium text-text-primary">Strictly Moderated &amp; Safe</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Globe2 className="h-4 w-4 text-heading-accent" />
-                  <span className="font-medium text-text-primary">Dhaka to Global Diaspora</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Layered Visual Composition & Floating Cards */}
-            <div
-              data-aos="fade-left"
-              data-aos-delay="200"
-              className="lg:col-span-5 relative flex items-center justify-center lg:justify-end"
-            >
-              <div className="relative w-full max-w-md sm:max-w-lg">
-                {/* Main Hero Portrait/Action Image */}
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[2.5rem] border-4 border-white/90 shadow-premium">
-                  <Image
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1200&q=80"
-                    alt="Bangladeshi woman entrepreneur smiling in collaborative office"
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, 500px"
-                    className="object-cover object-center"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-
-                  {/* Caption Overlay */}
-                  <div className="absolute bottom-5 inset-x-5 z-10 text-white">
-                    <span className="inline-block rounded-full bg-primary/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs backdrop-blur-xs mb-1">
-                      Sisterhood In Action
-                    </span>
-                    <p className="text-sm font-semibold text-white/90">
-                      Collaborative growth, verified mentorship, and economic dignity.
-                    </p>
-                  </div>
+                {/* Metric 1 */}
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-primary">
+                    Verified Network
+                  </span>
+                  <span className="mt-1 text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                    5,000+
+                  </span>
+                  <span className="mt-1 text-xs font-medium text-text-secondary">
+                    Sisters Connected Globally
+                  </span>
                 </div>
 
-                {/* Overlapping Secondary Image */}
-                <div className="absolute -bottom-6 -left-6 sm:-left-10 h-36 w-36 sm:h-44 sm:w-44 overflow-hidden rounded-3xl border-4 border-white shadow-card-hover z-20 hidden xs:block">
-                  <Image
-                    src="https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=600&q=80"
-                    alt="Artisan Jamdani textile craftsmanship"
-                    fill
-                    sizes="180px"
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-primary/20 mix-blend-overlay" />
-                </div>
-
-                {/* Floating Milestone Card 1 (Top Right) */}
-                <div className="absolute -top-6 -right-4 sm:-right-8 z-30 flex items-center gap-3 rounded-2xl border border-white/90 bg-white/95 px-4 py-3 shadow-floating backdrop-blur-md animate-float">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-white font-bold">
-                    <TrendingUp className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-secondary">
-                      Community Commerce
-                    </span>
-                    <p className="text-base font-extrabold text-text-primary">
-                      ৳4.5M+ <span className="text-xs font-semibold text-success">Generated</span>
-                    </p>
-                  </div>
-                </div>
-
-                {/* Floating Member Avatar Stack (Bottom Right) */}
-                <div className="absolute -bottom-8 right-2 sm:right-6 z-30 flex items-center gap-3 rounded-2xl border border-white/90 bg-white/95 px-4 py-3 shadow-card-hover backdrop-blur-md animate-float-delayed">
-                  <div className="flex -space-x-2">
-                    <div className="h-8 w-8 rounded-full border-2 border-white bg-primary text-white flex items-center justify-center text-xs font-bold">
-                      TR
-                    </div>
-                    <div className="h-8 w-8 rounded-full border-2 border-white bg-heading-accent text-white flex items-center justify-center text-xs font-bold">
-                      SN
-                    </div>
-                    <div className="h-8 w-8 rounded-full border-2 border-white bg-success text-white flex items-center justify-center text-xs font-bold">
-                      AZ
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 text-amber-400">
-                      <Star className="h-3 w-3 fill-current" />
-                      <span className="text-xs font-bold text-text-primary">5.0 Community</span>
-                    </div>
-                    <span className="text-[11px] font-medium text-text-secondary">
-                      5,000+ Sisters Connected
-                    </span>
-                  </div>
+                {/* Metric 2 */}
+                <div className="flex flex-col items-start">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-text-primary">
+                    Zero Commission
+                  </span>
+                  <span className="mt-1 text-2xl sm:text-3xl font-extrabold text-primary tracking-tight">
+                    ৳4.5M+
+                  </span>
+                  <span className="mt-1 text-xs font-medium text-text-secondary">
+                    Community Commerce
+                  </span>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Social Proof Stats Bar */}
-          <div
-            data-aos="fade-up"
-            data-aos-delay="400"
-            className="mt-16 sm:mt-24 grid grid-cols-2 gap-4 rounded-3xl border border-white/90 bg-white/80 p-6 shadow-premium backdrop-blur-xl sm:grid-cols-4 sm:p-8"
-          >
-            <div className="flex flex-col items-center text-center">
-              <span className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
-                5,000+
-              </span>
-              <span className="mt-1.5 text-xs sm:text-sm font-semibold text-text-secondary">
-                Registered Sisters
-              </span>
-              <span className="text-[11px] text-neutral mt-0.5">Across 8 Divisions &amp; Abroad</span>
-            </div>
+            {/* =========================================================
+              RIGHT COLUMN: Staggered 4-Pill Geometric Collage
+              (Automatically sits at bottom on mobile/tablet via order-2)
+             ========================================================= */}
+            <div className="order-2 lg:col-span-6 flex items-center justify-center lg:justify-end">
+              <div className="relative w-full max-w-[360px] sm:max-w-[460px] lg:max-w-[500px] mx-auto lg:mr-0">
+                {/* 2-Column Asymmetric Pill Grid */}
+                <div className="grid grid-cols-2 gap-4 sm:gap-5 items-start">
+                  {/* LEFT SUB-COLUMN: Top Horizontal Gold Pill + Bottom Tall Primary Pill */}
+                  <div className="flex flex-col gap-4 sm:gap-5">
+                    {/* 1. Top-Left Horizontal Accent Pill */}
+                    <div
+                      data-aos="fade-down-right"
+                      data-aos-delay="150"
+                      data-aos-duration="800"
+                      className="h-24 sm:h-32 w-full rounded-full bg-amber-400 shadow-[0_18px_35px_-10px_rgba(251,191,36,0.45)]"
+                      aria-hidden="true"
+                    />
 
-            <div className="flex flex-col items-center text-center border-l-0 sm:border-l border-border/80">
-              <span className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
-                250+
-              </span>
-              <span className="mt-1.5 text-xs sm:text-sm font-semibold text-text-secondary">
-                Verified Enterprises
-              </span>
-              <span className="text-[11px] text-neutral mt-0.5">Ethical Women-Led Brands</span>
-            </div>
+                    {/* 2. Bottom-Left Tall Primary Pill with Portrait */}
+                    <div
+                      data-aos="fade-up"
+                      data-aos-delay="250"
+                      data-aos-duration="800"
+                      className="relative h-64 sm:h-80 w-full overflow-hidden rounded-full bg-primary shadow-[0_22px_45px_-12px_rgba(0,0,0,0.18)] group"
+                    >
+                      <Image
+                        src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=800&q=85"
+                        alt="Bangladeshi woman entrepreneur smiling confidently"
+                        fill
+                        priority
+                        sizes="(max-width: 640px) 170px, 240px"
+                        className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {/* Subtle bottom vignette for depth */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-primary/30 via-transparent to-transparent pointer-events-none" />
+                    </div>
+                  </div>
 
-            <div className="flex flex-col items-center text-center border-t sm:border-t-0 sm:border-l border-border/80 pt-4 sm:pt-0">
-              <span className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
-                120+
-              </span>
-              <span className="mt-1.5 text-xs sm:text-sm font-semibold text-text-secondary">
-                Workshops &amp; Circles
-              </span>
-              <span className="text-[11px] text-neutral mt-0.5">Practical Masterclasses</span>
-            </div>
+                  {/* RIGHT SUB-COLUMN: Top Tall Gold Pill + Bottom Horizontal Primary Pill */}
+                  <div className="flex flex-col gap-4 sm:gap-5 pt-4 sm:pt-6">
+                    {/* 3. Top-Right Tall Gold Pill with Portrait */}
+                    <div
+                      data-aos="fade-down"
+                      data-aos-delay="200"
+                      data-aos-duration="800"
+                      className="relative h-64 sm:h-80 w-full overflow-hidden rounded-full bg-amber-400 shadow-[0_22px_45px_-12px_rgba(0,0,0,0.18)] group"
+                    >
+                      <Image
+                        src="https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=800&q=85"
+                        alt="Creative female leader in studio"
+                        fill
+                        priority
+                        sizes="(max-width: 640px) 170px, 240px"
+                        className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-amber-500/25 via-transparent to-transparent pointer-events-none" />
+                    </div>
 
-            <div className="flex flex-col items-center text-center border-t sm:border-t-0 sm:border-l border-border/80 pt-4 sm:pt-0">
-              <span className="text-3xl sm:text-4xl font-black text-primary tracking-tight">
-                ৳4.5M+
-              </span>
-              <span className="mt-1.5 text-xs sm:text-sm font-semibold text-text-secondary">
-                Community Commerce
-              </span>
-              <span className="text-[11px] text-neutral mt-0.5">100% Commission-Free</span>
+                    {/* 4. Bottom-Right Horizontal Primary Pill */}
+                    <div
+                      data-aos="fade-up-left"
+                      data-aos-delay="350"
+                      data-aos-duration="800"
+                      className="h-24 sm:h-32 w-full rounded-full bg-primary shadow-[0_18px_35px_-10px_rgba(79,70,229,0.35)]"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </Container>
@@ -290,9 +252,10 @@ export default async function HomePage() {
                   Protected Sisterhood Circles
                 </h3>
                 <p className="mt-3 text-sm sm:text-base text-text-secondary leading-relaxed">
-                  Engage in candid professional dialogues, seeking mentorship, asking
-                  unfiltered questions, and sharing victories in a sanctuary free from
-                  harassment, spam, and algorithmic distractions.
+                  Engage in candid professional dialogues, seeking mentorship,
+                  asking unfiltered questions, and sharing victories in a
+                  sanctuary free from harassment, spam, and algorithmic
+                  distractions.
                 </p>
                 <div className="mt-6 flex flex-wrap gap-2">
                   <span className="rounded-xl bg-surface px-3 py-1.5 text-xs font-semibold text-text-primary">
@@ -340,8 +303,9 @@ export default async function HomePage() {
                   Business Directory
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  Gain institutional credibility with the BDSisters Verification Seal.
-                  Connect directly with domestic clients and overseas diaspora buyers.
+                  Gain institutional credibility with the BDSisters Verification
+                  Seal. Connect directly with domestic clients and overseas
+                  diaspora buyers.
                 </p>
               </div>
               <div className="mt-8 pt-6 border-t border-border/80">
@@ -372,8 +336,8 @@ export default async function HomePage() {
                   Artisan Marketplace
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  Buy Jamdani, organic skincare, Nakshi Kantha, and heritage foods
-                  directly from the women who make them.
+                  Buy Jamdani, organic skincare, Nakshi Kantha, and heritage
+                  foods directly from the women who make them.
                 </p>
               </div>
               <div className="mt-8 pt-6 border-t border-border/80">
@@ -404,8 +368,8 @@ export default async function HomePage() {
                   Learning Academy
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  Bite-sized, jargon-free courses in trade licenses, tax compliance,
-                  export logistics, and digital branding.
+                  Bite-sized, jargon-free courses in trade licenses, tax
+                  compliance, export logistics, and digital branding.
                 </p>
               </div>
               <div className="mt-8 pt-6 border-t border-border/80">
@@ -436,8 +400,8 @@ export default async function HomePage() {
                   Philanthropic Mission
                 </h3>
                 <p className="mt-3 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  Operated with strict non-profit governance, ensuring revenues are
-                  reinvested into micro-grants and community training.
+                  Operated with strict non-profit governance, ensuring revenues
+                  are reinvested into micro-grants and community training.
                 </p>
               </div>
               <div className="mt-8 pt-6 border-t border-border/80">
@@ -473,7 +437,9 @@ export default async function HomePage() {
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-5xl font-black text-primary/20">01</span>
+                  <span className="text-5xl font-black text-primary/20">
+                    01
+                  </span>
                   <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
                     Free Step
                   </span>
@@ -482,8 +448,9 @@ export default async function HomePage() {
                   Create Your Sister Profile
                 </h3>
                 <p className="mt-2.5 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  Sign up in two minutes. Specify your professional industry, business
-                  interests, or craft preferences to be matched into relevant circles.
+                  Sign up in two minutes. Specify your professional industry,
+                  business interests, or craft preferences to be matched into
+                  relevant circles.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-border/60 text-xs font-semibold text-primary">
@@ -499,7 +466,9 @@ export default async function HomePage() {
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-5xl font-black text-primary/20">02</span>
+                  <span className="text-5xl font-black text-primary/20">
+                    02
+                  </span>
                   <span className="rounded-full bg-heading-accent/10 px-3 py-1 text-xs font-bold text-heading-accent">
                     Showcase
                   </span>
@@ -508,8 +477,9 @@ export default async function HomePage() {
                   Verify &amp; Showcase
                 </h3>
                 <p className="mt-2.5 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  List your registered enterprise in our verified directory or launch your
-                  artisan product catalog with zero commission deductions.
+                  List your registered enterprise in our verified directory or
+                  launch your artisan product catalog with zero commission
+                  deductions.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-border/60 text-xs font-semibold text-heading-accent">
@@ -525,7 +495,9 @@ export default async function HomePage() {
             >
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-5xl font-black text-primary/20">03</span>
+                  <span className="text-5xl font-black text-primary/20">
+                    03
+                  </span>
                   <span className="rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success">
                     Thrive
                   </span>
@@ -534,8 +506,9 @@ export default async function HomePage() {
                   Flourish &amp; Pay It Forward
                 </h3>
                 <p className="mt-2.5 text-xs sm:text-sm text-text-secondary leading-relaxed">
-                  Attend exclusive workshops, expand your customer revenues, find peer
-                  collaborators, and mentor the next generation of emerging sisters.
+                  Attend exclusive workshops, expand your customer revenues,
+                  find peer collaborators, and mentor the next generation of
+                  emerging sisters.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-border/60 text-xs font-semibold text-success">
@@ -561,7 +534,8 @@ export default async function HomePage() {
                 Featured Women-Led Businesses
               </h2>
               <p className="mt-2 text-sm text-text-secondary max-w-xl">
-                Discover authentic brands created by visionary female founders across Bangladesh.
+                Discover authentic brands created by visionary female founders
+                across Bangladesh.
               </p>
             </div>
 
@@ -597,7 +571,8 @@ export default async function HomePage() {
                 Curated Artisan Marketplace
               </h2>
               <p className="mt-2 text-sm text-text-secondary max-w-xl">
-                Support Bangladeshi craftswomen directly. Jamdani sarees, herbal skincare, and gourmet culinary treats.
+                Support Bangladeshi craftswomen directly. Jamdani sarees, herbal
+                skincare, and gourmet culinary treats.
               </p>
             </div>
 
@@ -633,7 +608,8 @@ export default async function HomePage() {
                 Upskill with Specialized Masterclasses
               </h2>
               <p className="mt-2 text-sm text-text-secondary max-w-xl">
-                Action-oriented courses led by successful female founders and certified experts.
+                Action-oriented courses led by successful female founders and
+                certified experts.
               </p>
             </div>
 
@@ -669,7 +645,8 @@ export default async function HomePage() {
                 Upcoming Summits &amp; Circles
               </h2>
               <p className="mt-2 text-sm text-text-secondary max-w-xl">
-                Join our live masterminds, regional city mixers, and online skill clinics.
+                Join our live masterminds, regional city mixers, and online
+                skill clinics.
               </p>
             </div>
 
@@ -735,8 +712,12 @@ export default async function HomePage() {
                     <h4 className="font-bold text-text-primary text-base leading-tight">
                       {t.name}
                     </h4>
-                    <p className="text-xs font-semibold text-primary mt-0.5">{t.role}</p>
-                    <p className="text-[11px] text-neutral">{t.district}, Bangladesh</p>
+                    <p className="text-xs font-semibold text-primary mt-0.5">
+                      {t.role}
+                    </p>
+                    <p className="text-[11px] text-neutral">
+                      {t.district}, Bangladesh
+                    </p>
                   </div>
                 </div>
               </div>
@@ -764,7 +745,8 @@ export default async function HomePage() {
                   100% Free Core Membership
                 </h4>
                 <p className="text-xs sm:text-sm text-text-secondary mt-1.5 leading-relaxed">
-                  Access discussion forums, networking directory, public events, and resource guides at no cost.
+                  Access discussion forums, networking directory, public events,
+                  and resource guides at no cost.
                 </p>
               </div>
             </div>
@@ -776,7 +758,8 @@ export default async function HomePage() {
                   Strict Verification &amp; Safety
                 </h4>
                 <p className="text-xs sm:text-sm text-text-secondary mt-1.5 leading-relaxed">
-                  Careful moderation maintains a professional, encouraging, and spam-free environment for women.
+                  Careful moderation maintains a professional, encouraging, and
+                  spam-free environment for women.
                 </p>
               </div>
             </div>
@@ -788,7 +771,8 @@ export default async function HomePage() {
                   Zero Commission Deductions
                 </h4>
                 <p className="text-xs sm:text-sm text-text-secondary mt-1.5 leading-relaxed">
-                  Female artisans and makers keep 100% of their earnings with direct buyer-to-seller interactions.
+                  Female artisans and makers keep 100% of their earnings with
+                  direct buyer-to-seller interactions.
                 </p>
               </div>
             </div>
@@ -800,7 +784,8 @@ export default async function HomePage() {
                   Active Global Diaspora Network
                 </h4>
                 <p className="text-xs sm:text-sm text-text-secondary mt-1.5 leading-relaxed">
-                  Connect with overseas Bangladeshi professionals across North America, Europe, Australia, and the Middle East.
+                  Connect with overseas Bangladeshi professionals across North
+                  America, Europe, Australia, and the Middle East.
                 </p>
               </div>
             </div>

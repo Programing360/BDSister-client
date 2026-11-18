@@ -22,7 +22,7 @@ export function MemberTableToolbar({
     filters.verificationStatus !== "ALL";
 
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white p-4 shadow-2xs space-y-3">
+    <div className="rounded-2xl  border-gray-200/80 bg-white p-4 shadow-2xs space-y-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
@@ -32,7 +32,7 @@ export function MemberTableToolbar({
             value={filters.query}
             onChange={(e) => onFilterChange({ query: e.target.value, page: 1 })}
             placeholder="Search by sister name, email, or member ID..."
-            className="w-full rounded-xl border border-gray-200 bg-gray-50/50 pl-10 pr-4 py-2 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:border-[#5B46F6] focus:bg-white focus:outline-hidden focus:ring-1 focus:ring-[#5B46F6] transition"
+            className="w-full rounded-xl outline-0 border  border-gray-200 bg-gray-50/50 pl-10 pr-4 py-2 text-xs font-medium text-gray-900 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-0 transition"
           />
         </div>
 

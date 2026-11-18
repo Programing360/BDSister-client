@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Notification Management</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import React from "react";
+import { NotificationsOverviewView } from "@/features/admin/communication/components/notifications/notifications-overview-view";
+
+export const metadata = {
+  title: "Notifications Hub | BDSisters Admin",
+  description: "Multi-channel in-app and push notification management"
+};
+
+export default function NotificationsPage() {
+  return <NotificationsOverviewView />;
 }

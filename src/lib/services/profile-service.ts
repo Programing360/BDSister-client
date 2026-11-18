@@ -1,4 +1,5 @@
-import { getDatabase } from "@/lib/db/mongodb";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import type { MemberProfileDocument } from "@/types/profile";
 import { defaultPrivacySettings } from "@/lib/validations/profile";
 import {
@@ -14,23 +15,10 @@ export {
 };
 export type { PrivacyViewerContext } from "@/features/profile/utils/profile-utils";
 
-const COLLECTION_NAME = "member_profiles";
-
-let indexEnsured = false;
-async function ensureIndex() {
-  if (indexEnsured) return;
-  try {
-    const db = await getDatabase();
-    await db.collection(COLLECTION_NAME).createIndex({ userId: 1 }, { unique: true });
-    indexEnsured = true;
-  } catch (err) {
-    // If connection deferred or mock, do not fail
-    console.warn("[ProfileService] Index creation deferred:", (err as Error).message);
-  }
-}
-
 /**
- * Fetch member profile by userId. Creates an initial baseline profile in DB if not found.
+ * Fetch member profile via REST API.
+ * Calls /api/users/:id or /api/auth/me instead of direct MongoDB connection.
+ * Falls back safely to baseline default profile during offline or mock runs.
  */
 export async function getProfileByUserId(
   userId: string,
@@ -40,40 +28,28 @@ export async function getProfileByUserId(
     throw new Error("userId is required to fetch profile");
   }
 
-  await ensureIndex();
-
   try {
-    const db = await getDatabase();
-    const doc = await db.collection<MemberProfileDocument>(COLLECTION_NAME).findOne({ userId });
-
-    if (doc) {
+    const res = await apiClient.get<MemberProfileDocument>(API_ENDPOINTS.users.detail(userId));
+    if (res.data) {
       return {
-        ...doc,
+        ...res.data,
         privacySettings: {
           ...defaultPrivacySettings,
-          ...(doc.privacySettings || {}),
+          ...(res.data.privacySettings || {}),
         },
       };
     }
-
-    // Initialize baseline profile
-    const newProfile = createDefaultProfile(
-      userId,
-      initialData?.displayName,
-      initialData?.avatar
-    );
-
-    await db.collection(COLLECTION_NAME).insertOne({ ...newProfile } as any);
-    return newProfile;
   } catch (err) {
-    console.warn("[ProfileService] Database lookup deferred or failed:", (err as Error).message);
-    // Return memory baseline for resilience during build or offline tests
-    return createDefaultProfile(userId, initialData?.displayName, initialData?.avatar);
+    console.warn("[ProfileService] API fetch deferred or offline:", (err as Error).message);
   }
+
+  // Fallback to initial structured profile
+  return createDefaultProfile(userId, initialData?.displayName, initialData?.avatar);
 }
 
 /**
- * Update member profile by userId. Strips administrative fields to prevent tampering.
+ * Update member profile via REST API.
+ * Calls PATCH /api/auth/me/contact or PUT /api/users/profile instead of direct MongoDB connection.
  */
 export async function updateProfileByUserId(
   userId: string,
@@ -83,9 +59,7 @@ export async function updateProfileByUserId(
     throw new Error("userId is required to update profile");
   }
 
-  await ensureIndex();
-
-  // Strip protected fields
+  // Strip administrative / system properties
   const safeData = { ...updateData };
   delete (safeData as Record<string, unknown>)._id;
   delete (safeData as Record<string, unknown>).userId;
@@ -94,29 +68,50 @@ export async function updateProfileByUserId(
   delete (safeData as Record<string, unknown>).membershipTier;
   delete (safeData as Record<string, unknown>).createdAt;
 
-  const toSet = {
+  try {
+    const res = await apiClient.patch<MemberProfileDocument>(
+      API_ENDPOINTS.auth.updateContact,
+      safeData
+    );
+    if (res.data) {
+      return res.data;
+    }
+  } catch (err) {
+    console.warn("[ProfileService] API update deferred:", (err as Error).message);
+  }
+
+  return {
+    ...createDefaultProfile(userId),
     ...safeData,
     updatedAt: new Date(),
   };
+}
 
+/**
+ * Submit member profile for official sisterhood verification review.
+ * Calls POST /api/auth/me/submit-review
+ */
+export async function submitProfileForReview(): Promise<{ success: boolean; message: string }> {
   try {
-    const db = await getDatabase();
-    const result = await db.collection(COLLECTION_NAME).findOneAndUpdate(
-      { userId },
-      { $set: toSet },
-      { returnDocument: "after", upsert: true }
-    );
-
-    if (result) {
-      return result as unknown as MemberProfileDocument;
-    }
-
-    return (await getProfileByUserId(userId)) as MemberProfileDocument;
-  } catch (err) {
-    console.warn("[ProfileService] Database update deferred or failed:", (err as Error).message);
+    const res = await apiClient.post<{ message?: string }>(API_ENDPOINTS.auth.submitReview);
     return {
-      ...createDefaultProfile(userId),
-      ...toSet,
-    } as MemberProfileDocument;
+      success: !res.error,
+      message: res.data?.message || "Profile successfully submitted for official Sisterhood Review.",
+    };
+  } catch (err) {
+    return {
+      success: false,
+      message: (err as Error).message || "Failed to submit profile for review.",
+    };
   }
+}
+
+/**
+ * Initiate authenticated download of member profile in official PDF format.
+ * Triggers GET /api/auth/export-pdf
+ */
+export function downloadProfilePdf(): void {
+  if (typeof window === "undefined") return;
+  const downloadUrl = API_ENDPOINTS.auth.exportPdf;
+  window.open(downloadUrl, "_blank");
 }

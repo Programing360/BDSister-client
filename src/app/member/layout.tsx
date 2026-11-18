@@ -8,7 +8,8 @@ export const metadata: Metadata = {
     template: "%s | BDSisters Member Portal",
     default: "Member Dashboard | BDSisters.org",
   },
-  description: "Exclusive member portal for Bangladeshi women entrepreneurs, professionals, and learners.",
+  description:
+    "Exclusive member portal for Bangladeshi women entrepreneurs, professionals, and learners.",
 };
 
 export default async function MemberRootLayout({
@@ -18,9 +19,5 @@ export default async function MemberRootLayout({
 }) {
   const session = await requireServerSession("/member");
 
-  return (
-    <MemberLayoutShell user={session.user}>
-      {children}
-    </MemberLayoutShell>
-  );
+  return <MemberLayoutShell user={session.user}>{children}</MemberLayoutShell>;
 }

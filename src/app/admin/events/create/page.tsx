@@ -1,16 +1,11 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { Metadata } from "next";
+import { EventForm } from "@/features/admin/events/components/form/event-form";
 
-export const metadata = {
-  title: "Create Event | BDSisters Administration",
+export const metadata: Metadata = {
+  title: "Create Event | BDSisters Admin",
+  description: "Schedule and publish a new event, conference, or community summit.",
 };
 
-export default function AdminEventCreatePage() {
-  return (
-    <AdminModulePlaceholder
-      title="Create Platform Event"
-      category="Events & Workshops"
-      description="Schedule networking webinars, entrepreneurship summits, and physical workshops"
-      plannedStep="Admin Step 9 (Events Hub)"
-    />
-  );
+export default function CreateEventPage() {
+  return <EventForm isEdit={false} />;
 }

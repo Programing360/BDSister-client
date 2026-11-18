@@ -2,18 +2,32 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User, Mail, AlertCircle, ArrowRight, Loader2, ShieldCheck } from "lucide-react";
+import {
+  User,
+  Mail,
+  AlertCircle,
+  ArrowRight,
+  Loader2,
+  ShieldCheck,
+  Gift,
+  Lock,
+} from "lucide-react";
 import { registerSchema, type RegisterFormData } from "@/lib/validations/auth";
 import { signUp } from "@/lib/auth/auth-client";
+import { apiClient, ApiError } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { AuthInput } from "./auth-input";
 import { PasswordInput } from "./password-input";
 import { PasswordStrength } from "./password-strength";
 
 export function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialReferrerCode = searchParams.get("ref") || "";
+
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -29,6 +43,7 @@ export function RegisterForm() {
       email: "",
       password: "",
       confirmPassword: "",
+      referrerCode: initialReferrerCode,
       acceptTerms: false,
       acceptPrivacy: false,
     },
@@ -41,37 +56,71 @@ export function RegisterForm() {
     setErrorMessage(null);
 
     try {
-      const response = await signUp.email({
-        email: data.email,
-        password: data.password,
-        name: data.name,
-        callbackURL: "/verify-email",
-      });
-
-      if (response.error) {
-        const msg = (response.error.message || "").toLowerCase();
-        if (msg.includes("already exists") || msg.includes("duplicate") || msg.includes("taken")) {
-          setErrorMessage("An account with this email address already exists. Try signing in instead.");
-        } else {
-          setErrorMessage(response.error.message || "Failed to create account. Please try again.");
+      // 1. Attempt official REST API endpoint: POST /api/auth/register
+      const res = await apiClient.post<{ email?: string; userId?: string }>(
+        API_ENDPOINTS.auth.register,
+        {
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          referrerCode: data.referrerCode,
         }
+      );
+
+      if (res.error) {
+        throw new ApiError(
+          res.error.code,
+          res.error.message,
+          400,
+          res.error.details
+        );
+      }
+
+      router.push(`/verify-email?email=${encodeURIComponent(data.email)}&registered=true`);
+    } catch (err: unknown) {
+      // If REST API endpoint responds with a specific domain error, show it
+      if (err instanceof ApiError && err.status !== 404 && err.status !== 502) {
+        setErrorMessage(err.message);
         setIsLoading(false);
         return;
       }
 
-      // Successful signup — redirect to email verification notice
-      router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
-    } catch (err: unknown) {
-      console.warn("[Registration Request Failed]", err);
-      const errorStr = String(err);
-      if (errorStr.includes("Failed to fetch") || errorStr.includes("NetworkError") || errorStr.includes("activeContentBlocker")) {
+      // 2. Resilient fallback to Better-Auth client during offline/local development
+      try {
+        const response = await signUp.email({
+          email: data.email,
+          password: data.password,
+          name: data.name,
+          callbackURL: "/verify-email",
+        });
+
+        if (response.error) {
+          const msg = (response.error.message || "").toLowerCase();
+          if (
+            msg.includes("already exists") ||
+            msg.includes("duplicate") ||
+            msg.includes("taken")
+          ) {
+            setErrorMessage(
+              "An account with this email address already exists. Try signing in instead."
+            );
+          } else {
+            setErrorMessage(response.error.message || "Failed to create account. Please try again.");
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}&registered=true`);
+      } catch (clientErr: unknown) {
+        console.warn("[Registration Fallback Failed]", clientErr);
         setErrorMessage(
-          "Unable to reach the registration service. If you are using an ad-blocker or content-blocker extension, please pause it for localhost, or check your connection."
+          err instanceof Error
+            ? err.message
+            : "A network error occurred while creating your account. Please try again."
         );
-      } else {
-        setErrorMessage("A network error occurred while creating your account. Please try again.");
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }
   };
 
@@ -113,6 +162,18 @@ export function RegisterForm() {
           {...register("email")}
         />
 
+        <AuthInput
+          id="referrerCode"
+          type="text"
+          label="Sisterhood Referral Code"
+          placeholder="e.g. SISTER-2026 or Founder Code"
+          autoComplete="off"
+          leftIcon={<Gift className="h-4 w-4 text-[#5B46F6]" />}
+          helperText="Enter the referral code of the sister or community partner who invited you."
+          error={errors.referrerCode?.message}
+          {...register("referrerCode")}
+        />
+
         <div>
           <PasswordInput
             id="password"
@@ -133,6 +194,17 @@ export function RegisterForm() {
           error={errors.confirmPassword?.message}
           {...register("confirmPassword")}
         />
+
+        {/* NID Confidentiality & Safe Space Disclosure */}
+        <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-4 text-xs text-purple-950 space-y-1.5">
+          <div className="flex items-center gap-2 font-bold text-[#5B46F6]">
+            <Lock className="h-4 w-4 shrink-0" />
+            <span>Identity Confidentiality &amp; Safe Space Disclosure</span>
+          </div>
+          <p className="text-[11px] leading-relaxed text-purple-900/80">
+            BDSisters.org is an authenticated sanctuary for Bangladeshi women. Following registration, members may verify their National ID (NID) or Passport to unlock verified sister badges and seller privileges. Your documents are encrypted (AES-256) and reviewed exclusively by authorized female verification officers.
+          </p>
+        </div>
 
         {/* Legal Agreements */}
         <div className="space-y-2.5 pt-2">

@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import type { PrivacySettings, ProfileVisibility } from "@/types/profile";
 import { defaultPrivacySettings } from "@/lib/validations/profile";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 interface PrivacySettingsFormProps {
   initialSettings?: PrivacySettings;
@@ -31,13 +33,14 @@ export function PrivacySettingsForm({ initialSettings }: PrivacySettingsFormProp
   };
 
   const [visibility, setVisibility] = useState<ProfileVisibility>(settings.profileVisibility);
-  const [showEmail, setShowEmail] = useState<boolean>(settings.showEmail);
-  const [showPhone, setShowPhone] = useState<boolean>(settings.showPhone);
-  const [showLocation, setShowLocation] = useState<boolean>(settings.showLocation);
-  const [showEducation, setShowEducation] = useState<boolean>(settings.showEducation);
-  const [showExperience, setShowExperience] = useState<boolean>(settings.showExperience);
-  const [showSkills, setShowSkills] = useState<boolean>(settings.showSkills);
-  const [showSocialLinks, setShowSocialLinks] = useState<boolean>(settings.showSocialLinks);
+  // Default strictly to false (hidden) unless explicitly opted in
+  const [showEmail, setShowEmail] = useState<boolean>(Boolean(settings.showEmail));
+  const [showPhone, setShowPhone] = useState<boolean>(Boolean(settings.showPhone));
+  const [showLocation, setShowLocation] = useState<boolean>(Boolean(settings.showLocation));
+  const [showEducation, setShowEducation] = useState<boolean>(Boolean(settings.showEducation));
+  const [showExperience, setShowExperience] = useState<boolean>(Boolean(settings.showExperience));
+  const [showSkills, setShowSkills] = useState<boolean>(Boolean(settings.showSkills));
+  const [showSocialLinks, setShowSocialLinks] = useState<boolean>(Boolean(settings.showSocialLinks));
 
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -61,15 +64,20 @@ export function PrivacySettingsForm({ initialSettings }: PrivacySettingsFormProp
     };
 
     try {
-      const res = await fetch("/api/member/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ privacySettings }),
-      });
+      try {
+        await apiClient.patch(API_ENDPOINTS.auth.updateContact, { privacySettings });
+      } catch {
+        // Fallback to local profile API
+        const res = await fetch("/api/member/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ privacySettings }),
+        });
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || "Failed to update privacy settings.");
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error?.message || "Failed to update privacy settings.");
+        }
       }
 
       setSuccessMsg("Privacy preferences updated successfully.");

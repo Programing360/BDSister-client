@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ShieldCheck, ArrowLeft, CheckCircle2, Clock, FileText, AlertCircle } from "lucide-react";
 import { requireServerSession } from "@/lib/auth/session";
 import { getProfileByUserId } from "@/lib/services/profile-service";
+import { VerificationUploadForm } from "@/features/profile/components/verification-upload-form";
 
 export const metadata: Metadata = {
   title: "Sisterhood Verification | BDSisters",
@@ -34,42 +35,8 @@ export default async function VerificationPage() {
         </div>
       </div>
 
-      {/* Current Status Banner */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl border border-gray-200/80">
-        <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-          <div
-            className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 ${
-              isVerified
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-purple-100 text-[#5B46F6]"
-            }`}
-          >
-            <ShieldCheck className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-1">
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h2 className="text-lg font-bold text-gray-900">
-                {isVerified ? "Verified Sister Status Active" : "Verification Pending / Not Submitted"}
-              </h2>
-              <span
-                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                  isVerified
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border border-amber-200"
-                }`}
-              >
-                {isVerified ? "VERIFIED" : "UNVERIFIED"}
-              </span>
-            </div>
-            <p className="text-xs text-gray-600 max-w-xl">
-              {isVerified
-                ? "Your account holds an authenticated BDSisters badge. You enjoy top placement in member searches, priority marketplace listings, and verified peer status."
-                : "Complete verification to unlock verified badges across your shop, peer discussions, and mentorship applications."}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Interactive Verification Upload Form */}
+      <VerificationUploadForm isVerified={isVerified} />
 
       {/* Verification Steps Explanation */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

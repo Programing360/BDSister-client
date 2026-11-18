@@ -25,7 +25,7 @@ export function AdminMemberAnalyticsCard() {
   );
 
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-2xs space-y-6">
+    <div className="rounded-2xl border-gray-200/80 bg-white p-6 shadow-2xs space-y-6">
       {/* 1. Header with Range and Metric Controls */}
       <div className=" gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
         <div className="flex justify-between items-center">

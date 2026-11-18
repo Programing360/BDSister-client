@@ -1,0 +1,171 @@
+"use client";
+
+import React from "react";
+import { ShieldAlert, CheckCircle, XCircle, AlertTriangle, Eye } from "lucide-react";
+import { ModerationQueueItem } from "../../types/community";
+import {
+  ModerationPriorityBadge,
+  ModerationReviewStatusBadge,
+} from "../common/community-status-badge";
+
+interface ModerationQueueTableProps {
+  items: ModerationQueueItem[];
+  onReview: (item: ModerationQueueItem) => void;
+  onQuickApprove: (id: string) => void;
+  onQuickReject: (id: string) => void;
+}
+
+export function ModerationQueueTable({
+  items,
+  onReview,
+  onQuickApprove,
+  onQuickReject,
+}: ModerationQueueTableProps) {
+  if (items.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center shadow-md">
+        <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+        <h3 className="text-sm font-bold text-gray-800">Moderation Queue is Clean!</h3>
+        <p className="text-xs text-gray-500 mt-1">
+          No items currently awaiting review or matching your filter criteria.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Desktop Table */}
+      <div className="hidden md:block overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-xl shadow-purple-500/5">
+        <table className="w-full text-left text-xs min-w-[1050px]">
+          <thead className="bg-gray-50/75 border-b border-gray-100 uppercase tracking-wider text-gray-500 font-semibold">
+            <tr>
+              <th className="py-3.5 px-4 min-w-[320px]">Flagged Content</th>
+              <th className="py-3.5 px-4 min-w-[120px]">Type</th>
+              <th className="py-3.5 px-4 min-w-[180px]">Interception Reason</th>
+              <th className="py-3.5 px-4 min-w-[150px]">Author</th>
+              <th className="py-3.5 px-4 text-center">Priority</th>
+              <th className="py-3.5 px-4 text-center">Review Status</th>
+              <th className="py-3.5 px-4 text-right min-w-[160px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100 text-gray-700">
+            {items.map((item) => (
+              <tr key={item.id} className="hover:bg-purple-50/20 transition-colors">
+                <td className="py-3.5 px-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-mono text-gray-400">{item.id}</span>
+                    <button
+                      type="button"
+                      onClick={() => onReview(item)}
+                      className="font-bold text-gray-900 hover:text-purple-600 block line-clamp-1 text-left text-sm transition-colors"
+                    >
+                      {item.title || item.contentPreview}
+                    </button>
+                    <p className="text-xs text-gray-500 line-clamp-1">{item.contentPreview}</p>
+                  </div>
+                </td>
+                <td className="py-3.5 px-4">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-gray-100 text-gray-800 uppercase">
+                    {item.contentType}
+                  </span>
+                </td>
+                <td className="py-3.5 px-4">
+                  <div className="flex items-center gap-1.5 text-xs text-amber-800 font-medium">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="line-clamp-2">{item.reason}</span>
+                  </div>
+                </td>
+                <td className="py-3.5 px-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                      {item.author.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{item.author.name}</p>
+                      <span className="text-[10px] text-gray-400">@{item.author.username}</span>
+                    </div>
+                  </div>
+                </td>
+                <td className="py-3.5 px-4 text-center min-w-40">
+                  <ModerationPriorityBadge priority={item.priority} />
+                </td>
+                <td className="py-3.5 px-4 text-center min-w-40">
+                  <ModerationReviewStatusBadge status={item.reviewStatus} />
+                </td>
+                <td className="py-3.5 px-4 text-right">
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onReview(item)}
+                      className="px-2.5 py-1.5 rounded-lg border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 font-semibold text-xs flex items-center gap-1 transition-all"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      Review
+                    </button>
+                    {item.reviewStatus === "PENDING" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onQuickApprove(item.id)}
+                          className="p-1.5 rounded-lg border border-emerald-200 text-emerald-700 hover:bg-emerald-50 transition-colors"
+                          title="Quick Approve"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onQuickReject(item.id)}
+                          className="p-1.5 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 transition-colors"
+                          title="Quick Reject"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Fallback */}
+      <div className="md:hidden space-y-3">
+        {items.map((item) => (
+          <div
+            key={item.id}
+            className="p-4 rounded-xl border border-gray-100 bg-white shadow-md space-y-3"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 text-gray-800 uppercase">
+                  {item.contentType}
+                </span>
+                <ModerationPriorityBadge priority={item.priority} />
+              </div>
+              <ModerationReviewStatusBadge status={item.reviewStatus} />
+            </div>
+
+            <p className="font-bold text-xs text-gray-900">{item.title || item.contentPreview}</p>
+            <p className="text-xs text-amber-800 bg-amber-50 p-2 rounded-lg">
+              Reason: {item.reason}
+            </p>
+
+            <div className="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-100">
+              <span>By {item.author.name}</span>
+              <button
+                type="button"
+                onClick={() => onReview(item)}
+                className="px-3 py-1 rounded-lg bg-purple-600 text-white font-semibold text-xs"
+              >
+                Inspect & Decide
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

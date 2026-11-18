@@ -1,8 +1,12 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Community Reports</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import React from "react";
+import { Metadata } from "next";
+import { ReportsListView } from "@/features/admin/community/components/reports/reports-list-view";
+
+export const metadata: Metadata = {
+  title: "Content Reports & Grievances | BDSisters Admin",
+  description: "Investigate and resolve user-submitted content reports and community grievances.",
+};
+
+export default function ReportsPage() {
+  return <ReportsListView />;
 }

@@ -74,25 +74,22 @@ export function MemberSidebar({ user, onNavigate, className = "" }: MemberSideba
                     <Link
                       href={item.href}
                       onClick={onNavigate}
-                      className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 ${
-                        isActive
-                          ? "bg-[#5B46F6] text-white shadow-md shadow-[#5B46F6]/25"
-                          : "text-gray-600 hover:bg-[#5B46F6]/5 hover:text-[#5B46F6]"
-                      }`}
+                      className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-semibold transition-all duration-200 ${isActive
+                        ? "bg-[#2c1f88] text-white shadow-md shadow-[#5B46F6]/25"
+                        : "text-gray-600 hover:bg-[#5B46F6]/5 hover:text-[#5341e0e8]"
+                        }`}
                     >
                       <Icon
-                        className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${
-                          isActive ? "text-white" : "text-gray-400 group-hover:text-[#5B46F6]"
-                        }`}
+                        className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110 ${isActive ? "text-white" : "text-gray-400 group-hover:text-[#5B46F6]"
+                          }`}
                       />
                       <span className="truncate">{item.label}</span>
                       {item.badge !== undefined && (
                         <span
-                          className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                            isActive
-                              ? "bg-white/20 text-white"
-                              : "bg-gray-100 text-gray-600"
-                          }`}
+                          className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${isActive
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 text-gray-600"
+                            }`}
                         >
                           {item.badge}
                         </span>

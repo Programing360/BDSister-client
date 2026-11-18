@@ -168,7 +168,7 @@ export function RoleCreateForm() {
         </div>
 
         {/* Frontend Demo Banner */}
-        <div className="mt-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-3">
+        {/* <div className="mt-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-3">
           <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
           <div>
             <p className="font-semibold">Frontend Simulation Mode</p>
@@ -176,7 +176,7 @@ export function RoleCreateForm() {
               Custom roles created here operate in the client-side state for interface validation. Server-side role persistence and authorization enforcement will be implemented in the backend phase.
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Success View */}
@@ -236,9 +236,8 @@ export function RoleCreateForm() {
                   value={name}
                   onChange={handleNameChange}
                   placeholder="e.g. Regional Divisional Coordinator"
-                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${
-                    errors.name ? "border-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                  }`}
+                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${errors.name ? "border-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                    }`}
                 />
                 {errors.name && (
                   <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
@@ -257,9 +256,8 @@ export function RoleCreateForm() {
                   value={slug}
                   onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                   placeholder="e.g. regional-divisional-coordinator"
-                  className={`w-full font-mono text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${
-                    errors.slug ? "border-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                  }`}
+                  className={`w-full font-mono text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${errors.slug ? "border-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                    }`}
                 />
                 {errors.slug && (
                   <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
@@ -313,9 +311,8 @@ export function RoleCreateForm() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Explain the functional remit, target staff personas, and operational boundaries of this custom role..."
-                className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition placeholder-gray-400 ${
-                  errors.description ? "border-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                }`}
+                className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition placeholder-gray-400 ${errors.description ? "border-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                  }`}
               />
               {errors.description && (
                 <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
@@ -423,11 +420,10 @@ export function RoleCreateForm() {
                             <div
                               key={perm.key}
                               onClick={() => handleToggleKey(perm.key)}
-                              className={`p-3 rounded-xl border transition cursor-pointer flex items-start gap-3 ${
-                                isChecked
+                              className={`p-3 rounded-xl border transition cursor-pointer flex items-start gap-3 ${isChecked
                                   ? "bg-indigo-50/40 border-indigo-200 dark:bg-indigo-950/20 dark:border-indigo-900/60"
                                   : "bg-white dark:bg-gray-900 border-gray-200/70 dark:border-gray-800 hover:border-gray-300"
-                              }`}
+                                }`}
                             >
                               <div className="pt-0.5 text-[#5B46F6]">
                                 {isChecked ? (

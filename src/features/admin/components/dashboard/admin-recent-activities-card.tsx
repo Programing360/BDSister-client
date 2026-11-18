@@ -70,7 +70,7 @@ export function AdminRecentActivitiesCard() {
   };
 
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-2xs space-y-5">
+    <div className="rounded-2xl border-gray-200/80 bg-white p-6 space-y-5">
       {/* 1. Header with View All Navigation */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
         <div>

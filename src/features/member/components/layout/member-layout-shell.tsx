@@ -69,7 +69,7 @@ export function MemberLayoutShell({ user, children }: MemberLayoutShellProps) {
         />
 
         <main className="flex-1 p-4 sm:p-8 lg:p-10">
-          <div className="mx-auto max-w-7xl">
+          <div className="">
             {children}
           </div>
         </main>

@@ -41,8 +41,12 @@ export function ProfileTableToolbar({
     filters.isFeatured !== "ALL";
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/80 dark:border-gray-800 p-4 space-y-3.5 shadow-xs">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+    <div
+      data-aos="fade-up"
+      data-aos-delay="150"
+      className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-xs rounded-3xl border border-gray-200/80 dark:border-gray-800 p-4 space-y-4 shadow-lg shadow-indigo-500/5 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300"
+    >
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
         {/* Search Input */}
         <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -51,7 +55,7 @@ export function ProfileTableToolbar({
             value={filters.query}
             onChange={(e) => onFilterChange({ query: e.target.value, page: 1 })}
             placeholder="Search by sister name, email, profession, or BDS-MEM ID..."
-            className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-gray-50 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#5B46F6]/20 focus:border-[#5B46F6] transition-all"
+            className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-gray-50/90 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#5B46F6]/20 focus:border-[#5B46F6] transition-all shadow-xs"
           />
         </div>
 
@@ -66,7 +70,8 @@ export function ProfileTableToolbar({
                 page: 1,
               })
             }
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6]"
+            aria-label="Filter by approval status"
+            className="px-3.5 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6] shadow-xs cursor-pointer"
           >
             <option value="ALL">All Approvals</option>
             <option value="PUBLISHED">Published Live</option>
@@ -82,7 +87,8 @@ export function ProfileTableToolbar({
           <select
             value={filters.category}
             onChange={(e) => onFilterChange({ category: e.target.value, page: 1 })}
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6]"
+            aria-label="Filter by category"
+            className="px-3.5 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6] shadow-xs cursor-pointer"
           >
             <option value="ALL">All Categories</option>
             {DEMO_PROFILE_CATEGORIES.map((cat) => (
@@ -101,7 +107,8 @@ export function ProfileTableToolbar({
                 page: 1,
               })
             }
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6]"
+            aria-label="Filter by visibility"
+            className="px-3.5 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6] shadow-xs cursor-pointer"
           >
             <option value="ALL">All Visibility</option>
             <option value="PUBLIC">Public</option>
@@ -118,7 +125,8 @@ export function ProfileTableToolbar({
                 page: 1,
               })
             }
-            className="px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6]"
+            aria-label="Filter by verification status"
+            className="px-3.5 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium focus:outline-hidden focus:border-[#5B46F6] shadow-xs cursor-pointer"
           >
             <option value="ALL">All Verification</option>
             <option value="VERIFIED">NID Verified</option>
@@ -139,10 +147,10 @@ export function ProfileTableToolbar({
                 page: 1,
               })
             }
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition-colors ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-all duration-200 shadow-xs cursor-pointer ${
               filters.isFeatured === "FEATURED"
-                ? "bg-amber-50 text-amber-700 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700"
-                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100"
+                ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700 shadow-amber-500/20"
+                : "bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -154,7 +162,7 @@ export function ProfileTableToolbar({
             <button
               type="button"
               onClick={onReset}
-              className="inline-flex items-center gap-1.5 px-2.5 py-2 text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset</span>
@@ -164,9 +172,9 @@ export function ProfileTableToolbar({
       </div>
 
       {/* Counter summary */}
-      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 pt-2.5 border-t border-gray-100 dark:border-gray-800/80">
         <span>
-          Showing <span className="font-semibold text-gray-900 dark:text-white">{totalFiltered}</span> matching profile profiles
+          Showing <span className="font-semibold text-gray-900 dark:text-white">{totalFiltered}</span> matching profile records
         </span>
         <div className="flex items-center gap-2">
           <span>Sort by:</span>
@@ -177,6 +185,7 @@ export function ProfileTableToolbar({
                 sortBy: e.target.value as ProfileFilterState["sortBy"],
               })
             }
+            aria-label="Sort profiles by"
             className="text-xs bg-transparent font-semibold text-gray-700 dark:text-gray-300 border-0 focus:outline-hidden cursor-pointer"
           >
             <option value="lastUpdated">Last Updated</option>

@@ -29,6 +29,11 @@ export const registerSchema = z
       .regex(/[a-z]/, "Password must contain at least one lowercase letter")
       .regex(/[0-9]/, "Password must contain at least one number"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
+    referrerCode: z
+      .string()
+      .trim()
+      .min(3, "Referral code is required (min 3 characters)")
+      .max(30, "Referral code cannot exceed 30 characters"),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: "You must accept the Terms and Conditions",
     }),

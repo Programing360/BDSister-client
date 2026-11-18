@@ -149,15 +149,15 @@ export function ProfileReviewDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+      <div className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl shadow-purple-950/20 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className={`w-11 h-11 rounded-2xl ${details.iconBg} flex items-center justify-center shrink-0`}>
-              <Icon className="w-6 h-6" />
+            <div className={`w-11 h-11 rounded-2xl ${details.iconBg} flex items-center justify-center shrink-0 shadow-sm`}>
+              <Icon className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-gray-900 dark:text-white">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                 {details.title}
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

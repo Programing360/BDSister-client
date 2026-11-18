@@ -15,7 +15,7 @@ import {
 
 export function AdminBusinessAnalyticsCard() {
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white p-6 shadow-2xs space-y-6">
+    <div className="rounded-2xl border-gray-200/80 bg-white p-6  space-y-6">
       {/* 1. Header with View All Navigation */}
       <div className="gap-2  border-b border-gray-100 pb-4">
         <div className="flex justify-between items-center">

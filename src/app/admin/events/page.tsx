@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Event Management</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { Metadata } from "next";
+import { EventsOverviewView } from "@/features/admin/events/components/overview/events-overview-view";
+
+export const metadata: Metadata = {
+  title: "Events & Workshops Overview | BDSisters Admin",
+  description: "Executive control and intelligence suite for events, summits, workshops, and registrations.",
+};
+
+export default function AdminEventsPage() {
+  return <EventsOverviewView />;
 }

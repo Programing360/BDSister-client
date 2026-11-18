@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import AOS from "aos";
 import {
   Clock,
   ArrowLeft,
@@ -25,9 +26,7 @@ import {
   ReviewDialogAction,
 } from "./profile-review-dialog";
 import { ProfilePreviewDialog } from "./profile-preview-dialog";
-import {
-  DEMO_ADMIN_PROFILES,
-} from "../data/admin-profiles-data";
+import { DEMO_ADMIN_PROFILES } from "../data/admin-profiles-data";
 import type { AdminProfileItem } from "../types/admin-profile";
 
 export function ProfilesPendingView() {
@@ -43,6 +42,16 @@ export function ProfilesPendingView() {
   } | null>(null);
   const [previewTarget, setPreviewTarget] = useState<AdminProfileItem | null>(null);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    AOS.init({
+      duration: 650,
+      easing: "ease-out-cubic",
+      once: true,
+      offset: 35,
+    });
+    AOS.refresh();
+  }, [search, profiles.length]);
 
   const filtered = profiles.filter((p) => {
     if (!search.trim()) return true;
@@ -89,14 +98,17 @@ export function ProfilesPendingView() {
     <div className="space-y-6 max-w-7xl mx-auto pb-12">
       {/* Toast */}
       {feedbackToast && (
-        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-gray-900 text-white text-xs font-semibold shadow-2xl flex items-center gap-3 border border-gray-700 animate-in slide-in-from-bottom duration-200">
+        <div className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-gray-900/95 backdrop-blur-md text-white text-xs font-semibold shadow-2xl shadow-purple-900/40 flex items-center gap-3 border border-gray-700 animate-in slide-in-from-bottom duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{feedbackToast}</span>
         </div>
       )}
 
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+      <nav
+        data-aos="fade-down"
+        className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
+      >
         <Link href="/admin" className="hover:text-gray-900 dark:hover:text-white transition-colors">
           Admin
         </Link>
@@ -109,14 +121,18 @@ export function ProfilesPendingView() {
       </nav>
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-5">
+      <div
+        data-aos="fade-down"
+        data-aos-delay="50"
+        className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 pb-5"
+      >
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/60 dark:to-orange-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-200/80 dark:border-amber-850 shadow-lg shadow-amber-500/15">
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+              <h1 className="text-xl lg:text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
                 Pending Profile Approvals
               </h1>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -128,7 +144,7 @@ export function ProfilesPendingView() {
 
         <Link
           href="/admin/profiles"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors border border-gray-200 dark:border-gray-800 shadow-xs"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-all border border-gray-200 dark:border-gray-800 shadow-md shadow-gray-200/50 dark:shadow-none hover:shadow-lg"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>All Profiles</span>
@@ -136,39 +152,54 @@ export function ProfilesPendingView() {
       </div>
 
       {/* Search Toolbar */}
-      <div className="relative max-w-md">
+      <div
+        data-aos="fade-up"
+        data-aos-delay="100"
+        className="relative max-w-md"
+      >
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Filter pending profiles by name, profession, or ID..."
-          className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-hidden focus:border-[#5B46F6]"
+          className="w-full pl-10 pr-4 py-2.5 text-xs rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#5B46F6]/20 focus:border-[#5B46F6] transition-all shadow-md shadow-amber-500/5"
         />
       </div>
 
       {/* Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filtered.length === 0 ? (
-          <div className="col-span-full p-12 text-center rounded-2xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-400">
-            No profiles currently waiting in the approval queue.
+          <div
+            data-aos="fade-up"
+            className="col-span-full p-16 text-center rounded-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-xs text-gray-400 shadow-lg shadow-amber-500/5"
+          >
+            <Clock className="w-8 h-8 text-amber-400/80 mx-auto mb-2" />
+            <p className="font-semibold text-sm text-gray-600 dark:text-gray-300">
+              No profiles currently waiting in the approval queue.
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              All member profiles are up-to-date and published!
+            </p>
           </div>
         ) : (
-          filtered.map((profile) => (
+          filtered.map((profile, idx) => (
             <div
               key={profile.id}
-              className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-xs hover:border-gray-300 dark:hover:border-gray-700 transition-all space-y-4"
+              data-aos="fade-up"
+              data-aos-delay={(idx % 6) * 50 + 100}
+              className="p-5 rounded-3xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-lg shadow-amber-500/10 hover:shadow-xl hover:shadow-amber-500/20 hover:border-amber-300 dark:hover:border-amber-700/60 transition-all duration-300 space-y-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 font-bold text-base flex items-center justify-center shrink-0 border border-amber-200 dark:border-amber-800">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold text-base flex items-center justify-center shrink-0 border border-amber-200/80 dark:border-amber-800 shadow-xs shadow-amber-500/10">
                     {profile.fullName.charAt(0)}
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">
+                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
                       {profile.fullName}
                     </h3>
-                    <p className="text-xs text-[#5B46F6] font-semibold mt-0.5">
+                    <p className="text-xs text-[#5B46F6] font-medium mt-0.5">
                       {profile.profession}
                     </p>
                     <span className="font-mono text-[10px] text-gray-400">
@@ -184,13 +215,13 @@ export function ProfilesPendingView() {
               </div>
 
               {/* Bio snippet */}
-              <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed bg-gray-50 dark:bg-gray-800/60 p-3 rounded-2xl">
+              <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2 leading-relaxed bg-gray-50/80 dark:bg-gray-800/60 p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
                 {profile.bio || "No biography provided yet."}
               </p>
 
               {/* Meta pills */}
               <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-[11px] font-medium text-gray-700 dark:text-gray-300">
+                <span className="px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[11px] font-medium text-gray-700 dark:text-gray-300 border border-gray-200/60 dark:border-gray-700/60">
                   {profile.category}
                 </span>
                 <ProfileVerificationBadgeTag status={profile.verificationStatus} />
@@ -208,7 +239,7 @@ export function ProfilesPendingView() {
                   <button
                     type="button"
                     onClick={() => setPreviewTarget(profile)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors border border-gray-200 dark:border-gray-700"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors border border-gray-200 dark:border-gray-700 shadow-xs"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Preview</span>
@@ -227,7 +258,7 @@ export function ProfilesPendingView() {
                   <button
                     type="button"
                     onClick={() => setReviewTarget({ profile, action: "REQUEST_CHANGES" })}
-                    className="p-1.5 rounded-xl text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 border border-orange-200 dark:border-orange-800 transition-colors"
+                    className="p-2 rounded-xl text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/40 border border-orange-200 dark:border-orange-800 transition-colors shadow-xs"
                     title="Request Changes"
                   >
                     <AlertCircle className="w-4 h-4" />
@@ -236,7 +267,7 @@ export function ProfilesPendingView() {
                   <button
                     type="button"
                     onClick={() => setReviewTarget({ profile, action: "REJECT" })}
-                    className="p-1.5 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800 transition-colors"
+                    className="p-2 rounded-xl text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800 transition-colors shadow-xs"
                     title="Reject Profile"
                   >
                     <XCircle className="w-4 h-4" />
@@ -245,7 +276,7 @@ export function ProfilesPendingView() {
                   <button
                     type="button"
                     onClick={() => setReviewTarget({ profile, action: "APPROVE" })}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-xs"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Approve</span>

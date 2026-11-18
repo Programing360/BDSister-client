@@ -1,8 +1,18 @@
 import type { ApiResponse } from "@/types/api";
 
-const BASE_URL =
-  process.env["NEXT_PUBLIC_API_URL"] ??
-  (typeof window !== "undefined" ? window.location.origin + "/api" : "http://localhost:3000/api");
+function getBaseUrl(): string {
+  const envUrl = process.env["NEXT_PUBLIC_API_URL"] ?? process.env["NEXT_PUBLIC_APP_URL"];
+  if (envUrl) {
+    // Strip trailing slash and trailing "/api" because all endpoint paths explicitly start with "/api/..."
+    return envUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+  }
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  return "http://localhost:3000";
+}
+
+const BASE_URL = getBaseUrl();
 
 export class ApiError extends Error {
   constructor(
@@ -22,7 +32,12 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
 }
 
 function buildUrl(path: string, params?: Record<string, string | number | boolean | null | undefined>): string {
-  const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url =
+    path.startsWith("http://") || path.startsWith("https://")
+      ? path
+      : `${BASE_URL}${normalizedPath}`;
+
   if (!params) return url;
   const searchParams = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -34,9 +49,68 @@ function buildUrl(path: string, params?: Record<string, string | number | boolea
   return queryString ? `${url}?${queryString}` : url;
 }
 
+function getAuthHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (typeof window !== "undefined") {
+    try {
+      const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("auth_token") ||
+        localStorage.getItem("access_token");
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+    } catch {
+      // Ignore storage access errors in restricted contexts
+    }
+  }
+  return headers;
+}
+
 async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   const contentType = response.headers.get("content-type");
   const isJson = contentType?.includes("application/json");
+
+  // Intercept 401 Unauthorized session expiry
+  if (response.status === 401) {
+    if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      const isAuthPage =
+        pathname === "/login" ||
+        pathname === "/register" ||
+        pathname === "/admin/login" ||
+        pathname.startsWith("/auth");
+
+      if (!isAuthPage) {
+        try {
+          localStorage.removeItem("token");
+          localStorage.removeItem("auth_token");
+        } catch {
+          // Ignore
+        }
+
+        const targetLogin = pathname.startsWith("/admin") ? "/admin/login" : "/login";
+        const redirectUrl = `${targetLogin}?callbackUrl=${encodeURIComponent(pathname)}&error=session_expired`;
+
+        setTimeout(() => {
+          if (window.location.pathname !== targetLogin) {
+            window.location.href = redirectUrl;
+          }
+        }, 100);
+      }
+    }
+
+    if (isJson) {
+      const errorData = (await response.json()) as ApiResponse<T>;
+      throw new ApiError(
+        errorData.error?.code ?? "UNAUTHORIZED",
+        errorData.error?.message ?? "Your session has expired. Please sign in again.",
+        401,
+        errorData.error?.details,
+      );
+    }
+    throw new ApiError("UNAUTHORIZED", "Your session has expired. Please sign in again.", 401);
+  }
 
   if (!response.ok) {
     if (isJson) {
@@ -64,11 +138,13 @@ async function request<T>(
   options: RequestOptions = {},
 ): Promise<ApiResponse<T>> {
   const { body, params, headers = {}, ...rest } = options;
+  const authHeaders = getAuthHeaders();
 
   const response = await fetch(buildUrl(path, params), {
     method,
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders,
       ...headers,
     },
     body: body !== undefined ? JSON.stringify(body) : undefined,

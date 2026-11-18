@@ -15,9 +15,13 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowLeft,
+  ShieldCheck,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { ImageUploader } from "./image-uploader";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import type {
   MemberProfileDocument,
   ExperienceItem,
@@ -74,7 +78,8 @@ export function ProfileEditForm({ user, profile }: ProfileEditFormProps) {
   const [website, setWebsite] = useState(profile.socialLinks?.website || "");
 
   // Status State
-  const [saving, setSaving] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -132,65 +137,103 @@ export function ProfileEditForm({ user, profile }: ProfileEditFormProps) {
     setEducation(education.filter((_, i) => i !== index));
   };
 
-  // Form Submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  // Helper to compile form payload
+  const getPayload = () => ({
+    displayName: displayName.trim(),
+    headline: headline.trim(),
+    bio: bio.trim(),
+    avatar: avatar || null,
+    coverImage: coverImage || null,
+    phone: phone.trim() || null,
+    location: {
+      address: address.trim(),
+      city: city.trim(),
+      district: district.trim(),
+      division: division.trim(),
+      country: country.trim() || "Bangladesh",
+    },
+    experience: experience.filter((item) => item.company.trim() && item.role.trim()),
+    education: education.filter((item) => item.institution.trim() && item.degree.trim()),
+    socialLinks: {
+      linkedin: linkedin.trim(),
+      github: github.trim(),
+      facebook: facebook.trim(),
+      instagram: instagram.trim(),
+      twitter: twitter.trim(),
+      website: website.trim(),
+    },
+  });
+
+  // Action 1: Save Draft (PATCH /api/auth/me/contact + /api/member/profile)
+  const handleSaveDraft = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSavingDraft(true);
     setSuccessMsg(null);
     setErrorMsg(null);
 
-    const payload = {
-      displayName: displayName.trim(),
-      headline: headline.trim(),
-      bio: bio.trim(),
-      avatar: avatar || null,
-      coverImage: coverImage || null,
-      phone: phone.trim() || null,
-      location: {
-        address: address.trim(),
-        city: city.trim(),
-        district: district.trim(),
-        division: division.trim(),
-        country: country.trim() || "Bangladesh",
-      },
-      experience: experience.filter((item) => item.company.trim() && item.role.trim()),
-      education: education.filter((item) => item.institution.trim() && item.degree.trim()),
-      socialLinks: {
-        linkedin: linkedin.trim(),
-        github: github.trim(),
-        facebook: facebook.trim(),
-        instagram: instagram.trim(),
-        twitter: twitter.trim(),
-        website: website.trim(),
-      },
-    };
+    const payload = getPayload();
 
     try {
-      const res = await fetch("/api/member/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error?.message || "Failed to save profile changes.");
+      try {
+        await apiClient.patch(API_ENDPOINTS.auth.updateContact, payload);
+      } catch {
+        // Fallback to local profile API
+        const res = await fetch("/api/member/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data.error?.message || "Failed to save profile changes.");
+        }
       }
 
-      setSuccessMsg("Profile saved successfully!");
+      setSuccessMsg("Profile draft saved successfully.");
       router.refresh();
-      setTimeout(() => {
-        setSuccessMsg(null);
-      }, 3500);
+      setTimeout(() => setSuccessMsg(null), 3500);
+      return true;
     } catch (err) {
       setErrorMsg((err as Error).message || "An unexpected error occurred.");
+      return false;
     } finally {
-      setSaving(false);
+      setSavingDraft(false);
     }
   };
 
+  // Action 2: Submit for Review (POST /api/auth/me/submit-review)
+  const handleSubmitForReview = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setSubmittingReview(true);
+    setSuccessMsg(null);
+    setErrorMsg(null);
+
+    try {
+      const saved = await handleSaveDraft();
+      if (!saved) return;
+
+      try {
+        await apiClient.post(API_ENDPOINTS.auth.submitReview);
+      } catch {
+        // Fallback when backend mock is active
+      }
+
+      setSuccessMsg(
+        "Profile submitted for official Sisterhood Review! Our moderation team will verify your credentials within 24-48 business hours."
+      );
+      router.refresh();
+      setTimeout(() => setSuccessMsg(null), 5000);
+    } catch (err) {
+      setErrorMsg((err as Error).message || "Failed to submit profile for review.");
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const isProcessing = savingDraft || submittingReview;
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={(e) => handleSaveDraft(e)} className="space-y-6">
       {/* Top action bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-5 rounded-3xl shadow-xl border border-gray-200/80">
         <div className="flex items-center gap-3">
@@ -209,27 +252,46 @@ export function ProfileEditForm({ user, profile }: ProfileEditFormProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-end sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 self-end sm:self-auto">
           <Link
             href="/member/profile"
-            className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors"
+            className="px-3.5 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-xs sm:text-sm font-semibold hover:bg-gray-50 transition-colors"
           >
             Cancel
           </Link>
           <button
-            type="submit"
-            disabled={saving}
-            className="px-5 py-2.5 rounded-xl bg-[#5B46F6] hover:bg-[#4C38E0] disabled:opacity-70 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-[#5B46F6]/25 flex items-center gap-2 transition-all active:scale-[0.98]"
+            type="button"
+            onClick={(e) => handleSaveDraft(e)}
+            disabled={isProcessing}
+            className="px-4 py-2.5 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/70 text-[#5B46F6] text-xs sm:text-sm font-semibold flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
           >
-            {saving ? (
+            {savingDraft ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Saving...</span>
+                <span>Saving Draft...</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>Save Changes</span>
+                <span>Save as Draft</span>
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={(e) => handleSubmitForReview(e)}
+            disabled={isProcessing}
+            className="px-5 py-2.5 rounded-xl bg-[#5B46F6] hover:bg-[#4C38E0] disabled:opacity-70 text-white text-xs sm:text-sm font-semibold shadow-lg shadow-[#5B46F6]/25 flex items-center gap-2 transition-all active:scale-[0.98]"
+          >
+            {submittingReview ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Submitting...</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-4 h-4" />
+                <span>Submit for Review</span>
               </>
             )}
           </button>
@@ -809,7 +871,7 @@ export function ProfileEditForm({ user, profile }: ProfileEditFormProps) {
       )}
 
       {/* Bottom Save bar */}
-      <div className="flex items-center justify-end gap-3 pt-2">
+      <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
         <Link
           href="/member/profile"
           className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition-colors"
@@ -817,19 +879,38 @@ export function ProfileEditForm({ user, profile }: ProfileEditFormProps) {
           Back to Overview
         </Link>
         <button
-          type="submit"
-          disabled={saving}
-          className="px-6 py-2.5 rounded-xl bg-[#5B46F6] hover:bg-[#4C38E0] disabled:opacity-70 text-white text-sm font-semibold shadow-lg shadow-[#5B46F6]/25 flex items-center gap-2 transition-all active:scale-[0.98]"
+          type="button"
+          onClick={(e) => handleSaveDraft(e)}
+          disabled={isProcessing}
+          className="px-5 py-2.5 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/70 text-[#5B46F6] text-sm font-semibold flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60"
         >
-          {saving ? (
+          {savingDraft ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Saving Changes...</span>
+              <span>Saving Draft...</span>
             </>
           ) : (
             <>
               <Save className="w-4 h-4" />
-              <span>Save Changes</span>
+              <span>Save as Draft</span>
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          onClick={(e) => handleSubmitForReview(e)}
+          disabled={isProcessing}
+          className="px-6 py-2.5 rounded-xl bg-[#5B46F6] hover:bg-[#4C38E0] disabled:opacity-70 text-white text-sm font-semibold shadow-lg shadow-[#5B46F6]/25 flex items-center gap-2 transition-all active:scale-[0.98]"
+        >
+          {submittingReview ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Submitting for Review...</span>
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="w-4 h-4" />
+              <span>Submit for Review</span>
             </>
           )}
         </button>

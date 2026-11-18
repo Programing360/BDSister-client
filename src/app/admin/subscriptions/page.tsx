@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Subscription Management</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { Metadata } from "next";
+import { SubscriptionsListView } from "@/features/admin/memberships/components/subscriptions/subscriptions-list-view";
+
+export const metadata: Metadata = {
+  title: "Membership Subscriptions | BDSisters Admin",
+  description: "Manage and monitor member subscription accounts, terms, and manual renewal requests.",
+};
+
+export default function AdminSubscriptionsPage() {
+  return <SubscriptionsListView />;
 }

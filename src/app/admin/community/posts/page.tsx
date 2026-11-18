@@ -1,8 +1,12 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Community Posts</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import React from "react";
+import { Metadata } from "next";
+import { PostsListView } from "@/features/admin/community/components/posts/posts-list-view";
+
+export const metadata: Metadata = {
+  title: "Posts Moderation | BDSisters Admin",
+  description: "Audit individual community posts, inspect media attachments, and enforce content safety.",
+};
+
+export default function PostsPage() {
+  return <PostsListView />;
 }

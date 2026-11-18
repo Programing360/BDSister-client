@@ -18,6 +18,10 @@ export const publicNavItems: NavItem[] = [
   {
     label: "Community",
     href: "/community",
+    children: [
+      { label: "Community Feed", href: "/community" },
+      { label: "Sisterhood Directory", href: "/members" },
+    ],
   },
   {
     label: "Businesses",

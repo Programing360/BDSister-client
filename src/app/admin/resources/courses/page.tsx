@@ -1,16 +1,13 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { Metadata } from "next";
+import { CoursesListView } from "@/features/admin/resources/components/courses/courses-list-view";
+import { DEMO_COURSES } from "@/features/admin/resources/data/mock-resources";
 
-export const metadata = {
-  title: "Courses & Curricula | BDSisters Administration",
+export const metadata: Metadata = {
+  title: "Courses & Learning Programs (LMS) | BDSisters Admin",
+  description:
+    "Structured educational courses, interactive modules, lesson syllabi, and enrollment tracking.",
 };
 
 export default function AdminCoursesPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Courses & Structured Learning"
-      category="Learning Resources"
-      description="Manage structured cohort learning, syllabus modules, lessons, and completion certificates"
-      plannedStep="Admin Step 9 (Learning Resources)"
-    />
-  );
+  return <CoursesListView initialCourses={DEMO_COURSES} />;
 }

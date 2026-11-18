@@ -66,7 +66,7 @@ export function MemberPageHeader({
       </div>
 
       {/* 2. Notice banner */}
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-purple-200/70 bg-gradient-to-r from-purple-50/80 via-white to-purple-50/40 p-3 sm:p-4 shadow-xs">
+      {/* <div className="flex items-center justify-between gap-3 rounded-2xl border border-purple-200/70 bg-gradient-to-r from-purple-50/80 via-white to-purple-50/40 p-3 sm:p-4 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#5B46F6] text-white shadow-xs">
             <Sparkles className="h-4 w-4" />
@@ -84,7 +84,7 @@ export function MemberPageHeader({
         <span className="hidden sm:inline-block rounded-md bg-purple-100 border border-purple-200 px-2 py-0.5 text-[10px] font-bold text-[#5B46F6]">
           Frontend Simulation
         </span>
-      </div>
+      </div> */}
     </div>
   );
 }

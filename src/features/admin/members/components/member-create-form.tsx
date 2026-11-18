@@ -113,7 +113,7 @@ export function MemberCreateForm() {
         </div>
 
         {/* Frontend Demo Banner */}
-        <div className="mt-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-3">
+        {/* <div className="mt-5 p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/40 text-xs text-amber-900 dark:text-amber-300 flex items-start gap-3">
           <Info className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
           <div>
             <p className="font-semibold">Frontend Simulation Mode</p>
@@ -121,7 +121,7 @@ export function MemberCreateForm() {
               In this frontend development phase, submitting this form validates inputs, generates a synthetic member identifier, and provides user feedback without persistent database modifications.
             </p>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Success Banner */}
@@ -224,9 +224,8 @@ export function MemberCreateForm() {
                   value={formData.firstName}
                   onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                   placeholder="e.g. Farhana"
-                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${
-                    errors.firstName ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                  }`}
+                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${errors.firstName ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                    }`}
                 />
                 {errors.firstName && (
                   <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
@@ -245,9 +244,8 @@ export function MemberCreateForm() {
                   value={formData.lastName}
                   onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                   placeholder="e.g. Yeasmin"
-                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${
-                    errors.lastName ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                  }`}
+                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${errors.lastName ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                    }`}
                 />
                 {errors.lastName && (
                   <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
@@ -266,9 +264,8 @@ export function MemberCreateForm() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="e.g. farhana.yeasmin@example.com"
-                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${
-                    errors.email ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                  }`}
+                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${errors.email ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                    }`}
                 />
                 {errors.email && (
                   <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">
@@ -287,9 +284,8 @@ export function MemberCreateForm() {
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+880 1712-345678"
-                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${
-                    errors.phone ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
-                  }`}
+                  className={`w-full text-sm rounded-xl border p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden transition ${errors.phone ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-gray-200 dark:border-gray-700 focus:border-[#5B46F6]"
+                    }`}
                 />
                 {errors.phone && (
                   <p className="mt-1 text-xs text-rose-500 flex items-center gap-1">

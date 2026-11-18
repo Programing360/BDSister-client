@@ -129,11 +129,10 @@ export function AdminKpiSection({ metrics, isLoading = false }: AdminKpiSectionP
 
     return (
       <span
-        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold ${
-          isDesirable
-            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-            : "border-rose-200 bg-rose-50 text-rose-700"
-        }`}
+        className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-bold ${isDesirable
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-rose-200 bg-rose-50 text-rose-700"
+          }`}
       >
         {isUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
         <span>{Math.abs(metric.changePercent)}%</span>
@@ -158,7 +157,7 @@ export function AdminKpiSection({ metrics, isLoading = false }: AdminKpiSectionP
             return (
               <div
                 key={metric.id}
-                className="relative flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-5 shadow-2xs transition hover:border-[#5B46F6]/30 hover:shadow-md"
+                className="relative flex flex-col justify-between rounded-2xl shadow-lg border-gray-200/80 bg-white p-5 shadow-2xs transition hover:border-[#5B46F6]/30 hover:shadow-md"
               >
                 {isLoading ? (
                   <div className="space-y-3 animate-pulse">
@@ -228,7 +227,7 @@ export function AdminKpiSection({ metrics, isLoading = false }: AdminKpiSectionP
       </div>
 
       {/* 2. Additional Metrics: 10 Structured Metrics in Organized Category Tabs */}
-      <div className="rounded-2xl border border-gray-200/80 bg-white p-5 shadow-2xs">
+      <div className="rounded-2xl border-gray-200/80 bg-white p-5 shadow-2xs">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900">
@@ -254,11 +253,10 @@ export function AdminKpiSection({ metrics, isLoading = false }: AdminKpiSectionP
                 key={cat.id}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                  activeCategory === cat.id
-                    ? "bg-[#5B46F6] text-white shadow-xs"
-                    : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${activeCategory === cat.id
+                  ? "bg-[#5B46F6] text-white shadow-xs"
+                  : "text-gray-600 hover:text-gray-900"
+                  }`}
               >
                 {cat.label}
               </button>
@@ -273,7 +271,7 @@ export function AdminKpiSection({ metrics, isLoading = false }: AdminKpiSectionP
             return (
               <div
                 key={metric.id}
-                className="flex flex-col justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-4 transition hover:bg-white hover:border-[#5B46F6]/20 hover:shadow-xs"
+                className="flex flex-col justify-between rounded-xl border-x-2 shadow-lg bg-gray-50/50 p-4 transition hover:bg-white border-[#5B46F6]/20 hover:border-[#5B46F6]/40 hover:shadow-xl"
               >
                 {isLoading ? (
                   <div className="space-y-2 animate-pulse">

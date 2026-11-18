@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Payment Management</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { Metadata } from "next";
+import { PaymentsOverviewView } from "@/features/admin/payments/components/overview/payments-overview-view";
+
+export const metadata: Metadata = {
+  title: "Payment & Financial Overview | BDSisters Admin",
+  description: "Reconciliation metrics, settlement revenue, and ZiniPay gateway performance for BDSisters.org.",
+};
+
+export default function AdminPaymentsPage() {
+  return <PaymentsOverviewView />;
 }

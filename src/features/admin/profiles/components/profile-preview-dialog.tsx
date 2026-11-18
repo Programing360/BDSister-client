@@ -58,12 +58,12 @@ export function ProfilePreviewDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-800 shadow-2xl shadow-indigo-950/25 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Top Perspective Switcher Banner */}
         <div className="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-100 dark:border-indigo-900/60 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-[#5B46F6]" />
-            <span className="text-xs font-bold text-gray-900 dark:text-white">
+            <span className="text-xs font-semibold text-gray-900 dark:text-white">
               Visual Profile Preview:
             </span>
             <div className="flex items-center gap-1 bg-white dark:bg-gray-900 p-0.5 rounded-xl border border-indigo-200 dark:border-indigo-800">

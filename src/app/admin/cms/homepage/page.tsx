@@ -1,16 +1,10 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { HomepageManagementView } from "@/features/admin/cms/components/homepage/homepage-management-view";
 
 export const metadata = {
-  title: "Homepage CMS | BDSisters Administration",
+  title: "Homepage Management | BDSisters CMS",
+  description: "Configure the BDSisters.org landing page sections, hero messaging, and layout flow.",
 };
 
 export default function AdminCmsHomepagePage() {
-  return (
-    <AdminModulePlaceholder
-      title="Homepage Visual Editor"
-      category="CMS & Content"
-      description="Configure hero spotlights, featured sisters, testimonial carousels, and value propositions"
-      plannedStep="Admin Step 10 (CMS)"
-    />
-  );
+  return <HomepageManagementView />;
 }

@@ -1,16 +1,12 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import React from "react";
+import { Metadata } from "next";
+import { DiscussionsListView } from "@/features/admin/community/components/discussions/discussions-list-view";
 
-export const metadata = {
-  title: "Discussions Moderation | BDSisters Administration",
+export const metadata: Metadata = {
+  title: "Discussions Management | BDSisters Admin",
+  description: "Browse, moderate, pin, and lock community discussion threads.",
 };
 
-export default function AdminCommunityDiscussionsPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Community Discussions"
-      category="Forum Moderation"
-      description="Inspect threads, pin community announcements, and manage member discussion feeds"
-      plannedStep="Admin Step 8 (Community & Moderation)"
-    />
-  );
+export default function DiscussionsPage() {
+  return <DiscussionsListView />;
 }

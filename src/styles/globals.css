@@ -22,6 +22,10 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+@theme inline {
+  --font-besley: var(--font-besley);
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif);

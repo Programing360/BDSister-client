@@ -91,10 +91,10 @@ export function AdminDashboardHeader({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-gray-200/80 pb-5">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-2xl font-black tracking-tight text-[#111827] sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-gray-900 sm:text-3xl">
               {getGreeting()}, {adminDisplayName}!
             </h1>
-            <span className="rounded-full bg-purple-100 border border-purple-200 px-3 py-0.5 text-xs font-bold text-[#5B46F6]">
+            <span className="rounded-full bg-purple-50 border border-purple-200/80 px-3 py-0.5 text-xs font-semibold text-[#5B46F6]">
               Executive Overview
             </span>
           </div>
@@ -129,11 +129,10 @@ export function AdminDashboardHeader({
                 key={t.id}
                 type="button"
                 onClick={() => onTimeframeChange(t.id)}
-                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition ${
-                  timeframe === t.id
+                className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition ${timeframe === t.id
                     ? "bg-[#5B46F6] text-white shadow-xs"
                     : "text-gray-600 hover:text-gray-900"
-                }`}
+                  }`}
               >
                 {t.label}
               </button>
@@ -142,11 +141,10 @@ export function AdminDashboardHeader({
             <button
               type="button"
               onClick={() => setShowCustomModal(true)}
-              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition flex items-center gap-1 ${
-                timeframe === "custom"
+              className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition flex items-center gap-1 ${timeframe === "custom"
                   ? "bg-[#5B46F6] text-white shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
-              }`}
+                }`}
             >
               <CalendarDays className="h-3 w-3" />
               <span>Custom</span>
@@ -215,7 +213,7 @@ export function AdminDashboardHeader({
       )}
 
       {/* Demonstration Data Banner */}
-      <div className="flex items-center justify-between gap-3 rounded-2xl border border-purple-200/70 bg-gradient-to-r from-purple-50/80 via-white to-purple-50/40 p-3.5 sm:p-4 shadow-xs">
+      {/* <div className="flex items-center justify-between gap-3 rounded-2xl border border-purple-200/70 bg-gradient-to-r from-purple-50/80 via-white to-purple-50/40 p-3.5 sm:p-4 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#5B46F6] text-white shadow-xs">
             <Sparkles className="h-4 w-4" />
@@ -233,7 +231,7 @@ export function AdminDashboardHeader({
         <span className="hidden sm:inline-block rounded-md bg-purple-100 border border-purple-200 px-2 py-0.5 text-[10px] font-bold text-[#5B46F6]">
           Frontend Analytics Demo
         </span>
-      </div>
+      </div> */}
 
       {/* Custom Range Dialog / Popover */}
       {showCustomModal && (

@@ -1,16 +1,10 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { SEOManagementView } from "@/features/admin/cms/components/seo/seo-management-view";
 
 export const metadata = {
-  title: "SEO Management | BDSisters Administration",
+  title: "SEO & Social Metadata Studio | BDSisters CMS",
+  description: "Search engine snippet optimization, OpenGraph social sharing tags, and canonical URLs.",
 };
 
 export default function AdminCmsSeoPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Global SEO & OpenGraph Configuration"
-      category="CMS & Content"
-      description="Configure canonical tags, OpenGraph previews, JSON-LD schemas, and search indexing"
-      plannedStep="Admin Step 10 (CMS)"
-    />
-  );
+  return <SEOManagementView />;
 }

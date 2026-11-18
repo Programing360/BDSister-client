@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/providers";
 import "@/styles/globals.css";
-import { Geist, Inter } from "next/font/google";
-
+import { Besley, Geist, Inter } from "next/font/google";
 
 const geist = Geist({
-  subsets: ['latin'],
-})
+  subsets: ["latin"],
+});
 const inter = Inter({
-  subsets: ['latin'],
-})
+  subsets: ["latin"],
+});
+
+// const besley = Besley({
+//   subsets: ["latin"],
+//   variable: "--font-besley",
+//   display: "swap",
+// });
 
 export const metadata: Metadata = {
   title: {
@@ -18,7 +23,13 @@ export const metadata: Metadata = {
   },
   description:
     "A premium community, professional networking, personal development, and e-commerce platform for Bangladeshi women.",
-  keywords: ["Bangladeshi women", "community", "networking", "e-commerce", "BDSisters"],
+  keywords: [
+    "Bangladeshi women",
+    "community",
+    "networking",
+    "e-commerce",
+    "BDSisters",
+  ],
   authors: [{ name: "BDSisters Team" }],
   robots: {
     index: true,
@@ -40,7 +51,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`min-h-screen bg-background text-foreground font-sans antialiased ${inter.className}`}>
+      <body
+        className={`min-h-screen bg-background text-foreground font-sans antialiased ${inter.className}`}
+      >
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

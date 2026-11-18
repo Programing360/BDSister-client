@@ -40,6 +40,7 @@ describe("Authentication Validation & Security Tests", () => {
         email: "farhana@example.com",
         password: "SecurePassword1",
         confirmPassword: "SecurePassword1",
+        referrerCode: "REF-BDSISTER-100",
         acceptTerms: true,
         acceptPrivacy: true,
       });
@@ -52,6 +53,7 @@ describe("Authentication Validation & Security Tests", () => {
         email: "farhana@example.com",
         password: "SecurePassword1",
         confirmPassword: "DifferentPassword1",
+        referrerCode: "REF-BDSISTER-100",
         acceptTerms: true,
         acceptPrivacy: true,
       });
@@ -67,6 +69,7 @@ describe("Authentication Validation & Security Tests", () => {
         email: "farhana@example.com",
         password: "SecurePassword1",
         confirmPassword: "SecurePassword1",
+        referrerCode: "REF-BDSISTER-100",
         acceptTerms: false,
         acceptPrivacy: true,
       });

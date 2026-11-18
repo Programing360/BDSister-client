@@ -10,6 +10,50 @@ import {
   DEMO_RECENT_ACTIVITIES,
   DEMO_QUICK_ACTIONS,
 } from "../../src/features/admin/data/admin-mock-data.ts";
+import {
+  DEMO_EVENT_KPIS,
+  DEMO_EVENT_CATEGORIES,
+  DEMO_EVENTS,
+  DEMO_WORKSHOPS,
+  DEMO_REGISTRATIONS,
+  DEMO_ATTENDEES,
+  DEMO_TICKETS,
+  DEMO_EVENT_PAYMENTS,
+  DEMO_EVENT_FEEDBACK,
+  DEMO_EVENT_GROWTH_SERIES,
+} from "../../src/features/admin/events/data/mock-events.ts";
+import {
+  DEMO_CMS_KPIS,
+  DEMO_CMS_SECTIONS_HOMEPAGE,
+  DEMO_CMS_PAGES,
+  DEMO_NAVIGATION_ITEMS,
+  DEMO_BANNERS,
+  DEMO_SEO_SETTINGS,
+  DEMO_FAQS,
+  DEMO_WEBSITE_CONTENT,
+  DEMO_MEDIA_ASSETS,
+  DEMO_CONTENT_REVIEWS,
+  DEMO_REVISIONS,
+  DEMO_CMS_GROWTH_SERIES,
+} from "../../src/features/admin/cms/data/mock-cms.ts";
+import {
+  DEMO_COMMUNICATION_KPIS,
+  DEMO_CONTACT_SUBMISSIONS,
+  DEMO_SUPPORT_TICKETS,
+  DEMO_COMPLAINTS,
+  DEMO_EMAIL_TEMPLATES,
+  DEMO_EMAIL_LOGS,
+  DEMO_NEWSLETTER_SUBSCRIBERS,
+  DEMO_NEWSLETTER_CAMPAIGNS,
+  DEMO_ANNOUNCEMENTS,
+  DEMO_NOTIFICATION_TEMPLATES,
+  DEMO_NOTIFICATION_HISTORY,
+  DEMO_BULK_EMAIL_CAMPAIGNS,
+  DEMO_LIVE_CHAT_CONVERSATIONS,
+  DEMO_COMMUNICATION_CHANNELS,
+  DEMO_COMMUNICATION_SETTINGS,
+  DEMO_COMMUNICATION_GROWTH_SERIES,
+} from "../../src/features/admin/communication/data/mock-communication.ts";
 
 describe("Admin Dashboard Foundation, Layout & Navigation Verification", () => {
   describe("Admin Navigation Structure", () => {
@@ -952,6 +996,1496 @@ describe("Admin Dashboard Foundation, Layout & Navigation Verification", () => {
         assert.ok(validStatuses.includes(report.status), `Invalid report status: ${report.status}`);
         assert.ok(validPriorities.includes(report.priority), `Invalid priority: ${report.priority}`);
         assert.ok(report.description.length > 0);
+      });
+    });
+
+    // ==========================================
+    // STEP 6: BUSINESS MANAGEMENT & SELLER ADMIN
+    // ==========================================
+    it("should verify Admin Businesses dataset structure and required business fields", async () => {
+      const { DEMO_ADMIN_BUSINESSES, DEMO_BUSINESS_KPIS } = await import(
+        "../../src/features/admin/businesses/data/admin-businesses-data.ts"
+      );
+
+      assert.ok(DEMO_ADMIN_BUSINESSES.length >= 8, "Must contain at least 8 businesses");
+      assert.strictEqual(DEMO_BUSINESS_KPIS.totalBusinesses, DEMO_ADMIN_BUSINESSES.length);
+      assert.ok(DEMO_BUSINESS_KPIS.pendingApprovals > 0);
+      assert.ok(DEMO_BUSINESS_KPIS.approvedBusinesses > 0);
+      assert.ok(DEMO_BUSINESS_KPIS.verifiedBusinesses > 0);
+      assert.ok(DEMO_BUSINESS_KPIS.totalProducts > 0);
+      assert.ok(DEMO_BUSINESS_KPIS.totalRevenueBDT > 0);
+
+      const validStatuses = ["APPROVED", "PENDING_REVIEW", "UNDER_REVIEW", "REJECTED", "SUSPENDED", "DRAFT"];
+      const validVerificationStatuses = ["VERIFIED", "PENDING", "UNDER_REVIEW", "REJECTED", "NOT_SUBMITTED", "ACTION_REQUIRED"];
+
+      DEMO_ADMIN_BUSINESSES.forEach((b) => {
+        assert.ok(b.id.startsWith("biz_"), `Invalid business ID format: ${b.id}`);
+        assert.ok(b.businessCode.startsWith("BDS-BIZ-"), `Invalid business code: ${b.businessCode}`);
+        assert.ok(b.name.length > 0);
+        assert.ok(b.slug.length > 0);
+        assert.ok(b.category.length > 0);
+        assert.ok(b.businessType.length > 0);
+        assert.ok(validStatuses.includes(b.status), `Invalid status: ${b.status}`);
+        assert.ok(validVerificationStatuses.includes(b.verificationStatus), `Invalid verification: ${b.verificationStatus}`);
+        assert.ok(b.ownerId.startsWith("BDS-MEM-"), `Owner ID must reference member: ${b.ownerId}`);
+        assert.ok(b.ownerName.length > 0);
+        assert.ok(b.contact.email.length > 0);
+        assert.ok(b.location.division.length > 0);
+        assert.ok(b.location.district.length > 0);
+        assert.ok(b.location.city.length > 0);
+        assert.ok(typeof b.productCount === "number");
+        assert.ok(typeof b.totalRevenueBDT === "number");
+        assert.ok(typeof b.isFeatured === "boolean");
+      });
+    });
+
+    it("should verify Business lookup and filter helper utilities", async () => {
+      const {
+        getAdminBusinessById,
+        getAdminBusinessesByStatus,
+        getFeaturedBusinesses,
+        calculateBusinessKpis,
+        DEMO_ADMIN_BUSINESSES,
+      } = await import(
+        "../../src/features/admin/businesses/data/admin-businesses-data.ts"
+      );
+
+      // Lookup by ID
+      const byId = getAdminBusinessById("biz_101");
+      assert.ok(byId !== undefined);
+      assert.strictEqual(byId.name, "Nilambari Jamdani & Heritage Silk");
+
+      // Lookup by code
+      const byCode = getAdminBusinessById("BDS-BIZ-102");
+      assert.ok(byCode !== undefined);
+      assert.strictEqual(byCode.id, "biz_102");
+
+      // Lookup by slug
+      const bySlug = getAdminBusinessById("nilambari-crafts");
+      assert.ok(bySlug !== undefined);
+      assert.strictEqual(bySlug.id, "biz_101");
+
+      // Status filter
+      const approved = getAdminBusinessesByStatus("APPROVED");
+      assert.ok(approved.length > 0);
+      approved.forEach((b) => assert.strictEqual(b.status, "APPROVED"));
+
+      const pending = getAdminBusinessesByStatus("PENDING_REVIEW");
+      assert.ok(pending.length > 0);
+      pending.forEach((b) => assert.strictEqual(b.status, "PENDING_REVIEW"));
+
+      // Featured businesses
+      const featured = getFeaturedBusinesses();
+      assert.ok(featured.length > 0);
+      featured.forEach((b) => {
+        assert.strictEqual(b.isFeatured, true);
+        assert.ok(b.featuredOrder !== undefined && b.featuredOrder > 0);
+      });
+
+      // Recalculate KPIs
+      const kpis = calculateBusinessKpis(DEMO_ADMIN_BUSINESSES);
+      assert.strictEqual(kpis.totalBusinesses, DEMO_ADMIN_BUSINESSES.length);
+      assert.strictEqual(kpis.approvedBusinesses, approved.length);
+    });
+
+    it("should verify Business Categories master taxonomy registry", async () => {
+      const { INITIAL_BUSINESS_CATEGORIES, getBusinessCategoryBySlug, getAllBusinessCategories } = await import(
+        "../../src/features/admin/businesses/constants/business-categories.ts"
+      );
+
+      assert.ok(INITIAL_BUSINESS_CATEGORIES.length >= 14, "Must contain at least 14 business categories");
+
+      const expectedSlugs = [
+        "handloom-jamdani",
+        "pottery-terracotta",
+        "organic-wellness",
+        "culinary-sweets-pitha",
+        "boutique-fashion",
+        "jute-eco-crafts",
+        "homemade-specialty-foods",
+        "jewelry-accessories",
+        "home-decor-crafts",
+        "digital-freelancing",
+        "education-training",
+        "health-childcare",
+        "event-catering",
+        "agriculture-gardening",
+      ];
+
+      const actualSlugs = INITIAL_BUSINESS_CATEGORIES.map((c) => c.slug);
+      expectedSlugs.forEach((slug) => {
+        assert.ok(actualSlugs.includes(slug), `Missing expected business category: ${slug}`);
+      });
+
+      const catJamdani = getBusinessCategoryBySlug("handloom-jamdani");
+      assert.ok(catJamdani !== undefined);
+      assert.strictEqual(catJamdani.name, "Traditional Handloom & Jamdani");
+      assert.ok(catJamdani.businessCount > 0);
+
+      const allCats = getAllBusinessCategories();
+      assert.strictEqual(allCats.length, INITIAL_BUSINESS_CATEGORIES.length);
+    });
+
+    it("should verify Business Verification Records and synthetic specimen masking", async () => {
+      const {
+        DEMO_BUSINESS_VERIFICATIONS,
+        getBusinessVerificationById,
+        getBusinessVerificationsByStatus,
+        getBusinessVerificationsByBusinessId,
+      } = await import(
+        "../../src/features/admin/businesses/data/admin-business-verifications-data.ts"
+      );
+
+      assert.ok(DEMO_BUSINESS_VERIFICATIONS.length >= 7, "Must contain at least 7 verification records");
+
+      DEMO_BUSINESS_VERIFICATIONS.forEach((v) => {
+        assert.ok(v.id.startsWith("ver_b"), `Invalid verification ID: ${v.id}`);
+        assert.ok(v.businessId.startsWith("biz_"));
+        assert.ok(v.businessCode.startsWith("BDS-BIZ-"));
+        assert.ok(v.ownerId.startsWith("BDS-MEM-"));
+        assert.ok(["TRADE_LICENSE", "TIN_CERTIFICATE", "NATIONAL_ID", "OWNERSHIP_DEED", "UTILITY_BILL", "BRAND_REGISTRATION", "OTHER"].includes(v.documentType));
+        assert.ok(v.previewWatermark.includes("SYNTHETIC"), "Specimen watermark must specify synthetic record");
+        assert.ok(["VERIFIED", "PENDING", "UNDER_REVIEW", "REJECTED", "ACTION_REQUIRED"].includes(v.status));
+      });
+
+      const lookup1 = getBusinessVerificationById("ver_b01");
+      assert.ok(lookup1 !== undefined);
+      assert.strictEqual(lookup1.businessName, "Nilambari Jamdani & Heritage Silk");
+
+      const verified = getBusinessVerificationsByStatus("VERIFIED");
+      assert.ok(verified.length > 0);
+      verified.forEach((v) => assert.strictEqual(v.status, "VERIFIED"));
+
+      const biz103Docs = getBusinessVerificationsByBusinessId("biz_103");
+      assert.ok(biz103Docs.length >= 2, "biz_103 should have Trade License and TIN submissions");
+    });
+
+    it("should verify Business Customer Reviews and Moderation Reports datasets", async () => {
+      const {
+        DEMO_BUSINESS_REVIEWS,
+        getBusinessReviewsByBusinessId,
+        getBusinessReviewsByStatus,
+      } = await import(
+        "../../src/features/admin/businesses/data/admin-business-reviews-data.ts"
+      );
+
+      const {
+        DEMO_BUSINESS_REPORTS,
+        getBusinessReportsByStatus,
+      } = await import(
+        "../../src/features/admin/businesses/data/admin-business-reports-data.ts"
+      );
+
+      assert.ok(DEMO_BUSINESS_REVIEWS.length >= 7, "Must contain at least 7 reviews");
+      assert.ok(DEMO_BUSINESS_REPORTS.length >= 5, "Must contain at least 5 reports");
+
+      DEMO_BUSINESS_REVIEWS.forEach((r) => {
+        assert.ok(r.id.startsWith("rev_"));
+        assert.ok(r.businessId.startsWith("biz_"));
+        assert.ok(r.rating >= 1 && r.rating <= 5);
+        assert.ok(["PUBLISHED", "PENDING", "HIDDEN", "REJECTED", "REPORTED"].includes(r.status));
+      });
+
+      const biz101Reviews = getBusinessReviewsByBusinessId("biz_101");
+      assert.ok(biz101Reviews.length >= 2);
+
+      DEMO_BUSINESS_REPORTS.forEach((rep) => {
+        assert.ok(rep.id.startsWith("rep_"));
+        assert.ok(rep.businessId.startsWith("biz_"));
+        assert.ok(["FAKE_INFORMATION", "IMPERSONATION", "FRAUD_SCAM", "MISLEADING_CONTENT", "COPYRIGHT_VIOLATION", "OFFENSIVE_CONTENT", "OTHER"].includes(rep.reason));
+        assert.ok(["LOW", "NORMAL", "HIGH", "URGENT"].includes(rep.priority));
+        assert.ok(["PENDING", "INVESTIGATING", "RESOLVED", "DISMISSED"].includes(rep.status));
+      });
+    });
+
+    it("should verify Admin Sellers dataset and associations to members and businesses", async () => {
+      const {
+        DEMO_ADMIN_SELLERS,
+        DEMO_SELLER_KPIS,
+        getAdminSellerById,
+        getAdminSellersByStatus,
+        calculateSellerKpis,
+      } = await import(
+        "../../src/features/admin/sellers/data/admin-sellers-data.ts"
+      );
+
+      assert.ok(DEMO_ADMIN_SELLERS.length >= 7, "Must contain at least 7 sellers");
+      assert.strictEqual(DEMO_SELLER_KPIS.totalSellers, DEMO_ADMIN_SELLERS.length);
+      assert.ok(DEMO_SELLER_KPIS.approvedSellers > 0);
+      assert.ok(DEMO_SELLER_KPIS.pendingSellers > 0);
+      assert.ok(DEMO_SELLER_KPIS.totalMarketplaceRevenueBDT > 0);
+
+      DEMO_ADMIN_SELLERS.forEach((s) => {
+        assert.ok(s.id.startsWith("sell_"));
+        assert.ok(s.sellerCode.startsWith("BDS-SEL-"));
+        assert.ok(s.memberId.startsWith("BDS-MEM-"));
+        assert.ok(s.memberName.length > 0);
+        assert.ok(s.shopName.length > 0);
+        assert.ok(["BUSINESS", "INDIVIDUAL", "SERVICE_PROVIDER"].includes(s.sellerType));
+        assert.ok(["APPROVED", "PENDING_APPROVAL", "UNDER_REVIEW", "SUSPENDED", "REJECTED"].includes(s.status));
+        assert.ok(["VERIFIED", "PENDING", "UNVERIFIED", "REJECTED"].includes(s.verificationStatus));
+        assert.ok(s.commissionRatePercent > 0 && s.commissionRatePercent <= 50);
+        assert.ok(["bKash", "Nagad", "Bank Transfer"].includes(s.payoutAccountType));
+        assert.ok(s.payoutAccountNumber.length > 0);
+      });
+
+      // Association check for sell_201 (Nusrat Jahan)
+      const nusratSeller = getAdminSellerById("sell_201");
+      assert.ok(nusratSeller !== undefined);
+      assert.strictEqual(nusratSeller.memberId, "BDS-MEM-10492");
+      assert.strictEqual(nusratSeller.businessId, "biz_101");
+      assert.strictEqual(nusratSeller.sellerType, "BUSINESS");
+      assert.strictEqual(nusratSeller.isTopSeller, true);
+
+      // Lookup by code
+      const byCode = getAdminSellerById("BDS-SEL-202");
+      assert.ok(byCode !== undefined);
+      assert.strictEqual(byCode.id, "sell_202");
+
+      // Status filter
+      const approvedSellers = getAdminSellersByStatus("APPROVED");
+      assert.ok(approvedSellers.length > 0);
+      approvedSellers.forEach((s) => assert.strictEqual(s.status, "APPROVED"));
+
+      // Recalculate KPIs
+      const kpis = calculateSellerKpis(DEMO_ADMIN_SELLERS);
+      assert.strictEqual(kpis.totalSellers, DEMO_ADMIN_SELLERS.length);
+      assert.strictEqual(kpis.approvedSellers, approvedSellers.length);
+    });
+
+    // ==============================================================
+    // STEP 8: PAYMENT, MEMBERSHIP & SUBSCRIPTION MANAGEMENT VERIFICATION
+    // ==============================================================
+    it("should verify all 14 Admin Step 8 routes and navigation children are configured", async () => {
+      const paymentsGroup = adminNavGroups.find((g) => g.id === "business-commerce");
+      assert.ok(paymentsGroup);
+
+      const paymentsItem = paymentsGroup.items.find((i) => i.href === "/admin/payments");
+      assert.ok(paymentsItem);
+      assert.ok(paymentsItem.children && paymentsItem.children.length >= 6);
+
+      const expectedPaymentRoutes = [
+        "/admin/payments",
+        "/admin/payments/transactions",
+        "/admin/payments/gateway",
+        "/admin/payments/refunds",
+        "/admin/payments/invoices",
+        "/admin/payments/reports",
+      ];
+
+      const actualPaymentRoutes = paymentsItem.children.map((c) => c.href);
+      expectedPaymentRoutes.forEach((route) => {
+        assert.ok(
+          actualPaymentRoutes.includes(route),
+          `Missing required payment subroute in navigation: ${route}`
+        );
+      });
+
+      const platformGroup = adminNavGroups.find((g) => g.id === "platform-management");
+      assert.ok(platformGroup);
+
+      const plansItem = platformGroup.items.find((i) => i.href === "/admin/membership-plans");
+      assert.ok(plansItem, "Missing Membership Plans navigation item");
+
+      const subsItem = platformGroup.items.find((i) => i.href === "/admin/subscriptions");
+      assert.ok(subsItem, "Missing Subscriptions navigation item");
+      assert.ok(subsItem.children && subsItem.children.length >= 2);
+
+      const expectedSubRoutes = ["/admin/subscriptions", "/admin/subscriptions/renewals"];
+      const actualSubRoutes = subsItem.children.map((c) => c.href);
+      expectedSubRoutes.forEach((route) => {
+        assert.ok(actualSubRoutes.includes(route), `Missing required sub route: ${route}`);
+      });
+    });
+
+    it("should verify ZiniPay Gateway exclusive configuration and security masking", async () => {
+      const { DEMO_ZINIPAY_CONFIG } = await import(
+        "../../src/features/admin/payments/data/mock-payments.ts"
+      );
+
+      assert.strictEqual(DEMO_ZINIPAY_CONFIG.provider, "ZINIPAY");
+      assert.strictEqual(DEMO_ZINIPAY_CONFIG.isEnabled, true);
+      assert.ok(["SANDBOX", "PRODUCTION"].includes(DEMO_ZINIPAY_CONFIG.environment));
+      assert.ok(DEMO_ZINIPAY_CONFIG.merchantId.startsWith("ZNP-"));
+      // Security check: Keys must be masked in demo object
+      assert.ok(DEMO_ZINIPAY_CONFIG.apiKey.includes("••••"));
+      assert.ok(DEMO_ZINIPAY_CONFIG.apiSecret.includes("••••"));
+      assert.ok(DEMO_ZINIPAY_CONFIG.callbackUrl.includes("/api/payments/zinipay/verify"));
+      assert.ok(DEMO_ZINIPAY_CONFIG.webhookUrl.includes("/api/payments/zinipay/webhook"));
+      assert.ok(DEMO_ZINIPAY_CONFIG.supportedChannels.length >= 4);
+    });
+
+    it("should verify Payment Overview KPIs and financial accounting consistency", async () => {
+      const { DEMO_PAYMENT_KPIS, formatBDT } = await import(
+        "../../src/features/admin/payments/data/mock-payments.ts"
+      );
+
+      assert.ok(DEMO_PAYMENT_KPIS.totalPayments > 0);
+      assert.ok(DEMO_PAYMENT_KPIS.successfulPayments > 0);
+      assert.ok(DEMO_PAYMENT_KPIS.totalCollectedRevenueBDT > 0);
+      assert.ok(DEMO_PAYMENT_KPIS.membershipRevenueBDT > 0);
+      assert.ok(DEMO_PAYMENT_KPIS.marketplaceRevenueBDT > 0);
+
+      // Total collected = Membership + Marketplace
+      assert.strictEqual(
+        DEMO_PAYMENT_KPIS.totalCollectedRevenueBDT,
+        DEMO_PAYMENT_KPIS.membershipRevenueBDT + DEMO_PAYMENT_KPIS.marketplaceRevenueBDT
+      );
+
+      // Total payments must account for successful, pending, and failed
+      assert.ok(
+        DEMO_PAYMENT_KPIS.totalPayments >=
+          DEMO_PAYMENT_KPIS.successfulPayments +
+            DEMO_PAYMENT_KPIS.pendingPayments +
+            DEMO_PAYMENT_KPIS.failedPayments
+      );
+
+      // BDT Formatter test
+      assert.strictEqual(formatBDT(1500), "৳1,500");
+      assert.strictEqual(formatBDT(350000), "৳3,50,000");
+    });
+
+    it("should verify Payment Transactions dataset integrity and ZiniPay channel mappings", async () => {
+      const { DEMO_PAYMENT_TRANSACTIONS, getPaymentTransactionById } = await import(
+        "../../src/features/admin/payments/data/mock-payments.ts"
+      );
+
+      assert.ok(DEMO_PAYMENT_TRANSACTIONS.length >= 8);
+      const validStatuses = [
+        "INITIATED",
+        "PENDING",
+        "PROCESSING",
+        "SUCCESSFUL",
+        "FAILED",
+        "CANCELLED",
+        "EXPIRED",
+        "REFUNDED",
+        "PARTIALLY_REFUNDED",
+      ];
+
+      const validMethods = [
+        "ZINIPAY_BKASH",
+        "ZINIPAY_NAGAD",
+        "ZINIPAY_ROCKET",
+        "ZINIPAY_CARD",
+        "ZINIPAY_INTERNET_BANKING",
+      ];
+
+      DEMO_PAYMENT_TRANSACTIONS.forEach((tx) => {
+        assert.ok(tx.id.startsWith("txn_"));
+        assert.ok(tx.transactionId.startsWith("BDS-TXN-"));
+        assert.ok(tx.gatewayTrxId.startsWith("ZNP_"));
+        assert.ok(tx.memberId.startsWith("BDS-MEM-"));
+        assert.ok(tx.amountBDT > 0);
+        assert.strictEqual(tx.currency, "BDT");
+        assert.strictEqual(tx.gateway, "ZINIPAY");
+        assert.ok(validStatuses.includes(tx.status), `Invalid payment status: ${tx.status}`);
+        assert.ok(validMethods.includes(tx.paymentMethod), `Invalid payment method: ${tx.paymentMethod}`);
+        assert.ok(tx.timeline.length > 0);
+      });
+
+      // Lookup test
+      const foundTx = getPaymentTransactionById("txn_801");
+      assert.ok(foundTx !== undefined);
+      assert.strictEqual(foundTx.transactionId, "BDS-TXN-2026-90412");
+      assert.strictEqual(foundTx.paymentMethod, "ZINIPAY_BKASH");
+    });
+
+    it("should verify Refund Claims and Invoices datasets", async () => {
+      const { DEMO_REFUNDS, DEMO_INVOICES, getRefundById, getInvoiceById } = await import(
+        "../../src/features/admin/payments/data/mock-payments.ts"
+      );
+
+      assert.ok(DEMO_REFUNDS.length >= 3);
+      DEMO_REFUNDS.forEach((ref) => {
+        assert.ok(ref.id.startsWith("ref_"));
+        assert.ok(ref.refundCode.startsWith("BDS-REF-"));
+        assert.ok(ref.originalTransactionId.startsWith("txn_"));
+        assert.ok(ref.requestedAmountBDT > 0);
+        assert.ok(ref.refundReason.length > 0);
+      });
+
+      assert.ok(DEMO_INVOICES.length >= 3);
+      DEMO_INVOICES.forEach((inv) => {
+        assert.ok(inv.id.startsWith("inv_"));
+        assert.ok(inv.invoiceNumber.startsWith("BDS-INV-"));
+        assert.ok(inv.memberId.startsWith("BDS-MEM-"));
+        assert.ok(inv.totalAmountBDT > 0);
+        assert.ok(inv.items.length > 0);
+      });
+    });
+
+    it("should verify Membership Plans taxonomy and subscription manual renewal rules", async () => {
+      const {
+        DEMO_MEMBERSHIP_PLANS,
+        DEMO_MEMBERSHIP_SUBSCRIPTIONS,
+        DEMO_SUBSCRIPTION_KPIS,
+        getMembershipPlanById,
+        getSubscriptionById,
+      } = await import("../../src/features/admin/memberships/data/mock-memberships.ts");
+
+      assert.ok(DEMO_MEMBERSHIP_PLANS.length >= 4);
+      assert.strictEqual(DEMO_SUBSCRIPTION_KPIS.totalSubscriptions, 2380);
+      assert.ok(DEMO_SUBSCRIPTION_KPIS.activeSubscriptions > 0);
+      assert.ok(DEMO_SUBSCRIPTION_KPIS.expiringSoon > 0);
+
+      // Verify Free vs Paid separation
+      const freePlan = DEMO_MEMBERSHIP_PLANS.find((p) => p.type === "FREE");
+      assert.ok(freePlan !== undefined);
+      assert.strictEqual(freePlan.priceBDT, 0);
+
+      const paidPlans = DEMO_MEMBERSHIP_PLANS.filter((p) => p.type === "PAID");
+      assert.ok(paidPlans.length >= 2);
+      paidPlans.forEach((p) => assert.ok(p.priceBDT > 0));
+
+      // Verify Manual Renewal constraint: autoRenewEnabled must be false
+      DEMO_MEMBERSHIP_SUBSCRIPTIONS.forEach((sub) => {
+        assert.strictEqual(
+          sub.autoRenewEnabled,
+          false,
+          "BDSisters memberships must not auto-debit; manual renewal required"
+        );
+        assert.strictEqual(sub.renewalType, "MANUAL");
+      });
+    });
+
+    describe("Step 9 — Community & Forum Management Verification", () => {
+      it("should verify complete Community Management navigation items and sub-routes", () => {
+        const communityGroup = adminNavGroups.find((g) => g.id === "community");
+        assert.ok(communityGroup, "Community navigation group not found");
+
+        const expectedItemLabels = [
+          "Community Overview",
+          "Discussion Categories",
+          "Discussions",
+          "Posts",
+          "Comments",
+          "Moderation Queue",
+          "Content Reports",
+          "Moderators",
+          "Community Settings",
+        ];
+
+        const actualLabels = communityGroup.items.map((i) => i.label);
+        expectedItemLabels.forEach((label) => {
+          assert.ok(
+            actualLabels.includes(label),
+            `Missing community navigation item: ${label}`
+          );
+        });
+
+        // Verify Moderation Queue and Reports carry warning badges for pending reviews
+        const modQueueItem = communityGroup.items.find((i) => i.label === "Moderation Queue");
+        assert.ok(modQueueItem?.badge !== undefined);
+        assert.strictEqual(modQueueItem?.badgeVariant, "warning");
+
+        const reportsItem = communityGroup.items.find((i) => i.label === "Content Reports");
+        assert.ok(reportsItem?.badge !== undefined);
+        assert.strictEqual(reportsItem?.badgeVariant, "warning");
+      });
+
+      it("should verify Community KPIs and mock dataset dimensions", async () => {
+        const {
+          DEMO_COMMUNITY_KPIS,
+          DEMO_COMMUNITY_CATEGORIES,
+          DEMO_DISCUSSIONS,
+          DEMO_COMMUNITY_POSTS,
+          DEMO_COMMUNITY_COMMENTS,
+          DEMO_MODERATION_QUEUE,
+          DEMO_COMMUNITY_REPORTS,
+          DEMO_COMMUNITY_MODERATORS,
+          DEMO_COMMUNITY_SETTINGS,
+        } = await import("../../src/features/admin/community/data/mock-community.ts");
+
+        // KPI checks
+        assert.ok(DEMO_COMMUNITY_KPIS.totalCommunityMembers >= 10000);
+        assert.ok(DEMO_COMMUNITY_KPIS.activeMembers > 0);
+        assert.ok(DEMO_COMMUNITY_KPIS.totalDiscussions > 0);
+        assert.ok(DEMO_COMMUNITY_KPIS.totalPosts > 0);
+        assert.ok(DEMO_COMMUNITY_KPIS.totalComments > 0);
+        assert.ok(DEMO_COMMUNITY_KPIS.pendingModeration > 0);
+        assert.ok(DEMO_COMMUNITY_KPIS.reportedContent > 0);
+        assert.ok(DEMO_COMMUNITY_KPIS.activeModerators > 0);
+
+        // Categories check
+        assert.ok(DEMO_COMMUNITY_CATEGORIES.length >= 6);
+        DEMO_COMMUNITY_CATEGORIES.forEach((cat) => {
+          assert.ok(cat.id.length > 0);
+          assert.ok(cat.name.length > 0);
+          assert.ok(cat.slug.length > 0);
+          assert.ok(["ACTIVE", "INACTIVE", "ARCHIVED"].includes(cat.status));
+          assert.ok(cat.displayOrder > 0);
+          assert.ok(cat.discussionsCount >= 0);
+          assert.ok(cat.postsCount >= 0);
+        });
+
+        // Discussions check
+        assert.ok(DEMO_DISCUSSIONS.length >= 5);
+        DEMO_DISCUSSIONS.forEach((d) => {
+          assert.ok(d.id.length > 0);
+          assert.ok(d.title.length > 0);
+          assert.ok(d.author.name.length > 0);
+          assert.ok(
+            ["DRAFT", "PUBLISHED", "UNDER_REVIEW", "LOCKED", "ARCHIVED", "REMOVED"].includes(
+              d.status
+            )
+          );
+        });
+
+        // Posts check
+        assert.ok(DEMO_COMMUNITY_POSTS.length >= 5);
+        DEMO_COMMUNITY_POSTS.forEach((p) => {
+          assert.ok(p.id.length > 0);
+          assert.ok(p.discussionId.length > 0);
+          assert.ok(p.content.length > 0);
+          assert.ok(
+            ["DRAFT", "PUBLISHED", "PENDING_REVIEW", "REJECTED", "HIDDEN", "ARCHIVED", "REMOVED"].includes(
+              p.status
+            )
+          );
+        });
+
+        // Comments check
+        assert.ok(DEMO_COMMUNITY_COMMENTS.length >= 4);
+        DEMO_COMMUNITY_COMMENTS.forEach((c) => {
+          assert.ok(c.id.length > 0);
+          assert.ok(c.content.length > 0);
+          assert.ok(
+            ["PUBLISHED", "PENDING_REVIEW", "HIDDEN", "REJECTED", "REMOVED"].includes(c.status)
+          );
+        });
+
+        // Moderation Queue check
+        assert.ok(DEMO_MODERATION_QUEUE.length >= 5);
+        DEMO_MODERATION_QUEUE.forEach((q) => {
+          assert.ok(["DISCUSSION", "POST", "COMMENT"].includes(q.contentType));
+          assert.ok(["LOW", "NORMAL", "HIGH", "URGENT"].includes(q.priority));
+          assert.ok(
+            ["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "NEEDS_CHANGES"].includes(
+              q.reviewStatus
+            )
+          );
+        });
+
+        // Community Reports check
+        assert.ok(DEMO_COMMUNITY_REPORTS.length >= 5);
+        DEMO_COMMUNITY_REPORTS.forEach((r) => {
+          assert.ok(r.reportId.startsWith("REP-"));
+          assert.ok(r.reporter.name.length > 0);
+          assert.ok(r.reportedMember.name.length > 0);
+          assert.ok(
+            [
+              "SPAM",
+              "HARASSMENT",
+              "BULLYING",
+              "HATE_SPEECH",
+              "MISINFORMATION",
+              "INAPPROPRIATE",
+              "COPYRIGHT",
+              "FAKE_ACCOUNT",
+              "OTHER",
+            ].includes(r.category)
+          );
+          assert.ok(
+            ["NEW", "UNDER_REVIEW", "RESOLVED", "DISMISSED", "ESCALATED"].includes(r.status)
+          );
+        });
+
+        // Moderators check & RBAC isolation
+        assert.ok(DEMO_COMMUNITY_MODERATORS.length >= 4);
+        DEMO_COMMUNITY_MODERATORS.forEach((m) => {
+          assert.ok(m.id.length > 0);
+          assert.ok(m.member.name.length > 0);
+          assert.ok(m.assignedCategoryIds.length > 0);
+          assert.ok(["ACTIVE", "INACTIVE", "SUSPENDED"].includes(m.moderatorStatus));
+          assert.ok(m.actionsCountLast30Days >= 0);
+        });
+
+        // Settings check
+        assert.strictEqual(typeof DEMO_COMMUNITY_SETTINGS.communityEnabled, "boolean");
+        assert.ok(DEMO_COMMUNITY_SETTINGS.maxAttachmentSizeMB > 0);
+        assert.ok(DEMO_COMMUNITY_SETTINGS.communityGuidelines.length > 0);
+      });
+    });
+  });
+
+  describe("Step 10: Events & Workshops Management Verification", () => {
+    describe("Event KPIs & Analytical Datasets", () => {
+      it("should provide consistent platform-wide event metrics", () => {
+        assert.strictEqual(typeof DEMO_EVENT_KPIS.totalEvents, "number");
+        assert.ok(DEMO_EVENT_KPIS.totalEvents >= 40);
+        assert.ok(DEMO_EVENT_KPIS.publishedEvents > 0);
+        assert.ok(DEMO_EVENT_KPIS.upcomingEvents > 0);
+        assert.ok(DEMO_EVENT_KPIS.totalRegistrations > 1000);
+        assert.ok(DEMO_EVENT_KPIS.totalAttendees > 1000);
+        assert.ok(DEMO_EVENT_KPIS.totalRegistrations >= DEMO_EVENT_KPIS.totalAttendees);
+      });
+
+      it("should define a valid 6-month historical event growth trajectory", () => {
+        assert.strictEqual(DEMO_EVENT_GROWTH_SERIES.length, 6);
+        DEMO_EVENT_GROWTH_SERIES.forEach((pt) => {
+          assert.strictEqual(typeof pt.month, "string");
+          assert.ok(pt.registrations >= pt.attendees);
+        });
+      });
+    });
+
+    describe("Event Categories Taxonomy", () => {
+      it("should contain at least 5 structured event categories with slugs and icons", () => {
+        assert.ok(DEMO_EVENT_CATEGORIES.length >= 5);
+        DEMO_EVENT_CATEGORIES.forEach((cat) => {
+          assert.ok(cat.id.startsWith("evt-cat-"));
+          assert.ok(cat.name.length > 0);
+          assert.ok(cat.slug.length > 0);
+          assert.ok(cat.description.length > 0);
+          assert.ok(["ACTIVE", "INACTIVE"].includes(cat.status));
+          assert.ok(cat.eventsCount >= 0);
+          assert.ok(cat.displayOrder > 0);
+        });
+      });
+    });
+
+    describe("Events Catalogue & Delivery Specifications", () => {
+      it("should validate all events have complete scheduling, venue/online details, and capacity bounds", () => {
+        assert.ok(DEMO_EVENTS.length >= 5);
+        DEMO_EVENTS.forEach((evt) => {
+          assert.ok(evt.id.startsWith("evt-"));
+          assert.ok(evt.title.length > 0);
+          assert.ok(evt.slug.length > 0);
+          assert.ok(["PHYSICAL", "ONLINE", "HYBRID"].includes(evt.format));
+          assert.ok(
+            [
+              "CONFERENCE",
+              "SEMINAR",
+              "WEBINAR",
+              "NETWORKING",
+              "EXHIBITION",
+              "TRAINING",
+              "MASTERCLASS",
+              "COMMUNITY",
+            ].includes(evt.eventType)
+          );
+          assert.ok(
+            [
+              "DRAFT",
+              "PENDING_REVIEW",
+              "PUBLISHED",
+              "UPCOMING",
+              "ONGOING",
+              "COMPLETED",
+              "CANCELLED",
+              "ARCHIVED",
+            ].includes(evt.status)
+          );
+          assert.ok(evt.capacity > 0);
+          assert.ok(evt.registrationCount >= 0);
+          assert.ok(evt.registrationCount <= evt.capacity);
+          assert.ok(evt.organizer.name.length > 0);
+          assert.ok(evt.organizer.email.includes("@"));
+
+          // Venue vs Online platform checks
+          if (
+            (evt.format === "PHYSICAL" || evt.format === "HYBRID") &&
+            evt.status !== "DRAFT"
+          ) {
+            assert.ok(evt.venue !== undefined);
+            assert.ok(evt.venue?.city.length > 0);
+          }
+          if (evt.format === "ONLINE") {
+            assert.ok(evt.onlinePlatform !== undefined);
+          }
+        });
+      });
+    });
+
+    describe("Workshops & Masterclasses", () => {
+      it("should validate intensive workshops have instructors, duration, and learning outcomes", () => {
+        assert.ok(DEMO_WORKSHOPS.length >= 4);
+        DEMO_WORKSHOPS.forEach((ws) => {
+          assert.ok(ws.id.startsWith("wsp-"));
+          assert.ok(ws.title.length > 0);
+          assert.ok(ws.instructor.name.length > 0);
+          assert.ok(ws.instructor.organization.length > 0);
+          assert.ok(ws.skillsLearned.length > 0);
+          assert.ok(ws.duration.length > 0);
+          assert.ok(ws.capacity > 0);
+          assert.ok(ws.priceBDT >= 0);
+        });
+      });
+    });
+
+    describe("Registrations & Attendee Gate Management", () => {
+      it("should validate registrations have ticket types, attendee info, and timeline entries", () => {
+        assert.ok(DEMO_REGISTRATIONS.length >= 5);
+        DEMO_REGISTRATIONS.forEach((reg) => {
+          assert.ok(reg.id.startsWith("reg-"));
+          assert.ok(reg.eventId.length > 0);
+          assert.ok(reg.attendeeName.length > 0);
+          assert.ok(reg.attendeeEmail.includes("@"));
+          assert.ok(
+            ["FREE", "PAID", "VIP", "EARLY_BIRD", "STUDENT", "CUSTOM"].includes(
+              reg.ticketType
+            )
+          );
+          assert.ok(
+            [
+              "PENDING",
+              "APPROVED",
+              "REJECTED",
+              "WAITLISTED",
+              "CANCELLED",
+            ].includes(reg.registrationStatus)
+          );
+          assert.ok(
+            [
+              "NOT_REQUIRED",
+              "PENDING",
+              "SUCCESSFUL",
+              "FAILED",
+              "REFUNDED",
+            ].includes(reg.paymentStatus)
+          );
+          assert.ok(reg.timeline.length > 0);
+        });
+      });
+
+      it("should validate gate attendees with check-in status options", () => {
+        assert.ok(DEMO_ATTENDEES.length >= 3);
+        DEMO_ATTENDEES.forEach((att) => {
+          assert.ok(att.id.startsWith("att-"));
+          assert.ok(att.name.length > 0);
+          assert.ok(["CHECKED_IN", "NOT_CHECKED_IN"].includes(att.checkInStatus));
+        });
+      });
+    });
+
+    describe("Tickets, Pricing & Quota Management", () => {
+      it("should validate ticket tiers with pricing and sales quotas", () => {
+        assert.ok(DEMO_TICKETS.length >= 5);
+        DEMO_TICKETS.forEach((t) => {
+          assert.ok(t.id.startsWith("tkt-"));
+          assert.ok(t.eventId.length > 0);
+          assert.ok(t.priceBDT >= 0);
+          assert.ok(t.totalQuantity > 0);
+          assert.ok(t.soldQuantity >= 0);
+          assert.ok(t.soldQuantity <= t.totalQuantity);
+          assert.ok(["ACTIVE", "SOLD_OUT", "DISABLED", "UPCOMING"].includes(t.status));
+        });
+      });
+    });
+
+    describe("ZiniPay Payment Records & Feedback Moderation", () => {
+      it("should strictly ensure ZiniPay is the designated payment gateway for all paid event transactions", () => {
+        assert.ok(DEMO_EVENT_PAYMENTS.length >= 5);
+        DEMO_EVENT_PAYMENTS.forEach((p) => {
+          assert.ok(p.id.startsWith("epay-"));
+          assert.strictEqual(p.gateway, "ZINIPAY");
+          assert.ok(p.transactionReference.startsWith("ZINI-"));
+          assert.ok(p.amountBDT > 0);
+          assert.ok(
+            ["SUCCESSFUL", "PENDING", "FAILED", "REFUNDED"].includes(p.status)
+          );
+        });
+      });
+
+      it("should validate event feedback reviews with star ratings between 1 and 5", () => {
+        assert.ok(DEMO_EVENT_FEEDBACK.length >= 4);
+        DEMO_EVENT_FEEDBACK.forEach((fb) => {
+          assert.ok(fb.id.startsWith("fb-"));
+          assert.ok(fb.rating >= 1 && fb.rating <= 5);
+          assert.ok(fb.comment.length > 0);
+          assert.ok(
+            ["PUBLISHED", "HIDDEN", "PENDING_REVIEW"].includes(fb.status)
+          );
+        });
+      });
+    });
+
+    describe("Admin Navigation Integration", () => {
+      it("should verify Events & Learning navigation group contains enriched Step 10 routes", () => {
+        const eventsGroup = adminNavGroups.find((g) => g.id === "events-learning");
+        assert.ok(eventsGroup, "Events & Learning group not found");
+        const eventsItem = eventsGroup.items.find((i) => i.label === "Events & Workshops");
+        assert.ok(eventsItem, "Events & Workshops item not found");
+        assert.ok(eventsItem.children && eventsItem.children.length >= 10);
+
+        const childHrefs = eventsItem.children.map((c) => c.href);
+        const expectedSubRoutes = [
+          "/admin/events",
+          "/admin/events/all",
+          "/admin/events/create",
+          "/admin/events/categories",
+          "/admin/events/workshops",
+          "/admin/events/registrations",
+          "/admin/events/attendees",
+          "/admin/events/tickets",
+          "/admin/events/payments",
+          "/admin/events/feedback",
+          "/admin/events/archive",
+        ];
+
+        expectedSubRoutes.forEach((route) => {
+          assert.ok(
+            childHrefs.includes(route),
+            `Missing expected event sub-route: ${route}`
+          );
+        });
+      });
+    });
+  });
+
+  // =========================================================================
+  // STEP 11 — RESOURCE LIBRARY & LEARNING MANAGEMENT (LMS)
+  // =========================================================================
+  describe("Step 11: Resource Library & Learning Management (LMS)", () => {
+    describe("Resource KPIs & Analytics", () => {
+      it("should validate resource dashboard metrics and telemetry KPIs", async () => {
+        const { DEMO_RESOURCE_KPIS } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.strictEqual(typeof DEMO_RESOURCE_KPIS.totalResources, "number");
+        assert.ok(DEMO_RESOURCE_KPIS.totalResources > 0);
+        assert.ok(DEMO_RESOURCE_KPIS.publishedResources > 0);
+        assert.ok(DEMO_RESOURCE_KPIS.totalViews > 10000);
+        assert.ok(DEMO_RESOURCE_KPIS.totalDownloads > 5000);
+        assert.strictEqual(DEMO_RESOURCE_KPIS.totalCategories, 10);
+      });
+
+      it("should validate learning analytics progression and monthly cohort data", async () => {
+        const { DEMO_LEARNING_ANALYTICS } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.ok(DEMO_LEARNING_ANALYTICS.totalEnrolledLearners > 0);
+        assert.ok(DEMO_LEARNING_ANALYTICS.activeLearners > 0);
+        assert.ok(DEMO_LEARNING_ANALYTICS.completedCoursesCount > 0);
+        assert.ok(
+          DEMO_LEARNING_ANALYTICS.averageCompletionRatePct > 0 &&
+            DEMO_LEARNING_ANALYTICS.averageCompletionRatePct <= 100
+        );
+        assert.strictEqual(
+          DEMO_LEARNING_ANALYTICS.monthlyEnrollmentSeries.length,
+          6
+        );
+        assert.strictEqual(
+          DEMO_LEARNING_ANALYTICS.progressDistribution.length,
+          4
+        );
+      });
+    });
+
+    describe("Resource Categories Taxonomy", () => {
+      it("should validate 10 standardized categories with slugs and icons", async () => {
+        const { DEMO_RESOURCE_CATEGORIES } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.strictEqual(DEMO_RESOURCE_CATEGORIES.length, 10);
+
+        DEMO_RESOURCE_CATEGORIES.forEach((cat) => {
+          assert.ok(cat.id.startsWith("rcat-"));
+          assert.ok(cat.name.length > 0);
+          assert.ok(cat.slug.length > 0);
+          assert.ok(cat.icon.length > 0);
+          assert.strictEqual(typeof cat.resourcesCount, "number");
+          assert.ok(["ACTIVE", "INACTIVE"].includes(cat.status));
+        });
+      });
+    });
+
+    describe("Resources Catalogue & Formats", () => {
+      it("should validate diverse resources with formats, visibility, and author attributions", async () => {
+        const { DEMO_RESOURCES } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.ok(DEMO_RESOURCES.length >= 6);
+
+        const typesFound = new Set(DEMO_RESOURCES.map((r) => r.resourceType));
+        assert.ok(typesFound.has("GUIDE"));
+        assert.ok(typesFound.has("VIDEO"));
+        assert.ok(typesFound.has("TEMPLATE"));
+        assert.ok(typesFound.has("ARTICLE"));
+
+        DEMO_RESOURCES.forEach((r) => {
+          assert.ok(r.id.startsWith("res-"));
+          assert.ok(r.title.length > 0);
+          assert.ok(r.slug.length > 0);
+          assert.ok(r.shortDescription.length > 0);
+          assert.ok(
+            [
+              "PUBLISHED",
+              "DRAFT",
+              "PENDING_REVIEW",
+              "UNDER_REVIEW",
+              "ARCHIVED",
+              "REJECTED",
+            ].includes(r.status)
+          );
+          assert.ok(
+            ["PUBLIC", "MEMBERS_ONLY", "PREMIUM"].includes(r.visibility)
+          );
+          assert.ok(r.author.name.length > 0);
+          assert.ok(Array.isArray(r.tags) && r.tags.length > 0);
+          assert.ok(r.viewsCount >= 0);
+        });
+      });
+    });
+
+    describe("Courses & LMS Curriculum Builder", () => {
+      it("should validate structured courses with modules, lessons, and pricing", async () => {
+        const { DEMO_COURSES } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.ok(DEMO_COURSES.length >= 4);
+
+        DEMO_COURSES.forEach((course) => {
+          assert.ok(course.id.startsWith("crs-"));
+          assert.ok(course.title.length > 0);
+          assert.ok(course.instructor.name.length > 0);
+          assert.ok(
+            ["BEGINNER", "INTERMEDIATE", "ADVANCED", "ALL_LEVELS"].includes(
+              course.level
+            )
+          );
+          assert.ok(
+            ["PUBLISHED", "DRAFT", "ARCHIVED", "UNPUBLISHED"].includes(
+              course.status
+            )
+          );
+          assert.ok(Array.isArray(course.modules));
+          assert.ok(course.enrolledLearnersCount >= 0);
+
+          course.modules.forEach((mod) => {
+            assert.ok(mod.id.length > 0);
+            assert.ok(mod.title.length > 0);
+            assert.ok(mod.lessons.length > 0);
+
+            mod.lessons.forEach((lesson) => {
+              assert.ok(lesson.id.length > 0);
+              assert.ok(lesson.title.length > 0);
+              assert.ok(
+                [
+                  "VIDEO",
+                  "ARTICLE",
+                  "QUIZ_PLACEHOLDER",
+                  "DOWNLOADABLE",
+                ].includes(lesson.lessonType)
+              );
+              assert.ok(lesson.duration.length > 0);
+            });
+          });
+        });
+      });
+    });
+
+    describe("Course Enrollments & Certifications", () => {
+      it("should validate student enrollments, syllabus progression, and status", async () => {
+        const { DEMO_ENROLLMENTS } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.ok(DEMO_ENROLLMENTS.length >= 5);
+
+        DEMO_ENROLLMENTS.forEach((enr) => {
+          assert.ok(enr.id.startsWith("enr-"));
+          assert.ok(enr.courseId.startsWith("crs-"));
+          assert.ok(enr.courseTitle.length > 0);
+          assert.ok(enr.learnerName.length > 0);
+          assert.ok(enr.learnerEmail.includes("@"));
+          assert.ok(
+            [
+              "ACTIVE",
+              "COMPLETED",
+              "CANCELLED",
+              "PENDING",
+              "SUSPENDED",
+            ].includes(enr.enrollmentStatus)
+          );
+          assert.ok(enr.progressPct >= 0 && enr.progressPct <= 100);
+          assert.ok(enr.completedLessonsCount <= enr.totalLessonsCount);
+          if (enr.enrollmentStatus === "COMPLETED") {
+            assert.strictEqual(enr.progressPct, 100);
+          }
+        });
+      });
+    });
+
+    describe("Editorial Reviews & Approvals", () => {
+      it("should validate editorial review queue and priority triage", async () => {
+        const { DEMO_APPROVALS } = await import(
+          "../../src/features/admin/resources/data/mock-resources.ts"
+        );
+
+        assert.ok(DEMO_APPROVALS.length >= 2);
+
+        DEMO_APPROVALS.forEach((appr) => {
+          assert.ok(appr.id.startsWith("appr-"));
+          assert.ok(appr.resourceId.startsWith("res-"));
+          assert.ok(appr.resourceTitle.length > 0);
+          assert.ok(
+            [
+              "PENDING",
+              "APPROVED",
+              "CHANGES_REQUESTED",
+              "REJECTED",
+              "UNDER_REVIEW",
+            ].includes(appr.reviewStatus)
+          );
+          assert.ok(["LOW", "MEDIUM", "HIGH", "URGENT"].includes(appr.priority));
+          assert.ok(appr.contributorName.length > 0);
+        });
+      });
+    });
+
+    describe("Admin Navigation Integration", () => {
+      it("should verify Events & Learning navigation group contains enriched Step 11 routes", () => {
+        const eventsGroup = adminNavGroups.find((g) => g.id === "events-learning");
+        assert.ok(eventsGroup, "Events & Learning group not found");
+
+        // 1. Resource Library item
+        const resourceItem = eventsGroup.items.find((i) => i.label === "Resource Library");
+        assert.ok(resourceItem, "Resource Library item not found");
+        assert.ok(resourceItem.children && resourceItem.children.length >= 8);
+
+        const resourceHrefs = resourceItem.children.map((c) => c.href);
+        const expectedResourceRoutes = [
+          "/admin/resources",
+          "/admin/resources/all",
+          "/admin/resources/create",
+          "/admin/resources/categories",
+          "/admin/resources/articles",
+          "/admin/resources/videos",
+          "/admin/resources/featured",
+          "/admin/resources/approvals",
+        ];
+
+        expectedResourceRoutes.forEach((route) => {
+          assert.ok(
+            resourceHrefs.includes(route),
+            `Missing expected resource sub-route: ${route}`
+          );
+        });
+
+        // 2. Courses & LMS item
+        const coursesItem = eventsGroup.items.find((i) => i.label === "Courses & LMS");
+        assert.ok(coursesItem, "Courses & LMS item not found");
+        assert.ok(coursesItem.children && coursesItem.children.length >= 4);
+
+        const coursesHrefs = coursesItem.children.map((c) => c.href);
+        const expectedCoursesRoutes = [
+          "/admin/resources/courses",
+          "/admin/resources/courses/create",
+          "/admin/resources/enrollments",
+          "/admin/resources/analytics",
+        ];
+
+        expectedCoursesRoutes.forEach((route) => {
+          assert.ok(
+            coursesHrefs.includes(route),
+            `Missing expected courses sub-route: ${route}`
+          );
+        });
+      });
+    });
+  });
+
+  describe("STEP 12 — CMS & Website Content Management Verification", () => {
+    describe("CMS KPIs & Analytics Data", () => {
+      it("should contain comprehensive CMS metrics with consistent totals", () => {
+        assert.ok(DEMO_CMS_KPIS.totalPages >= 12);
+        assert.ok(DEMO_CMS_KPIS.publishedPages > 0);
+        assert.ok(DEMO_CMS_KPIS.draftPages >= 0);
+        assert.ok(DEMO_CMS_KPIS.totalSections >= 40);
+        assert.ok(DEMO_CMS_KPIS.activeBanners > 0);
+        assert.ok(DEMO_CMS_KPIS.mediaCount > 0);
+      });
+
+      it("should verify monthly revision growth trends", () => {
+        assert.strictEqual(DEMO_CMS_GROWTH_SERIES.length, 6);
+        DEMO_CMS_GROWTH_SERIES.forEach((series) => {
+          assert.ok(series.month.length > 0);
+          assert.ok(series.published > 0);
+          assert.ok(series.updates >= series.published);
+        });
+      });
+    });
+
+    describe("Website Pages & Builder Structure", () => {
+      it("should verify all 12 CMS pages contain valid slug, author, status and sections", () => {
+        assert.ok(DEMO_CMS_PAGES.length >= 10);
+        DEMO_CMS_PAGES.forEach((page) => {
+          assert.ok(page.id.startsWith("page-"));
+          assert.ok(page.title.length > 0);
+          assert.ok(page.slug.length > 0);
+          assert.ok(["STANDARD", "LANDING", "INFORMATIONAL", "CAMPAIGN", "CUSTOM"].includes(page.pageType));
+          assert.ok(["DRAFT", "IN_REVIEW", "PUBLISHED", "SCHEDULED", "ARCHIVED"].includes(page.status));
+          assert.ok(["OPTIMIZED", "NEEDS_REVIEW", "MISSING"].includes(page.seoStatus));
+          assert.ok(page.author && page.author.name.length > 0);
+          assert.ok(Array.isArray(page.sections));
+        });
+      });
+
+      it("should verify homepage section ordering and hero configuration", () => {
+        assert.ok(DEMO_CMS_SECTIONS_HOMEPAGE.length >= 8);
+        const heroSection = DEMO_CMS_SECTIONS_HOMEPAGE.find((s) => s.sectionType === "HERO");
+        assert.ok(heroSection, "Hero section not found in homepage layout");
+        assert.ok(heroSection.title.includes("Women Entrepreneurs"));
+        assert.strictEqual(heroSection.order, 1);
+        assert.strictEqual(heroSection.isVisible, true);
+        assert.ok(heroSection.ctaText && heroSection.ctaUrl);
+      });
+    });
+
+    describe("Navigation, Headers & Footers", () => {
+      it("should verify primary and footer navigation items adhere to contract", () => {
+        const primaryItems = DEMO_NAVIGATION_ITEMS.filter((i) => i.location === "PRIMARY");
+        const footerItems = DEMO_NAVIGATION_ITEMS.filter((i) => i.location === "FOOTER");
+
+        assert.ok(primaryItems.length >= 5);
+        assert.ok(footerItems.length >= 6);
+
+        DEMO_NAVIGATION_ITEMS.forEach((item) => {
+          assert.ok(item.label.length > 0);
+          assert.ok(item.url.length > 0);
+          assert.ok(["PRIMARY", "FOOTER", "UTILITY", "MOBILE"].includes(item.location));
+          assert.strictEqual(typeof item.displayOrder, "number");
+          assert.strictEqual(typeof item.isVisible, "boolean");
+        });
+      });
+    });
+
+    describe("Banners & Announcements", () => {
+      it("should verify marketing campaigns and alert banners", () => {
+        assert.ok(DEMO_BANNERS.length >= 4);
+        DEMO_BANNERS.forEach((banner) => {
+          assert.ok(banner.id.startsWith("ban-"));
+          assert.ok(banner.title.length > 0);
+          assert.ok(["HERO_BANNER", "PROMOTIONAL", "ANNOUNCEMENT_BAR", "EVENT_BANNER", "CAMPAIGN"].includes(banner.bannerType));
+          assert.ok(["DRAFT", "SCHEDULED", "ACTIVE", "EXPIRED", "ARCHIVED"].includes(banner.status));
+          assert.ok(banner.startDate.length > 0 && banner.endDate.length > 0);
+          assert.strictEqual(typeof banner.clicksCount, "number");
+          assert.strictEqual(typeof banner.impressionsCount, "number");
+        });
+      });
+    });
+
+    describe("SEO Metadata & SERP Scoring", () => {
+      it("should verify SEO settings, scores, and meta tags", () => {
+        assert.ok(DEMO_SEO_SETTINGS.length >= 4);
+        DEMO_SEO_SETTINGS.forEach((seo) => {
+          assert.ok(seo.id.startsWith("seo-"));
+          assert.ok(seo.pageId.length > 0);
+          assert.ok(seo.pageTitle.length > 0);
+          assert.ok(seo.canonicalUrl.startsWith("https://bdsisters.org"));
+          assert.ok(seo.score >= 0 && seo.score <= 100);
+          assert.ok(["index, follow", "noindex, follow", "index, nofollow", "noindex, nofollow"].includes(seo.metaRobots));
+        });
+      });
+    });
+
+    describe("FAQ Knowledge Base & Website Policies", () => {
+      it("should verify categorized FAQs", () => {
+        assert.ok(DEMO_FAQS.length >= 4);
+        DEMO_FAQS.forEach((faq) => {
+          assert.ok(faq.id.startsWith("faq-"));
+          assert.ok(faq.question.endsWith("?"));
+          assert.ok(faq.answer.length > 20);
+          assert.ok(faq.category.length > 0);
+          assert.strictEqual(typeof faq.displayOrder, "number");
+        });
+      });
+
+      it("should verify standard website documents and legal policies", () => {
+        assert.ok(DEMO_WEBSITE_CONTENT.length >= 4);
+        const types = DEMO_WEBSITE_CONTENT.map((c) => c.contentType);
+        assert.ok(types.includes("ABOUT"));
+        assert.ok(types.includes("MISSION"));
+        assert.ok(types.includes("PRIVACY"));
+        assert.ok(types.includes("TERMS"));
+
+        DEMO_WEBSITE_CONTENT.forEach((doc) => {
+          assert.ok(doc.title.length > 0);
+          assert.ok(doc.content.length > 50);
+          assert.strictEqual(doc.status, "PUBLISHED");
+          assert.ok(doc.version >= 1);
+        });
+      });
+    });
+
+    describe("Media Library & Editorial Governance", () => {
+      it("should verify media assets and dimensions", () => {
+        assert.ok(DEMO_MEDIA_ASSETS.length >= 5);
+        DEMO_MEDIA_ASSETS.forEach((asset) => {
+          assert.ok(asset.id.startsWith("med-"));
+          assert.ok(asset.fileName.length > 0);
+          assert.ok(asset.url.startsWith("https://"));
+          assert.ok(asset.altText.length > 0);
+          assert.ok(asset.fileSizeBytes > 0);
+          assert.strictEqual(asset.status, "ACTIVE");
+        });
+      });
+
+      it("should verify content review approval queue", () => {
+        assert.ok(DEMO_CONTENT_REVIEWS.length >= 3);
+        DEMO_CONTENT_REVIEWS.forEach((rev) => {
+          assert.ok(rev.id.startsWith("rev-"));
+          assert.ok(rev.contentId.length > 0);
+          assert.ok(["PAGE", "HOMEPAGE", "BANNER", "FAQ", "POLICY"].includes(rev.contentType));
+          assert.ok(["PENDING", "UNDER_REVIEW", "APPROVED", "REJECTED", "CHANGES_REQUESTED"].includes(rev.reviewStatus));
+          assert.ok(["LOW", "MEDIUM", "HIGH", "URGENT"].includes(rev.priority));
+        });
+      });
+
+      it("should verify revision history and changelog snapshots", () => {
+        assert.ok(DEMO_REVISIONS.length >= 4);
+        DEMO_REVISIONS.forEach((revision) => {
+          assert.ok(revision.id.startsWith("rvs-"));
+          assert.ok(revision.contentId.length > 0);
+          assert.ok(revision.revisionNumber > 0);
+          assert.ok(revision.changeSummary.length > 0);
+          assert.ok(revision.editorName.length > 0);
+          assert.ok(["ACTIVE", "SUPERSEDED", "RESTORED"].includes(revision.status));
+        });
+      });
+    });
+
+    describe("Admin Navigation Integration", () => {
+      it("should verify Website Management navigation group contains all 11 rich CMS tools", () => {
+        const cmsGroup = adminNavGroups.find((g) => g.id === "website-management");
+        assert.ok(cmsGroup, "Website Management group not found in admin nav");
+
+        const expectedItemLabels = [
+          "CMS Overview",
+          "Website Pages",
+          "Homepage Studio",
+          "Header & Footer",
+          "Banners & Campaigns",
+          "SEO & Social Cards",
+          "FAQ Knowledge Base",
+          "Static Content & Policies",
+          "Media Library",
+          "Content Reviews",
+          "Revision History",
+        ];
+
+        const actualItemLabels = cmsGroup.items.map((i) => i.label);
+        expectedItemLabels.forEach((label) => {
+          assert.ok(
+            actualItemLabels.includes(label),
+            `Missing expected CMS nav item: ${label}`
+          );
+        });
+      });
+    });
+  });
+
+  // =========================================================================
+  // STEP 13 — Communication, Support & Notification Management Verification
+  // =========================================================================
+  describe("STEP 13 — Communication, Support & Notification Management", () => {
+    describe("Communication KPIs & Telemetry Data", () => {
+      it("should contain comprehensive communication metrics with realistic values", () => {
+        assert.ok(DEMO_COMMUNICATION_KPIS.totalContactMessages >= 150);
+        assert.ok(DEMO_COMMUNICATION_KPIS.unreadMessages >= 10);
+        assert.ok(DEMO_COMMUNICATION_KPIS.openSupportTickets >= 20);
+        assert.ok(DEMO_COMMUNICATION_KPIS.pendingComplaints >= 3);
+        assert.ok(DEMO_COMMUNICATION_KPIS.resolvedTickets >= 200);
+        assert.ok(DEMO_COMMUNICATION_KPIS.totalNewsletterSubscribers >= 5000);
+        assert.ok(DEMO_COMMUNICATION_KPIS.activeAnnouncements >= 3);
+        assert.ok(DEMO_COMMUNICATION_KPIS.emailsSentMonth >= 10000);
+        assert.ok(DEMO_COMMUNICATION_KPIS.avgResolutionHours > 0);
+      });
+
+      it("should verify communication monthly growth telemetry series", () => {
+        assert.ok(DEMO_COMMUNICATION_GROWTH_SERIES.length >= 6);
+        DEMO_COMMUNICATION_GROWTH_SERIES.forEach((item) => {
+          assert.ok(item.month.length > 0);
+          assert.ok(item.tickets >= 0);
+          assert.ok(item.contacts >= 0);
+          assert.ok(item.emails >= 0);
+        });
+      });
+    });
+
+    describe("Contact Submissions & Inquiries", () => {
+      it("should verify structured contact inquiries with categories and statuses", () => {
+        assert.ok(DEMO_CONTACT_SUBMISSIONS.length >= 6);
+        DEMO_CONTACT_SUBMISSIONS.forEach((contact) => {
+          assert.ok(contact.id.startsWith("cnt-"));
+          assert.ok(contact.senderName.length > 0);
+          assert.ok(contact.email.includes("@"));
+          assert.ok(contact.subject.length > 0);
+          assert.ok(contact.message.length > 0);
+        });
+      });
+    });
+
+    describe("Support Tickets & Formal Complaints", () => {
+      it("should verify support tickets, priority tags, and conversation threads", () => {
+        assert.ok(DEMO_SUPPORT_TICKETS.length >= 6);
+        DEMO_SUPPORT_TICKETS.forEach((ticket) => {
+          assert.ok(ticket.id.startsWith("tkt-"));
+          assert.ok(ticket.ticketNumber.startsWith("TKT-"));
+          assert.ok(ticket.memberName.length > 0);
+          assert.ok(ticket.memberEmail.includes("@"));
+          assert.ok(ticket.subject.length > 0);
+          assert.ok(ticket.messages.length > 0);
+        });
+      });
+
+      it("should verify formal consumer and marketplace dispute complaints", () => {
+        assert.ok(DEMO_COMPLAINTS.length >= 4);
+        DEMO_COMPLAINTS.forEach((c) => {
+          assert.ok(c.id.startsWith("cmp-"));
+          assert.ok(c.complaintNumber.startsWith("CMP-"));
+          assert.ok(c.reporterName.length > 0);
+          assert.ok(c.reportedUserOrContent.length > 0);
+        });
+      });
+    });
+
+    describe("Email Templates, Engine & Logs", () => {
+      it("should verify system transactional email templates with variables", () => {
+        assert.ok(DEMO_EMAIL_TEMPLATES.length >= 6);
+        DEMO_EMAIL_TEMPLATES.forEach((tpl) => {
+          assert.ok(tpl.id.startsWith("tpl-"));
+          assert.ok(tpl.name.length > 0);
+          assert.ok(tpl.subject.length > 0);
+          assert.ok(tpl.body.length > 0);
+          assert.ok(tpl.variables.length > 0);
+        });
+      });
+
+      it("should verify outbound email dispatch audit logs", () => {
+        assert.ok(DEMO_EMAIL_LOGS.length >= 6);
+        DEMO_EMAIL_LOGS.forEach((log) => {
+          assert.ok(log.id.startsWith("log-"));
+          assert.ok(log.recipient.includes("@"));
+          assert.ok(log.createdDate.length > 0);
+        });
+      });
+    });
+
+    describe("Newsletter Subscribers & Broadcast Campaigns", () => {
+      it("should verify newsletter subscriber list and opt-in sources", () => {
+        assert.ok(DEMO_NEWSLETTER_SUBSCRIBERS.length >= 8);
+        DEMO_NEWSLETTER_SUBSCRIBERS.forEach((sub) => {
+          assert.ok(sub.id.startsWith("sub-"));
+          assert.ok(sub.email.includes("@"));
+          assert.ok(sub.status.length > 0);
+        });
+      });
+
+      it("should verify newsletter broadcast campaigns and engagement metrics", () => {
+        assert.ok(DEMO_NEWSLETTER_CAMPAIGNS.length >= 4);
+        DEMO_NEWSLETTER_CAMPAIGNS.forEach((camp) => {
+          assert.ok(camp.id.startsWith("cmp-"));
+          assert.ok(camp.name.length > 0);
+          assert.ok(camp.subject.length > 0);
+        });
+      });
+    });
+
+    describe("Platform Announcements & Global Banners", () => {
+      it("should verify announcement alerts, severity levels, and audience target filters", () => {
+        assert.ok(DEMO_ANNOUNCEMENTS.length >= 5);
+        DEMO_ANNOUNCEMENTS.forEach((a) => {
+          assert.ok(a.id.startsWith("ann-"));
+          assert.ok(a.title.length > 0);
+          assert.ok(a.description.length > 0);
+        });
+      });
+    });
+
+    describe("Multi-Channel Notifications Hub", () => {
+      it("should verify notification templates with multi-channel support", () => {
+        assert.ok(DEMO_NOTIFICATION_TEMPLATES.length >= 6);
+        DEMO_NOTIFICATION_TEMPLATES.forEach((tpl) => {
+          assert.ok(tpl.id.startsWith("ntf-"));
+          assert.ok(tpl.name.length > 0);
+          assert.ok(tpl.title.length > 0);
+        });
+      });
+
+      it("should verify notification history delivery and read receipts", () => {
+        assert.ok(DEMO_NOTIFICATION_HISTORY.length >= 6);
+        DEMO_NOTIFICATION_HISTORY.forEach((item) => {
+          assert.ok(item.id.startsWith("nh-"));
+          assert.ok(item.recipientEmail.includes("@"));
+          assert.ok(["READ", "UNREAD"].includes(item.readStatus));
+        });
+      });
+    });
+
+    describe("Bulk Direct Email Campaigns", () => {
+      it("should verify bulk email records and recipient estimates", () => {
+        assert.ok(DEMO_BULK_EMAIL_CAMPAIGNS.length >= 3);
+        DEMO_BULK_EMAIL_CAMPAIGNS.forEach((bulk) => {
+          assert.ok(bulk.id.startsWith("blk-"));
+          assert.ok(bulk.name.length > 0);
+          assert.ok(bulk.recipientCount > 0);
+        });
+      });
+    });
+
+    describe("Live Chat Help Desk", () => {
+      it("should verify real-time chat sessions and multi-actor message history", () => {
+        assert.ok(DEMO_LIVE_CHAT_CONVERSATIONS.length >= 4);
+        DEMO_LIVE_CHAT_CONVERSATIONS.forEach((chat) => {
+          assert.ok(chat.id.startsWith("chat-"));
+          assert.ok(chat.memberName.length > 0);
+          assert.ok(chat.messages.length > 0);
+          chat.messages.forEach((msg) => {
+            assert.ok(["MEMBER", "AGENT"].includes(msg.senderType));
+            assert.ok(msg.text.length > 0);
+          });
+        });
+      });
+    });
+
+    describe("Omnichannel Gateways & Global Configuration", () => {
+      it("should verify communication gateways and enabled channels", () => {
+        assert.ok(DEMO_COMMUNICATION_CHANNELS.length >= 5);
+        DEMO_COMMUNICATION_CHANNELS.forEach((ch) => {
+          assert.ok(ch.id.startsWith("chn-"));
+          assert.ok(["EMAIL", "WHATSAPP", "TELEGRAM", "CONTACT_FORM", "LIVE_CHAT"].includes(ch.type));
+        });
+      });
+
+      it("should verify global communication SLA and mailbox settings", () => {
+        assert.ok(DEMO_COMMUNICATION_SETTINGS.contactNotificationEmail.includes("@"));
+        assert.ok(DEMO_COMMUNICATION_SETTINGS.supportEscalationHours > 0);
+      });
+    });
+
+    describe("Admin Navigation Integration", () => {
+      it("should verify Communication navigation group contains all 10 enriched tools", () => {
+        const commGroup = adminNavGroups.find((g) => g.id === "communication");
+        assert.ok(commGroup, "Communication group not found in admin nav");
+
+        const expectedItemLabels = [
+          "Overview",
+          "Contact Inquiries",
+          "Support & Help Desk",
+          "Email Management",
+          "Newsletter & Campaigns",
+          "Announcements",
+          "Notifications Hub",
+          "Bulk Email",
+          "Live Chat Inbox",
+          "Channels & Settings",
+        ];
+
+        const actualItemLabels = commGroup.items.map((i) => i.label);
+        expectedItemLabels.forEach((label) => {
+          assert.ok(
+            actualItemLabels.includes(label),
+            `Missing expected communication nav item: ${label}`
+          );
+        });
       });
     });
   });

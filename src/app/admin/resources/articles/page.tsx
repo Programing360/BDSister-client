@@ -1,16 +1,12 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { Metadata } from "next";
+import { ArticlesListView } from "@/features/admin/resources/components/articles/articles-list-view";
 
-export const metadata = {
-  title: "Resource Articles | BDSisters Administration",
+export const metadata: Metadata = {
+  title: "Articles & Editorial Guides | BDSisters Admin",
+  description:
+    "Manage published editorial articles, long-form guides, legal briefs, and educational research.",
 };
 
-export default function AdminResourceArticlesPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Articles & Knowledge Base"
-      category="Learning Resources"
-      description="Publish business guides, legal advice, financial literacy, and career toolkits"
-      plannedStep="Admin Step 9 (Learning Resources)"
-    />
-  );
+export default function AdminArticlesPage() {
+  return <ArticlesListView />;
 }

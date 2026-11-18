@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -12,10 +12,13 @@ import {
   Lock,
   Globe,
   Share2,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { FaLinkedin, FaGithub, FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import type { MemberProfileDocument } from "@/types/profile";
 import type { AuthUser } from "@/types/auth";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 interface ProfileHeaderProps {
   user: AuthUser;
@@ -24,6 +27,25 @@ interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({ user, profile, onOpenPreview }: ProfileHeaderProps) {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportPdf = () => {
+    setIsExporting(true);
+    try {
+      const a = document.createElement("a");
+      a.href = API_ENDPOINTS.auth.exportPdf;
+      a.target = "_blank";
+      a.download = `${(profile.displayName || user.name || "bdsisters-profile").toLowerCase().replace(/\s+/g, "-")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error("PDF Export error:", err);
+    } finally {
+      setTimeout(() => setIsExporting(false), 1500);
+    }
+  };
+
   const avatarUrl = profile.avatar || user.image;
   const displayName = profile.displayName || user.name || "BDSisters Member";
   const memberSince = user.createdAt
@@ -155,6 +177,21 @@ export function ProfileHeader({ user, profile, onOpenPreview }: ProfileHeaderPro
                 <span>Live Preview</span>
               </button>
             )}
+
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={isExporting}
+              className="px-4 py-2.5 rounded-xl border border-gray-200/80 bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold shadow-sm flex items-center gap-2 transition-all hover:border-[#5B46F6] disabled:opacity-60"
+              title="Download your profile in official PDF format"
+            >
+              {isExporting ? (
+                <Loader2 className="w-4 h-4 animate-spin text-[#5B46F6]" />
+              ) : (
+                <Download className="w-4 h-4 text-[#5B46F6]" />
+              )}
+              <span>Export PDF</span>
+            </button>
 
             <Link
               href="/member/profile/privacy"

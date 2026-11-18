@@ -1,16 +1,12 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { Metadata } from "next";
+import { VideosListView } from "@/features/admin/resources/components/videos/videos-list-view";
 
-export const metadata = {
-  title: "Video Masterclasses | BDSisters Administration",
+export const metadata: Metadata = {
+  title: "Video Library & Masterclasses | BDSisters Admin",
+  description:
+    "Curate video masterclasses, recorded summits, workshop replays, and video tutorials.",
 };
 
-export default function AdminResourceVideosPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Video Masterclasses & Tutorials"
-      category="Learning Resources"
-      description="Curate recorded masterclasses, artisan craft demonstrations, and leadership interviews"
-      plannedStep="Admin Step 9 (Learning Resources)"
-    />
-  );
+export default function AdminVideosPage() {
+  return <VideosListView />;
 }

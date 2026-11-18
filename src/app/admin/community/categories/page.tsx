@@ -1,16 +1,12 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import React from "react";
+import { Metadata } from "next";
+import { CategoriesListView } from "@/features/admin/community/components/categories/categories-list-view";
 
-export const metadata = {
-  title: "Discussion Categories | BDSisters Administration",
+export const metadata: Metadata = {
+  title: "Discussion Categories | BDSisters Admin",
+  description: "Manage community discussion categories, taxonomy, and display priority.",
 };
 
-export default function AdminCommunityCategoriesPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Discussion Topics & Categories"
-      category="Forum Moderation"
-      description="Configure sister circles, career topics, entrepreneurship forums, and regional groups"
-      plannedStep="Admin Step 8 (Community & Moderation)"
-    />
-  );
+export default function CategoriesPage() {
+  return <CategoriesListView />;
 }

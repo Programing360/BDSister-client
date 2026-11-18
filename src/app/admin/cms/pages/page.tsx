@@ -1,16 +1,10 @@
-import { AdminModulePlaceholder } from "@/features/admin/components/shared/admin-module-placeholder";
+import { PagesListView } from "@/features/admin/cms/components/pages/pages-list-view";
 
 export const metadata = {
-  title: "Pages Management | BDSisters Administration",
+  title: "Website Pages | BDSisters CMS Administration",
+  description: "Browse, filter, edit, and publish static and campaign pages across BDSisters.org.",
 };
 
 export default function AdminCmsPagesPage() {
-  return (
-    <AdminModulePlaceholder
-      title="Content Management & Static Pages"
-      category="CMS & Content"
-      description="Edit terms of service, privacy policies, about pages, and mission vision content"
-      plannedStep="Admin Step 10 (CMS)"
-    />
-  );
+  return <PagesListView />;
 }
