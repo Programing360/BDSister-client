@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Activity Logs</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { Metadata } from "next";
+import { AuditLogsView } from "@/features/admin/security/components/audit-logs-view";
+
+export const metadata: Metadata = {
+  title: "Administrative Activity Logs | BDSisters Admin",
+  description: "Tamper-evident trail of administrative actions, verifications, and system modifications.",
+};
+
+export default function AdminActivityLogsPage() {
+  return <AuditLogsView />;
 }

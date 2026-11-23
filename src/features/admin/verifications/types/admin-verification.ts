@@ -15,6 +15,7 @@ export interface SyntheticDocumentItem {
   uploadedAt: string;
   fileSize: string;
   fileFormat: string;
+  previewUrl?: string | null;
 }
 
 export interface VerificationReviewHistoryItem {

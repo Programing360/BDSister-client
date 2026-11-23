@@ -64,7 +64,7 @@ export function SkillsManager({
   const [languages, setLanguages] = useState<LanguageItem[]>(
     initialLanguages.length > 0
       ? initialLanguages
-      : [{ language: "Bengali", proficiency: "NATIVE" }]
+      : [{ language: "Bengali", proficiency: "NATIVE" }],
   );
   const [newLangName, setNewLangName] = useState("");
   const [newLangProf, setNewLangProf] = useState<LanguageProficiency>("CONVERSATIONAL");
@@ -170,9 +170,7 @@ export function SkillsManager({
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
-              Skills, Interests & Languages
-            </h1>
+            <h1 className="text-xl font-bold text-gray-900">Skills, Interests & Languages</h1>
             <p className="text-xs text-gray-500">
               Highlight your superpowers and discover complementary sisters across the network.
             </p>
@@ -265,7 +263,7 @@ export function SkillsManager({
           <button
             type="button"
             onClick={() => handleAddSkill()}
-            className="px-4 py-2.5 rounded-2xl bg-[#5B46F6] hover:bg-[#4C38E0] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            className="px-4 py-2.5 cursor-pointer rounded-2xl bg-[#5B46F6] hover:bg-[#4C38E0] text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Add Skill</span>
@@ -290,8 +288,8 @@ export function SkillsManager({
                       skill.level === "EXPERT"
                         ? "bg-[#5B46F6] text-white"
                         : skill.level === "INTERMEDIATE"
-                        ? "bg-purple-200 text-purple-900"
-                        : "bg-gray-200 text-gray-700"
+                          ? "bg-purple-200 text-purple-900"
+                          : "bg-gray-200 text-gray-700"
                     }`}
                   >
                     {skill.level}
@@ -319,7 +317,7 @@ export function SkillsManager({
           </label>
           <div className="flex flex-wrap gap-2">
             {POPULAR_SKILLS.filter(
-              (p) => !skills.some((s) => s.name.toLowerCase() === p.toLowerCase())
+              (p) => !skills.some((s) => s.name.toLowerCase() === p.toLowerCase()),
             ).map((sugg) => (
               <button
                 key={sugg}
@@ -366,7 +364,7 @@ export function SkillsManager({
           <button
             type="button"
             onClick={() => handleAddInterest()}
-            className="px-4 py-2.5 rounded-2xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2.5 cursor-pointer rounded-2xl bg-pink-600 hover:bg-pink-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Add Interest</span>
@@ -408,7 +406,7 @@ export function SkillsManager({
           </label>
           <div className="flex flex-wrap gap-2">
             {POPULAR_INTERESTS.filter(
-              (p) => !interests.some((i) => i.toLowerCase() === p.toLowerCase())
+              (p) => !interests.some((i) => i.toLowerCase() === p.toLowerCase()),
             ).map((sugg) => (
               <button
                 key={sugg}
@@ -461,7 +459,7 @@ export function SkillsManager({
           <button
             type="button"
             onClick={handleAddLanguage}
-            className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+            className="px-4 py-2.5 cursor-pointer rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Add Language</span>
@@ -499,7 +497,7 @@ export function SkillsManager({
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="px-6 py-2.5 rounded-xl bg-[#5B46F6] hover:bg-[#4C38E0] disabled:opacity-70 text-white text-sm font-semibold shadow-lg shadow-[#5B46F6]/25 flex items-center gap-2 transition-all active:scale-[0.98]"
+          className="px-6 py-2.5 cursor-pointer rounded-xl bg-[#5B46F6] hover:bg-[#4C38E0] disabled:opacity-70 text-white text-sm font-semibold shadow-lg shadow-[#5B46F6]/25 flex items-center gap-2 transition-all active:scale-[0.98]"
         >
           {saving ? (
             <>
@@ -508,7 +506,7 @@ export function SkillsManager({
             </>
           ) : (
             <>
-              <Save className="w-4 h-4" />
+              <Save className="w-4 h-4 " />
               <span>Save All Changes</span>
             </>
           )}

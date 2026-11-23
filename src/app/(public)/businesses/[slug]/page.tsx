@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProductCard } from "@/features/public/marketplace/components/product-card";
 import { publicService } from "@/features/public/services/public-service";
+import { AffiliateLink } from "@/features/public/businesses/components/affiliate-link";
 import {
   MapPin,
   Star,
@@ -306,10 +307,9 @@ export default async function BusinessDetailPage({
                   )}
 
                   {business.website && (
-                    <a
-                      href={business.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <AffiliateLink
+                      businessId={business.id}
+                      href={business.website.startsWith("http") ? business.website : `https://${business.website}`}
                       className="flex items-center justify-between rounded-xl border border-border bg-white px-4 py-2.5 text-xs font-semibold text-text-primary shadow-xs hover:border-primary hover:text-primary transition-colors"
                     >
                       <span className="flex items-center gap-2">
@@ -317,7 +317,7 @@ export default async function BusinessDetailPage({
                         <span>Official Website</span>
                       </span>
                       <ExternalLink className="h-3.5 w-3.5 text-neutral" />
-                    </a>
+                    </AffiliateLink>
                   )}
                 </div>
               </div>

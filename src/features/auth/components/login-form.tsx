@@ -5,12 +5,24 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, AlertCircle, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, AlertCircle, ArrowRight, Loader2, CheckCircle2, Clock } from "lucide-react";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
-import { signIn } from "@/lib/auth/auth-client";
+import { apiClient, ApiError } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { AuthInput } from "./auth-input";
 import { PasswordInput } from "./password-input";
 import { getSafeRedirectUrl, getDefaultDashboardRoute } from "@/lib/security/redirect";
+
+interface LoginResponseData {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+  status: string;
+  referralCode?: string;
+  profilePicture?: string;
+  isEmailVerified: boolean;
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -21,7 +33,11 @@ export function LoginForm() {
   const accountError = searchParams.get("error");
 
   const [isLoading, setIsLoading] = useState(false);
+  const isExpired = searchParams.get("expired") === "true";
   const [errorMessage, setErrorMessage] = useState<string | null>(() => {
+    if (isExpired) {
+      return "Your session has expired. Please sign in again to continue.";
+    }
     if (accountError === "account_suspended") {
       return "Your account has been suspended by administration. Please contact support.";
     }
@@ -31,6 +47,7 @@ export function LoginForm() {
     return null;
   });
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
 
   const {
     register,
@@ -45,39 +62,71 @@ export function LoginForm() {
     },
   });
 
+  // এরর হ্যান্ডলিংয়ের জন্য কমন হেল্পার ফাংশন
+  const handleAuthError = (message: string, code: string, email: string) => {
+    const msg = message.toLowerCase();
+    const errCode = code.toLowerCase();
+
+    if (
+      errCode === "account_pending" ||
+      msg.includes("pending") ||
+      msg.includes("review") ||
+      msg.includes("approval") ||
+      msg === "forbidden"
+    ) {
+      setIsPendingApproval(true);
+    } else if (
+      errCode === "email_not_verified" ||
+      msg.includes("verify") ||
+      msg.includes("verification")
+    ) {
+      setUnverifiedEmail(email);
+      setErrorMessage(
+        message ||
+          "Your email address has not been verified yet. Please check your inbox or request a new verification link.",
+      );
+    } else {
+      setErrorMessage(message || "Invalid email or password. Please try again.");
+    }
+  };
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     setErrorMessage(null);
     setUnverifiedEmail(null);
+    setIsPendingApproval(false);
 
     try {
-      const response = await signIn.email({
-        email: data.email,
+      const response = await apiClient.post<LoginResponseData>(API_ENDPOINTS.auth.login, {
+        email: data.email.trim(),
         password: data.password,
-        rememberMe: data.rememberMe ?? false,
       });
 
       if (response.error) {
-        const err = response.error;
-        const msg = (err.message || "").toLowerCase();
-        const code = (err.code || "").toLowerCase();
-
-        if (msg.includes("verify") || code.includes("email_not_verified") || msg.includes("verification")) {
-          setUnverifiedEmail(data.email);
-          setErrorMessage(
-            "Your email address has not been verified yet. Please check your inbox or request a new verification link."
-          );
-        } else if (msg.includes("credential") || code.includes("invalid_credentials") || msg.includes("password") || msg.includes("email")) {
-          setErrorMessage("Invalid email or password. Please verify your credentials and try again.");
-        } else {
-          setErrorMessage(err.message || "Unable to sign in. Please try again.");
-        }
+        handleAuthError(response.error.message || "", response.error.code || "", data.email.trim());
         setIsLoading(false);
         return;
       }
 
-      // Successful sign in
-      const user = response.data?.user as { role?: string } | undefined;
+      // ব্যাকএন্ড থেকে আসা token এবং user ডেটা সংরক্ষণ করা
+      const rawRes = response as unknown as {
+        token?: string;
+        data?: LoginResponseData & { token?: string };
+      };
+      const token = rawRes.token || rawRes.data?.token;
+      const user = rawRes.data;
+
+      if (token && typeof window !== "undefined") {
+        localStorage.setItem("token", token);
+        localStorage.setItem("auth_token", token);
+        document.cookie = `token=${token}; path=/; max-age=${data.rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7}`;
+      }
+
+      if (user && typeof window !== "undefined") {
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      // ইউজারের role অনুযায়ী ড্যাশবোর্ডে রিডাইরেক্ট
       const defaultRoute = getDefaultDashboardRoute(user?.role);
       const targetDestination = getSafeRedirectUrl(callbackUrl, defaultRoute);
 
@@ -85,13 +134,14 @@ export function LoginForm() {
       router.refresh();
     } catch (err: unknown) {
       console.warn("[Login Request Failed]", err);
-      const errorStr = String(err);
-      if (errorStr.includes("Failed to fetch") || errorStr.includes("NetworkError") || errorStr.includes("activeContentBlocker")) {
-        setErrorMessage(
-          "Unable to reach the authentication service. If you are using a browser extension such as an Ad-Blocker, Privacy Guard, or Active Content Blocker, please pause it for localhost, or verify that your local development server is running."
-        );
+      if (err instanceof ApiError) {
+        handleAuthError(err.message || "", err.code || "", data.email.trim());
       } else {
-        setErrorMessage("A network error occurred while signing in. Please check your connection and try again.");
+        setErrorMessage(
+          err instanceof Error
+            ? err.message
+            : "A network error occurred while signing in. Please check your connection and try again.",
+        );
       }
       setIsLoading(false);
     }
@@ -104,7 +154,8 @@ export function LoginForm() {
         <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-800">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
           <p>
-            Registration successful! Please check your email (<strong>{registeredEmail}</strong>) to verify your account before logging in.
+            Registration successful! Please check your email (<strong>{registeredEmail}</strong>) to
+            verify your account before logging in.
           </p>
         </div>
       )}
@@ -114,8 +165,26 @@ export function LoginForm() {
         <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-800">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
           <p>
-            Your password has been reset successfully. You can now sign in with your new credentials.
+            Your password has been reset successfully. You can now sign in with your new
+            credentials.
           </p>
+        </div>
+      )}
+
+      {/* Pending Admin Approval Alert */}
+      {isPendingApproval && (
+        <div className="flex items-start gap-3.5 rounded-2xl border border-amber-300 bg-amber-50/95 p-4 text-sm text-amber-900 shadow-xs">
+          <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+            <Clock className="h-4 w-4" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-bold text-amber-950">Account Pending Admin Approval</p>
+            <p className="text-xs leading-relaxed text-amber-800">
+              Your registration and identity documents are currently under review by our
+              verification team. You will receive an email notification as soon as your account is
+              approved.
+            </p>
+          </div>
         </div>
       )}
 
@@ -203,10 +272,7 @@ export function LoginForm() {
       <div className="text-center pt-2">
         <p className="text-sm text-gray-600">
           Don&apos;t have an account yet?{" "}
-          <Link
-            href="/register"
-            className="font-bold text-[#5B46F6] hover:underline"
-          >
+          <Link href="/register" className="font-bold text-[#5B46F6] hover:underline">
             Create Free Account
           </Link>
         </p>

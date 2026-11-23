@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "@/lib/auth/session";
-import { submitBusinessVerification } from "@/lib/services/business-service";
+import { addBusinessVerificationDoc as submitBusinessVerification } from "@/lib/db/repositories/business-repository";
 import { businessVerificationSchema } from "@/lib/validations/business";
 import {
   successResponse,

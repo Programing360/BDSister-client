@@ -12,6 +12,9 @@ import {
   Star,
 } from "lucide-react";
 
+import signUpImges from "../../../../public/images/placeholders/images.jpg"
+import Image from "next/image";
+
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
@@ -198,9 +201,11 @@ export function AuthLayout({
                 <div className="relative h-full w-full overflow-hidden rounded-[23px] bg-gradient-to-br from-[#B6A8FF] to-[#7861F4]">
 
                   {/* Main Image */}
-                  <img
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=900&q=85"
+                  <Image
+                    src={signUpImges}
                     alt="Professional woman representing the BDSisters community"
+                    width={400}
+                    height={400}
                     className="h-full w-full object-cover object-center"
                   />
 

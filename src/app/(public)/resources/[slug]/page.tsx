@@ -8,6 +8,7 @@ import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ResourceCard } from "@/features/public/resources/components/resource-card";
+import { ResourceDownloadAction } from "@/features/public/resources/components/resource-download-action";
 import { publicService } from "@/features/public/services/public-service";
 import {
   FileText,
@@ -252,23 +253,8 @@ export default async function ResourceDetailPage({
                   </div>
 
                   {/* Download Action */}
-                  <div className="space-y-3 border-t border-border/80 pt-5">
-                    <Link
-                      href={`/register?redirect=/resources/${resource.slug}`}
-                      className="block w-full"
-                    >
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        className="w-full justify-center gap-2 font-bold text-base py-3.5 shadow-button hover:shadow-card-hover"
-                      >
-                        <Download className="h-5 w-5" />
-                        <span>Download Free Toolkit</span>
-                      </Button>
-                    </Link>
-                    <p className="text-[11px] text-center text-text-secondary">
-                      Unlocked with your free sister account.
-                    </p>
+                  <div className="border-t border-border/80 pt-5">
+                    <ResourceDownloadAction resource={resource} />
                   </div>
 
                   {/* Open Source / Community Guarantee */}

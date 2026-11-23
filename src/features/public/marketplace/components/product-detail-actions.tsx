@@ -68,6 +68,20 @@ export function ProductDetailActions({
     setErrorMessage(null);
 
     try {
+      // Mirror in localStorage guest cart
+      if (typeof window !== "undefined") {
+        try {
+          const existing = JSON.parse(localStorage.getItem("bdsisters_guest_cart") || "[]");
+          const idx = existing.findIndex((i: any) => i.productId === productId);
+          if (idx >= 0) {
+            existing[idx].quantity += quantity;
+          } else {
+            existing.push({ productId, quantity, price });
+          }
+          localStorage.setItem("bdsisters_guest_cart", JSON.stringify(existing));
+        } catch {}
+      }
+
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

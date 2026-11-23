@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -8,571 +8,408 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Clock,
-  Shield,
-  Briefcase,
-  ShoppingBag,
-  ExternalLink,
-  Edit,
-  UserX,
+  ShieldCheck,
   UserCheck,
   Award,
   BookOpen,
-  GraduationCap,
-  Globe,
   FileText,
   AlertCircle,
-  Plus,
+  ExternalLink,
+  CheckCircle2,
+  UserPlus,
+  Loader2,
 } from "lucide-react";
-import { AdminMemberDetail, AdminAccountStatus } from "../types/admin-member";
-import {
-  AccountStatusBadge,
-  MembershipBadge,
-  EmailVerificationBadge,
-  IdentityVerificationBadge,
-} from "./member-status-badges";
-import { MemberActionDialog, AdminActionType } from "./member-action-dialog";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { BackendMember } from "./members-list-view";
+import { MemberActionDialog, MemberActionType } from "./member-action-dialog";
 
-interface MemberDetailsViewProps {
-  member: AdminMemberDetail;
+interface FullMemberProfile extends BackendMember {
+  bio?: string;
+  headline?: string;
+  whatsapp?: string;
+  profilePicture?: string;
+  isEmailVerified?: boolean;
+  skills?: Array<{ name: string; level?: string }>;
+  subjectsOfInterest?: string[];
+  identityVerification?: {
+    verificationStatus?: string;
+    documentType?: string;
+    nidOrPassportUrl?: string;
+    submittedAt?: string;
+    auditLog?: Array<{
+      action: string;
+      timestamp: string;
+      notes?: string;
+    }>;
+  };
 }
 
-export function MemberDetailsView({ member }: MemberDetailsViewProps) {
-  // Local state for interactive demo actions
-  const [currentStatus, setCurrentStatus] = useState<AdminAccountStatus>(member.accountStatus);
-  const [currentMembership, setCurrentMembership] = useState(member.membershipType);
-  const [dialogAction, setDialogAction] = useState<AdminActionType | null>(null);
-  const [adminNotes, setAdminNotes] = useState(member.adminNotes || []);
-  const [newNoteText, setNewNoteText] = useState("");
-  const [isAddingNote, setIsAddingNote] = useState(false);
+interface MemberDetailsViewProps {
+  userId: string;
+}
 
-  const handleActionSuccess = (action: AdminActionType, newStatus: string, reason?: string) => {
-    if (action === "SUSPEND" || action === "REACTIVATE" || action === "BAN") {
-      setCurrentStatus(newStatus as AdminAccountStatus);
-      if (reason) {
-        setAdminNotes((prev) => [
-          {
-            id: `an_sim_${Date.now()}`,
-            author: "Admin Auditor (Demo)",
-            note: `${action} applied: ${reason}`,
-            createdAt: "Just now",
-          },
-          ...prev,
-        ]);
+export function MemberDetailsView({ userId }: MemberDetailsViewProps) {
+  const [member, setMember] = useState<FullMemberProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dialogAction, setDialogAction] = useState<MemberActionType | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  console.log(member)
+
+  const fetchMemberDetails = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      // GET /api/admin/users/:userId (includes nidOrPassportUrl & logs audit access)
+      const res = await apiClient.get<{ data?: FullMemberProfile }>(
+        API_ENDPOINTS.admin.userDetail(userId)
+      );
+      const raw = res as unknown as { data?: FullMemberProfile };
+      console.log(raw.data);
+      if (raw.data) {
+        setMember(raw.data);
+      } else {
+        throw new Error("Member profile not found.");
       }
-    } else if (action === "CHANGE_MEMBERSHIP") {
-      setCurrentMembership(newStatus as "FREE" | "PAID");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load member details.");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [userId]);
 
-  const handleAddNote = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newNoteText.trim()) return;
+  useEffect(() => {
+    if (userId) fetchMemberDetails();
+  }, [userId, fetchMemberDetails]);
 
-    setIsAddingNote(true);
-    setTimeout(() => {
-      setAdminNotes((prev) => [
-        {
-          id: `an_sim_${Date.now()}`,
-          author: "Admin User (You)",
-          note: newNoteText.trim(),
-          createdAt: "Just now",
-        },
-        ...prev,
-      ]);
-      setNewNoteText("");
-      setIsAddingNote(false);
-    }, 400);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 rounded-3xl border border-[#5B9891]/20 bg-white space-y-3">
+        <Loader2 className="h-8 w-8 text-[#5B9891] animate-spin" />
+        <p className="text-xs font-semibold text-gray-600">
+          Loading member profile & secure verification documents...
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !member) {
+    return (
+      <div className="space-y-4">
+        <Link
+          href="/admin/members"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#5B9891] hover:underline"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Members
+        </Link>
+        <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-700">
+          <AlertCircle className="h-5 w-5 shrink-0" />
+          <p>{error || "Member not found."}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const referrerInfo =
+    typeof member.referredBy === "object" && member.referredBy !== null
+      ? `${member.referredBy.fullName || "Member"} (${member.referredBy.email || ""})`
+      : member.referredBy || "No referrer recorded";
+
+  const statusBadgeClass =
+    member.status === "Active"
+      ? "bg-[#5B9891]/15 text-[#467A74] border-[#5B9891]/30"
+      : member.status === "Pending"
+        ? "bg-[#F2B55D]/25 text-[#D98408] border-[#F2B55D]/50"
+        : "bg-rose-50 text-rose-700 border-rose-200";
 
   return (
-    <div className="space-y-6">
-      {/* Top back navigation & quick stats */}
+    <div className="space-y-6 pb-12">
+      {/* Top Back Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Link
           href="/admin/members"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition"
+          className="inline-flex items-center gap-2 text-xs font-bold text-gray-600 hover:text-[#5B9891] transition"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Members
+          <ArrowLeft className="w-4 h-4" /> Back to Members Directory
         </Link>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">System ID:</span>
-          <span className="font-mono text-xs font-semibold px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-            {member.id}
-          </span>
-        </div>
+        <span className="font-mono text-[11px] font-semibold px-3 py-1 rounded-lg bg-[#FAF8F5] border border-gray-200 text-gray-600">
+          ID: {member._id}
+        </span>
       </div>
 
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="flex items-center gap-2.5 rounded-2xl border border-[#5B9891]/30 bg-[#5B9891]/10 p-3.5 text-xs font-bold text-[#467A74]">
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-[#5B9891]" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Main Profile Header Card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-xs overflow-hidden">
-        {/* Cover pattern */}
-        <div className="h-28 bg-linear-to-r from-[#5B46F6]/20 via-[#7366F7]/15 to-[#EAE6F7] dark:to-gray-800" />
+      <div className="bg-white rounded-3xl border border-gray-200/80 shadow-xs overflow-hidden">
+        <div className="h-24 bg-gradient-to-r from-[#5B9891]/25 via-[#F7DFC7]/60 to-[#F2B55D]/25" />
 
         <div className="px-6 pb-6 pt-0">
-          <div className="flex flex-col md:flex-row md:items-end justify-between -mt-12 gap-4">
-            {/* Avatar & Identifiers */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between -mt-10 gap-4">
             <div className="flex items-end gap-4">
-              <div className="w-24 h-24 rounded-2xl bg-white dark:bg-gray-800 p-1 shadow-md border border-gray-100 dark:border-gray-700">
-                <div className="w-full h-full rounded-xl bg-linear-to-br from-[#5B46F6] to-[#7366F7] flex items-center justify-center text-white text-2xl font-bold">
-                  {member.name.charAt(0)}
-                </div>
+              <div className="w-20 h-20 rounded-2xl bg-white p-1 shadow-md border border-gray-100 overflow-hidden">
+                {member.profilePicture ? (
+                  <img
+                    src={member.profilePicture}
+                    alt={member.fullName}
+                    className="w-full h-full object-cover rounded-xl"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-[#5B9891] flex items-center justify-center text-white text-2xl font-bold">
+                    {(member.fullName || "B").charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
               <div className="mb-1">
-                <div className="flex items-center gap-3">
-                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {member.name}
-                  </h1>
-                  <span className="font-mono text-xs font-bold text-[#5B46F6] px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40">
-                    {member.memberId}
-                  </span>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                  {member.headline || "Registered BDSisters Community Member"}
+                <h1 className="text-2xl font-bold text-gray-900">{member.fullName}</h1>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {member.headline || "BDSisters Community Member"}
                 </p>
               </div>
             </div>
 
-            {/* Admin Action Buttons */}
-            <div className="flex flex-wrap items-center gap-2 pt-3 md:pt-0">
-              <Link
-                href={`/admin/members/${member.memberId || member.id}/edit`}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+            {/* Admin Actions */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDialogAction("UPDATE_STATUS")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#5B9891] text-white hover:bg-[#467A74] transition shadow-2xs"
               >
-                <Edit className="w-3.5 h-3.5" /> Edit Profile
-              </Link>
-
-              {currentStatus === "ACTIVE" ? (
-                <button
-                  type="button"
-                  onClick={() => setDialogAction("SUSPEND")}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/60 border border-amber-200/60 dark:border-amber-800/40 transition"
-                >
-                  <UserX className="w-3.5 h-3.5" /> Suspend
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setDialogAction("REACTIVATE")}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 border border-emerald-200 dark:border-emerald-800 transition"
-                >
-                  <UserCheck className="w-3.5 h-3.5" /> Reactivate
-                </button>
-              )}
+                <UserCheck className="w-4 h-4" /> Approve / Update Status
+              </button>
 
               <button
                 type="button"
-                onClick={() => setDialogAction("CHANGE_MEMBERSHIP")}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/30 text-[#5B46F6] hover:bg-indigo-100 border border-indigo-200/60 transition"
+                onClick={() => setDialogAction("UPDATE_ROLE")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#F7DFC7] text-[#D98408] hover:bg-[#F2B55D]/40 border border-[#D98408]/30 transition"
               >
-                <Award className="w-3.5 h-3.5" /> Change Tier
+                <Award className="w-4 h-4" /> Assign Role ({member.role})
               </button>
             </div>
           </div>
 
-          {/* Badges strip */}
-          <div className="flex flex-wrap items-center gap-2.5 mt-5 pt-4 border-t border-gray-100 dark:border-gray-800">
-            <AccountStatusBadge status={currentStatus} />
-            <MembershipBadge type={currentMembership} planName={member.membershipPlan} />
-            <EmailVerificationBadge verified={member.emailVerified} />
-            <IdentityVerificationBadge status={member.verificationStatus} />
+          {/* Status & Role Badges */}
+          <div className="flex flex-wrap items-center gap-2.5 mt-5 pt-4 border-t border-gray-100">
+            <span className={`rounded-full border px-3 py-0.5 text-xs font-bold ${statusBadgeClass}`}>
+              Account: {member.status}
+            </span>
+            <span className="rounded-full border border-[#D98408]/30 bg-[#F7DFC7]/60 px-3 py-0.5 text-xs font-bold text-[#D98408]">
+              Role: {member.role}
+            </span>
+            {member.profileStatus && (
+              <span className="rounded-full border border-gray-200 bg-[#FAF8F5] px-3 py-0.5 text-xs font-semibold text-gray-700">
+                Profile Status: {member.profileStatus}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Grid Layout: Details & Left Column vs Audit / Notes */}
+      {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Columns: Information panels */}
+        {/* Left 2 Columns: Profile & Referral Info */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Quick Metrics Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-xs">
-              <span className="text-xs text-gray-500 block">Profile Health</span>
-              <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  {member.profileCompletion}%
-                </span>
-              </div>
-              <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 mt-2 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-[#5B46F6]"
-                  style={{ width: `${member.profileCompletion}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-xs">
-              <span className="text-xs text-gray-500 block">Businesses</span>
-              <div className="mt-1 flex items-center gap-2">
-                <Briefcase className="w-4 h-4 text-gray-400" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  {member.businessesCount}
-                </span>
-              </div>
-              <span className="text-[11px] text-gray-400 mt-1 block">Registered stores</span>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-xs">
-              <span className="text-xs text-gray-500 block">Market Orders</span>
-              <div className="mt-1 flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-gray-400" />
-                <span className="text-xl font-bold text-gray-900 dark:text-white">
-                  {member.ordersCount}
-                </span>
-              </div>
-              <span className="text-[11px] text-gray-400 mt-1 block">Platform purchases</span>
-            </div>
-
-            <div className="bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 shadow-xs">
-              <span className="text-xs text-gray-500 block">Last Active</span>
-              <div className="mt-1 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                  {member.lastLogin}
-                </span>
-              </div>
-              <span className="text-[11px] text-gray-400 mt-1 block">Authenticated</span>
-            </div>
-          </div>
-
-          {/* Contact & Location Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
-            <h2 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-3">
-              Contact & Location Records
+          {/* Contact, Location & Referrer */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-xs space-y-4">
+            <h2 className="text-base font-bold text-gray-900 border-b border-gray-100 pb-3">
+              Member Details & Referral Attribution
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] text-[#5B9891]">
                   <Mail className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block">Email Address</span>
-                  <span className="font-mono">{member.email}</span>
+                  <span className="text-gray-400 block">Email Address</span>
+                  <span className="font-semibold text-gray-900">{member.email}</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] text-[#5B9891]">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block">Phone Number</span>
-                  <span>{member.phone}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500">
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <span className="text-xs text-gray-400 block">Location</span>
-                  <span>
-                    {[member.location?.city, member.location?.district, member.location?.country]
-                      .filter(Boolean)
-                      .join(", ") || "Bangladesh"}
+                  <span className="text-gray-400 block">Phone / WhatsApp</span>
+                  <span className="font-semibold text-gray-900">
+                    {member.phone || member.whatsapp || "Not provided"}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
-                <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] text-[#5B9891]">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-gray-400 block">Location (District, State, Country)</span>
+                  <span className="font-semibold text-gray-900">
+                    {[member.district, member.state, member.country].filter(Boolean).join(", ") ||
+                      "Bangladesh"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-[#FAF8F5] text-[#5B9891]">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-xs text-gray-400 block">Registration Date</span>
-                  <span className="font-mono">{member.joinedDate}</span>
+                  <span className="text-gray-400 block">Joined Date</span>
+                  <span className="font-semibold text-gray-900">
+                    {new Date(member.createdAt).toLocaleDateString("en-BD", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              {/* Referrer Box (Requirement: All profilers must have referees) */}
+              <div className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-[#F7DFC7] bg-[#FAF8F5] p-3.5">
+                <div className="p-2 rounded-lg bg-[#F7DFC7] text-[#D98408]">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-[#D98408] block">
+                    Referred By (Existing Sister Referee)
+                  </span>
+                  <span className="font-bold text-gray-900">{referrerInfo}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Profile Bio & Professional Narrative */}
-          {member.bio && (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-3">
-              <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-800 pb-3">
-                <BookOpen className="w-4 h-4 text-[#5B46F6]" />
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">
-                  Profile Narrative & Bio
-                </h2>
+          {/* Bio & Skills */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+              <BookOpen className="w-4 h-4 text-[#5B9891]" />
+              <h2 className="text-base font-bold text-gray-900">Profile Summary & Skills</h2>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-line">
+              {member.bio || "No profile summary added yet."}
+            </p>
+
+            {member.skills && member.skills.length > 0 && (
+              <div className="pt-2">
+                <span className="text-[11px] font-bold text-gray-400 uppercase block mb-2">
+                  Skills & Competencies
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {member.skills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 rounded-lg text-xs font-semibold bg-[#5B9891]/10 text-[#467A74] border border-[#5B9891]/20"
+                    >
+                      {skill.name} {skill.level ? `• ${skill.level}` : ""}
+                    </span>
+                  ))}
+                </div>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed whitespace-pre-line">
-                {member.bio}
-              </p>
-            </div>
-          )}
-
-          {/* Experience & Education */}
-          {(member.experience?.length || member.education?.length) ? (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-6">
-              {/* Experience */}
-              {member.experience && member.experience.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Briefcase className="w-4 h-4 text-[#5B46F6]" />
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                      Professional Experience
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    {member.experience.map((exp) => (
-                      <div
-                        key={exp.id}
-                        className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/60 text-xs"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="font-bold text-gray-900 dark:text-white">
-                              {exp.role}
-                            </span>
-                            <span className="text-gray-500 block">{exp.company}</span>
-                          </div>
-                          <span className="text-gray-400 font-mono text-[11px]">
-                            {exp.startDate} - {exp.current ? "Present" : exp.endDate}
-                          </span>
-                        </div>
-                        {exp.description && (
-                          <p className="mt-1.5 text-gray-600 dark:text-gray-300">
-                            {exp.description}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Education */}
-              {member.education && member.education.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <GraduationCap className="w-4 h-4 text-[#5B46F6]" />
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                      Education Credentials
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    {member.education.map((edu) => (
-                      <div
-                        key={edu.id}
-                        className="p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700/60 text-xs"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <span className="font-bold text-gray-900 dark:text-white">
-                              {edu.degree} in {edu.fieldOfStudy}
-                            </span>
-                            <span className="text-gray-500 block">{edu.institution}</span>
-                          </div>
-                          <span className="text-gray-400 font-mono text-[11px]">
-                            {edu.startDate} - {edu.endDate}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
-
-          {/* Skills & Languages */}
-          {(member.skills?.length || member.languages?.length) ? (
-            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
-              <h2 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 pb-3">
-                Skills & Communication Languages
-              </h2>
-
-              {member.skills && member.skills.length > 0 && (
-                <div>
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                    Verified Competencies
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {member.skills.map((skill) => (
-                      <span
-                        key={skill.id}
-                        className="px-3 py-1 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-200 dark:border-gray-700"
-                      >
-                        {skill.name} • {skill.level}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {member.languages && member.languages.length > 0 && (
-                <div className="pt-2">
-                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block mb-2">
-                    Spoken Languages
-                  </span>
-                  <div className="flex flex-wrap gap-2">
-                    {member.languages.map((lang, index) => (
-                      <span
-                        key={`${lang.language}-${index}`}
-                        className="px-3 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/40 text-[#5B46F6] border border-indigo-100 dark:border-indigo-900/40"
-                      >
-                        {lang.language} ({lang.proficiency})
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : null}
+            )}
+          </div>
         </div>
 
-        {/* Right 1 Column: Verification details, Subscription, and Admin Notes */}
+        {/* Right 1 Column: Private NID/Passport Verification & Audit Trail */}
         <div className="space-y-6">
-          {/* Identity Verification Summary Box */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+          {/* Private NID / Passport Document Box */}
+          <div className="bg-white rounded-2xl p-6 border border-[#D98408]/30 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
               <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-[#5B46F6]" />
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                  Identity Verification
+                <ShieldCheck className="w-4 h-4 text-[#D98408]" />
+                <h3 className="text-sm font-bold text-gray-900">
+                  Private ID Verification
                 </h3>
               </div>
-              <IdentityVerificationBadge status={member.verificationStatus} />
+              <span className="rounded-full bg-[#F7DFC7] px-2.5 py-0.5 text-[10px] font-bold text-[#D98408]">
+                {member.identityVerification?.verificationStatus || "Pending"}
+              </span>
             </div>
 
-            {member.identityVerificationDetails ? (
-              <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Document Type:</span>
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {member.identityVerificationDetails.documentType.replace("_", " ")}
-                  </span>
+            <p className="text-[11px] text-gray-500 bg-[#FAF8F5] p-2.5 rounded-xl border border-gray-100">
+              Confidential: Only authorized administrators can inspect NID/Passport documents. Access is logged.
+            </p>
+
+            {member.identityVerification?.nidOrPassportUrl ? (
+              <div className="space-y-3">
+                <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                  <img
+                    src={member.identityVerification.nidOrPassportUrl}
+                    alt="Member NID or Passport"
+                    className="w-full max-h-56 object-contain"
+                  />
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Masked ID:</span>
-                  <span className="font-mono text-gray-900 dark:text-white font-medium">
-                    {member.identityVerificationDetails.documentNumberMasked}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Submitted:</span>
-                  <span>{member.identityVerificationDetails.submittedAt}</span>
-                </div>
-                {member.identityVerificationDetails.reviewedBy && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Reviewed By:</span>
-                    <span>{member.identityVerificationDetails.reviewedBy}</span>
-                  </div>
-                )}
-                <div className="pt-2">
-                  <Link
-                    href={`/admin/verifications/${member.identityVerificationDetails.submissionId}`}
-                    className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#5B46F6]/10 text-[#5B46F6] hover:bg-[#5B46F6]/20 transition"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" /> Inspect Verification
-                  </Link>
-                </div>
+                <a
+                  href={member.identityVerification.nidOrPassportUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5B9891] px-4 py-2 text-xs font-bold text-white hover:bg-[#467A74] transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Open Full Resolution Document
+                </a>
               </div>
             ) : (
-              <div className="text-center py-4 text-xs text-gray-400 space-y-1">
-                <AlertCircle className="w-6 h-6 mx-auto text-gray-300 dark:text-gray-700" />
-                <p>No identity documents submitted.</p>
+              <div className="py-6 text-center text-xs text-gray-400">
+                No NID or Passport file uploaded yet.
               </div>
             )}
           </div>
 
-          {/* Membership Subscription Card */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-              <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                Subscription Plan
-              </h3>
-              <MembershipBadge type={currentMembership} planName={member.membershipPlan} />
+          {/* Verification Audit Trail */}
+          <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-xs space-y-3">
+            <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
+              <FileText className="w-4 h-4 text-[#5B9891]" />
+              <h3 className="text-sm font-bold text-gray-900">Document Access & Status Logs</h3>
             </div>
 
-            <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Current Plan:</span>
-                <span className="font-bold text-gray-900 dark:text-white">
-                  {currentMembership === "PAID" ? "Pro Entrepreneur Tier" : "Free Community Tier"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Billing Rate:</span>
-                <span className="font-mono text-gray-900 dark:text-white">
-                  {currentMembership === "PAID" ? "৳ 1,500 / year" : "৳ 0"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Auto Renewal:</span>
-                <span>{currentMembership === "PAID" ? "Enabled (ZiniPay Tokenized)" : "N/A"}</span>
-              </div>
+            <div className="space-y-2.5 max-h-60 overflow-y-auto">
+              {member.identityVerification?.auditLog &&
+                member.identityVerification.auditLog.length > 0 ? (
+                member.identityVerification.auditLog
+                  .slice()
+                  .reverse()
+                  .map((log, i) => (
+                    <div
+                      key={i}
+                      className="p-2.5 rounded-xl bg-[#FAF8F5] border border-gray-100 text-[11px] space-y-0.5"
+                    >
+                      <p className="font-bold text-gray-800">{log.action}</p>
+                      {log.notes && <p className="text-gray-500">{log.notes}</p>}
+                      <p className="text-[10px] text-gray-400">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                  ))
+              ) : (
+                <p className="text-xs text-gray-400 py-4 text-center">
+                  No audit logs recorded yet.
+                </p>
+              )}
             </div>
-          </div>
-
-          {/* Internal Audit Notes Box */}
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#5B46F6]" />
-                <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                  Internal Admin Notes
-                </h3>
-              </div>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500">
-                {adminNotes.length} logs
-              </span>
-            </div>
-
-            {/* List of notes */}
-            <div className="space-y-3 max-h-60 overflow-y-auto pr-1">
-              {adminNotes.map((note) => (
-                <div
-                  key={note.id}
-                  className="p-3 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-700/60 text-xs space-y-1"
-                >
-                  <div className="flex justify-between items-center text-[11px]">
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">
-                      {note.author}
-                    </span>
-                    <span className="text-gray-400 font-mono">{note.createdAt}</span>
-                  </div>
-                  <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
-                    {note.note}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Add note mini-form */}
-            <form onSubmit={handleAddNote} className="pt-2 space-y-2">
-              <textarea
-                rows={2}
-                value={newNoteText}
-                onChange={(e) => setNewNoteText(e.target.value)}
-                placeholder="Log internal note or moderation flag..."
-                className="w-full text-xs rounded-xl border border-gray-200 dark:border-gray-700 p-2.5 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-hidden focus:border-[#5B46F6] placeholder-gray-400"
-              />
-              <button
-                type="submit"
-                disabled={isAddingNote || !newNoteText.trim()}
-                className="w-full inline-flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-50"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                {isAddingNote ? "Recording..." : "Add Admin Note"}
-              </button>
-            </form>
           </div>
         </div>
       </div>
 
-      {/* Confirmation Action Modal */}
+      {/* Status & Role Modal */}
       {dialogAction && (
         <MemberActionDialog
           isOpen={true}
           onClose={() => setDialogAction(null)}
+          member={member}
           actionType={dialogAction}
-          memberId={member.memberId || member.id}
-          memberName={member.name}
-          memberEmail={member.email}
-          currentStatus={currentStatus}
-          currentMembership={currentMembership}
-          onSuccess={handleActionSuccess}
+          onSuccess={async (msg) => {
+            setToastMessage(msg);
+            setTimeout(() => setToastMessage(null), 4000);
+            await fetchMemberDetails();
+          }}
         />
       )}
     </div>

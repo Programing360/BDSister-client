@@ -3,6 +3,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Bell, ShieldCheck, ShoppingBag, FileText, ChevronRight } from "lucide-react";
+import { notificationService } from "@/lib/services/notification-service";
+import type { AppNotification } from "@/types/notification";
 
 interface NotificationItem {
   id: string;
@@ -45,6 +47,30 @@ export function AdminNotificationsMenu() {
   const [notifications, setNotifications] = useState(SAMPLE_NOTIFICATIONS);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    let isMounted = true;
+    notificationService
+      .getNotifications()
+      .then((data) => {
+        if (isMounted && data && data.length > 0) {
+          const mapped = data.map((n) => ({
+            id: n.id,
+            title: n.title,
+            description: n.message,
+            timestamp: new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            unread: !n.read,
+            type: (n.type.toLowerCase() === "order" ? "order" : n.type.toLowerCase() === "verification" ? "verification" : "business") as "verification" | "order" | "business",
+          }));
+          setNotifications(mapped);
+        }
+      })
+      .catch(() => { });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const unreadCount = notifications.filter((n) => n.unread).length;
 
   useEffect(() => {
@@ -66,7 +92,10 @@ export function AdminNotificationsMenu() {
     };
   }, []);
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+    } catch { }
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
   };
 
@@ -109,18 +138,16 @@ export function AdminNotificationsMenu() {
             {notifications.map((item) => (
               <div
                 key={item.id}
-                className={`flex items-start gap-3 p-2.5 rounded-xl transition ${
-                  item.unread ? "bg-purple-50/50" : "hover:bg-gray-50"
-                }`}
+                className={`flex items-start gap-3 p-2.5 rounded-xl transition ${item.unread ? "bg-purple-50/50" : "hover:bg-gray-50"
+                  }`}
               >
                 <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs ${
-                    item.type === "verification"
+                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs ${item.type === "verification"
                       ? "bg-amber-100 text-amber-700"
                       : item.type === "order"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-purple-100 text-[#5B46F6]"
-                  }`}
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-purple-100 text-[#5B46F6]"
+                    }`}
                 >
                   {item.type === "verification" ? (
                     <ShieldCheck className="h-4 w-4" />

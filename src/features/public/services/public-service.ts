@@ -18,6 +18,8 @@ import type {
   Testimonial,
   FaqItem,
 } from "@/types/public";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 // Normalize helpers so all components get uniform fields
 function normalizeBusiness(b: Business): Business {
@@ -77,56 +79,44 @@ function normalizeTeamMember(m: TeamMember): TeamMember {
   };
 }
 
-// Fast timeout helper for build time and disconnected DB states
-function withTimeout<T>(promise: Promise<T>, ms = 1500): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`Timeout of ${ms}ms exceeded`)), ms)
-    ),
-  ]);
-}
-
 // ----------------------------------------------------------------------
-// Public Data Access Service
+// Public Data Access Service (Pure REST API with resilient fallback)
 // ----------------------------------------------------------------------
 
 export async function getBusinesses(): Promise<Business[]> {
   try {
-    const { getDatabase } = await import("@/lib/db/mongodb");
-    const db = await withTimeout(getDatabase());
-    const realDocs = await withTimeout(
-      db.collection("businesses").find({ status: "APPROVED", visibility: "PUBLIC" }).toArray()
-    );
-    if (realDocs && realDocs.length > 0) {
-      const realNormalized: Business[] = realDocs.map((doc: any) => ({
-        id: doc.id,
+    const res = await apiClient.get<any>(API_ENDPOINTS.business.list);
+    const apiBusinesses = res.data?.businesses || res.data?.data || (Array.isArray(res.data) ? res.data : null);
+    if (apiBusinesses && Array.isArray(apiBusinesses) && apiBusinesses.length > 0) {
+      const normalizedApi: Business[] = apiBusinesses.map((doc: any) => ({
+        id: doc.id || doc._id,
         slug: doc.slug,
         name: doc.name,
-        tagline: doc.shortDescription,
-        description: doc.fullDescription || doc.shortDescription,
+        tagline: doc.shortDescription || doc.tagline,
+        description: doc.fullDescription || doc.shortDescription || doc.description,
         category: doc.category,
         location: `${doc.location?.city || ""}, ${doc.location?.division || ""}`,
         district: doc.location?.district,
         logo: doc.logo,
         coverImage: doc.coverImage,
-        isVerified: doc.verificationStatus === "VERIFIED",
-        verified: doc.verificationStatus === "VERIFIED",
+        isVerified: doc.verificationStatus === "VERIFIED" || doc.isVerified,
+        verified: doc.verificationStatus === "VERIFIED" || doc.isVerified,
         ownerName: doc.ownerName || "BDSisters Entrepreneur",
-        founder: doc.ownerName,
-        rating: 5.0,
-        reviewCount: 0,
-        contactEmail: doc.contact?.email,
-        phone: doc.contact?.phone,
-        website: doc.contact?.website,
-        tags: [doc.category, doc.businessType].filter(Boolean),
-        establishedYear: doc.yearEstablished,
+        founder: doc.ownerName || doc.founder,
+        rating: doc.rating || 5.0,
+        reviewCount: doc.reviewCount || doc.reviewsCount || 0,
+        contactEmail: doc.contact?.email || doc.contactEmail,
+        phone: doc.contact?.phone || doc.phone,
+        website: doc.contact?.website || doc.website,
+        tags: Array.isArray(doc.tags) ? doc.tags : [doc.category, doc.businessType].filter(Boolean),
+        establishedYear: doc.yearEstablished || doc.establishedYear,
       }));
-      return [...realNormalized, ...MOCK_BUSINESSES.map(normalizeBusiness)];
+      return normalizedApi;
     }
   } catch {
-    // fallback
+    // API not active or build time offline
   }
+
   return MOCK_BUSINESSES.map(normalizeBusiness);
 }
 
@@ -137,38 +127,35 @@ export async function getFeaturedBusinesses(): Promise<Business[]> {
 
 export async function getBusinessBySlug(slug: string): Promise<Business | null> {
   try {
-    const { getDatabase } = await import("@/lib/db/mongodb");
-    const db = await withTimeout(getDatabase());
-    const doc: any = await withTimeout(
-      db.collection("businesses").findOne({ slug })
-    );
-    if (doc) {
+    const res = await apiClient.get<any>(API_ENDPOINTS.business.detail(slug));
+    const doc = res.data?.business || res.data?.data || res.data;
+    if (doc && doc.name) {
       return normalizeBusiness({
-        id: doc.id,
+        id: doc.id || doc._id,
         slug: doc.slug,
         name: doc.name,
-        tagline: doc.shortDescription,
-        description: doc.fullDescription || doc.shortDescription,
+        tagline: doc.shortDescription || doc.tagline,
+        description: doc.fullDescription || doc.shortDescription || doc.description,
         category: doc.category,
         location: `${doc.location?.city || ""}, ${doc.location?.division || ""}`,
         district: doc.location?.district,
         logo: doc.logo,
         coverImage: doc.coverImage,
-        isVerified: doc.verificationStatus === "VERIFIED",
-        verified: doc.verificationStatus === "VERIFIED",
+        isVerified: doc.verificationStatus === "VERIFIED" || doc.isVerified,
+        verified: doc.verificationStatus === "VERIFIED" || doc.isVerified,
         ownerName: doc.ownerName || "BDSisters Entrepreneur",
-        founder: doc.ownerName,
-        rating: 5.0,
-        reviewCount: 0,
-        contactEmail: doc.contact?.email,
-        phone: doc.contact?.phone,
-        website: doc.contact?.website,
-        tags: [doc.category, doc.businessType].filter(Boolean),
-        establishedYear: doc.yearEstablished,
+        founder: doc.ownerName || doc.founder,
+        rating: doc.rating || 5.0,
+        reviewCount: doc.reviewCount || doc.reviewsCount || 0,
+        contactEmail: doc.contact?.email || doc.contactEmail,
+        phone: doc.contact?.phone || doc.phone,
+        website: doc.contact?.website || doc.website,
+        tags: Array.isArray(doc.tags) ? doc.tags : [doc.category, doc.businessType].filter(Boolean),
+        establishedYear: doc.yearEstablished || doc.establishedYear,
       });
     }
   } catch {
-    // fallback
+    // API not active, check fallback
   }
 
   const item = MOCK_BUSINESSES.find((b) => b.slug === slug);
@@ -188,73 +175,115 @@ export async function getBusinessLocations(): Promise<string[]> {
 // --- Products ---
 export async function getProducts(): Promise<Product[]> {
   try {
-    const { getDatabase } = await import("@/lib/db/mongodb");
-    const db = await withTimeout(getDatabase());
-    const realDocs = await withTimeout(
-      db
-        .collection("products")
-        .find({ status: "ACTIVE", visibility: "PUBLIC" })
-        .toArray()
-    );
+    const res = await apiClient.get<any>(API_ENDPOINTS.ecommerce.products);
+    const apiProducts = res.data?.products || res.data?.data || (Array.isArray(res.data) ? res.data : null);
+    if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0) {
+      const normalizedApi: Product[] = apiProducts.map((doc: any) => {
+        const regularPrice = doc.pricing?.regularPrice || doc.originalPrice || doc.price || 0;
+        const salePrice = doc.pricing?.salePrice || doc.price || regularPrice;
+        const discountPercent = doc.pricing?.discountPercent || (regularPrice > salePrice ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0);
+        const isWholesale = doc.wholesaleEligible || (doc.inventory?.quantity >= 10) || doc.tags?.includes("wholesale");
 
-    if (realDocs && realDocs.length > 0) {
-      const realNormalized: Product[] = realDocs.map((doc: any) => ({
-        id: doc.id,
-        slug: doc.slug,
-        name: doc.name,
-        description: doc.shortDescription || doc.description,
-        price: doc.pricing?.salePrice || doc.pricing?.regularPrice || 0,
-        originalPrice: doc.pricing?.salePrice ? doc.pricing?.regularPrice : undefined,
-        currency: "BDT",
-        category: doc.category,
-        sellerName: doc.businessName,
-        businessName: doc.businessName,
-        sellerSlug: doc.businessSlug,
-        images: doc.images?.map((i: any) => i.url) || [doc.primaryImage],
-        inStock: doc.inventory?.trackInventory === false ? true : (doc.inventory?.quantity || 0) > 0,
-        stockCount: doc.inventory?.quantity || 0,
-        tags: doc.tags || [],
-        rating: doc.rating || 5.0,
-        reviewsCount: doc.reviewsCount || 0,
-        featured: doc.featured || false,
-      }));
-      return [...realNormalized, ...MOCK_PRODUCTS.map(normalizeProduct)];
+        return {
+          id: doc.id || doc._id,
+          slug: doc.slug,
+          name: doc.name,
+          description: doc.shortDescription || doc.description,
+          price: salePrice,
+          originalPrice: regularPrice > salePrice ? regularPrice : undefined,
+          discountPercent,
+          wholesaleEligible: Boolean(isWholesale),
+          currency: "BDT",
+          category: doc.category,
+          sellerName: doc.business?.name || doc.businessName || doc.sellerName,
+          businessName: doc.business?.name || doc.businessName,
+          sellerSlug: doc.business?.slug || doc.businessSlug,
+          images: doc.images?.map((i: any) => (typeof i === "string" ? i : i.url)) || [doc.primaryImage],
+          inStock: doc.inventory?.inStock ?? (doc.inventory?.quantity ? doc.inventory.quantity > 0 : true),
+          stockCount: doc.inventory?.quantity || doc.inventory?.availableQuantity || 0,
+          tags: doc.tags || [],
+          rating: doc.rating || 5.0,
+          reviewsCount: doc.reviewsCount || 0,
+          featured: doc.featured || false,
+        };
+      });
+      return normalizedApi;
     }
   } catch {
-    // Fallback on DB disconnect
+    // Fallback on API disconnect
   }
+
   return MOCK_PRODUCTS.map(normalizeProduct);
 }
 
 export async function getFeaturedProducts(): Promise<Product[]> {
+  try {
+    const res = await apiClient.get<any>(API_ENDPOINTS.ecommerce.products, {
+      params: { featured: true, limit: 4 },
+    });
+    const apiProducts = res.data?.products || res.data?.data;
+    if (apiProducts && Array.isArray(apiProducts) && apiProducts.length > 0) {
+      return apiProducts.slice(0, 4).map((doc: any) => {
+        const regularPrice = doc.pricing?.regularPrice || doc.originalPrice || doc.price || 0;
+        const salePrice = doc.pricing?.salePrice || doc.price || regularPrice;
+        return {
+          id: doc.id || doc._id,
+          slug: doc.slug,
+          name: doc.name,
+          description: doc.shortDescription || doc.description,
+          price: salePrice,
+          originalPrice: regularPrice > salePrice ? regularPrice : undefined,
+          discountPercent: doc.pricing?.discountPercent,
+          wholesaleEligible: Boolean(doc.wholesaleEligible),
+          currency: "BDT",
+          category: doc.category,
+          sellerName: doc.business?.name || doc.businessName || doc.sellerName,
+          businessName: doc.business?.name || doc.businessName,
+          sellerSlug: doc.business?.slug || doc.businessSlug,
+          images: doc.images?.map((i: any) => (typeof i === "string" ? i : i.url)) || [doc.primaryImage],
+          inStock: true,
+          stockCount: 10,
+          tags: doc.tags || [],
+          rating: doc.rating || 5.0,
+          reviewsCount: doc.reviewsCount || 0,
+          featured: true,
+        };
+      });
+    }
+  } catch {
+    // Fallback
+  }
   const all = await getProducts();
   return all.slice(0, 4);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
   try {
-    const { getDatabase } = await import("@/lib/db/mongodb");
-    const db = await withTimeout(getDatabase());
-    const doc: any = await withTimeout(
-      db.collection("products").findOne({ slug })
-    );
+    const res = await apiClient.get<any>(API_ENDPOINTS.ecommerce.productDetail(slug));
+    const doc = res.data?.product || res.data?.data || res.data;
+    if (doc && doc.name) {
+      const regularPrice = doc.pricing?.regularPrice || doc.originalPrice || doc.price || 0;
+      const salePrice = doc.pricing?.salePrice || doc.price || regularPrice;
+      const discountPercent = doc.pricing?.discountPercent || (regularPrice > salePrice ? Math.round(((regularPrice - salePrice) / regularPrice) * 100) : 0);
+      const isWholesale = doc.wholesaleEligible || (doc.inventory?.quantity >= 10) || doc.tags?.includes("wholesale");
 
-    if (doc) {
       return normalizeProduct({
-        id: doc.id,
+        id: doc.id || doc._id,
         slug: doc.slug,
         name: doc.name,
-        description: doc.description || doc.shortDescription,
-        price: doc.pricing?.salePrice || doc.pricing?.regularPrice || 0,
-        originalPrice: doc.pricing?.salePrice ? doc.pricing?.regularPrice : undefined,
+        description: doc.fullDescription || doc.description || doc.shortDescription,
+        price: salePrice,
+        originalPrice: regularPrice > salePrice ? regularPrice : undefined,
+        discountPercent,
+        wholesaleEligible: Boolean(isWholesale),
         currency: "BDT",
         category: doc.category,
-        sellerName: doc.businessName,
-        businessName: doc.businessName,
-        sellerSlug: doc.businessSlug,
-        images: doc.images?.map((i: any) => i.url) || [doc.primaryImage],
-        inStock: doc.inventory?.trackInventory === false ? true : (doc.inventory?.quantity || 0) > 0,
-        stockCount: doc.inventory?.quantity || 0,
+        sellerName: doc.business?.name || doc.businessName || doc.sellerName,
+        businessName: doc.business?.name || doc.businessName,
+        sellerSlug: doc.business?.slug || doc.businessSlug,
+        images: doc.images?.map((i: any) => (typeof i === "string" ? i : i.url)) || [doc.primaryImage],
+        inStock: doc.inventory?.inStock ?? (doc.inventory?.quantity ? doc.inventory.quantity > 0 : true),
+        stockCount: doc.inventory?.quantity || doc.inventory?.availableQuantity || 0,
         tags: doc.tags || [],
         rating: doc.rating || 5.0,
         reviewsCount: doc.reviewsCount || 0,
@@ -262,7 +291,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
       });
     }
   } catch {
-    // Fallback on DB disconnect
+    // API not active
   }
 
   const item = MOCK_PRODUCTS.find((p) => p.slug === slug);
@@ -271,10 +300,9 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
 
 export async function getProductCategories(): Promise<string[]> {
   try {
-    const { getCategories } = await import("@/lib/services/category-service");
-    const dbCats = await getCategories();
-    if (dbCats && dbCats.length > 0) {
-      return dbCats.map((c) => c.name);
+    const res = await apiClient.get<any>("/api/categories");
+    if (res.data?.categories && Array.isArray(res.data.categories)) {
+      return res.data.categories.map((c: any) => c.name || c);
     }
   } catch {
     // Fallback

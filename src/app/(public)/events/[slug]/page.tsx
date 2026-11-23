@@ -5,23 +5,19 @@ import type { Metadata } from "next";
 import { Container } from "@/components/layout/container";
 import { Section } from "@/components/layout/section";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { EventCard } from "@/features/public/events/components/event-card";
+import { EventRsvpAction } from "@/features/public/events/components/event-rsvp-action";
 import { publicService } from "@/features/public/services/public-service";
 import {
   Calendar,
   Clock,
   MapPin,
-  CheckCircle2,
   ShieldCheck,
-  Ticket,
-  Users,
+  
   Video,
   Share2,
   Sparkles,
   ArrowRight,
-  HeartHandshake,
   MessageCircle,
 } from "lucide-react";
 
@@ -309,24 +305,7 @@ export default async function EventDetailPage({
                   </div>
 
                   {/* Primary CTA */}
-                  <div className="space-y-3">
-                    <Link
-                      href={`/register?redirect=/events/${event.slug}`}
-                      className="block w-full"
-                    >
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        className="w-full justify-center gap-2 font-bold text-base py-3.5 shadow-button hover:shadow-card-hover"
-                      >
-                        <Ticket className="h-5 w-5" />
-                        <span>Confirm Your Free RSVP</span>
-                      </Button>
-                    </Link>
-                    <p className="text-[11px] text-center text-text-secondary">
-                      Requires free BDSisters membership to verify identity.
-                    </p>
-                  </div>
+                  <EventRsvpAction event={event} />
 
                   {/* Share buttons */}
                   <div className="pt-4 border-t border-border/80">

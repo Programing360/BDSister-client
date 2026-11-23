@@ -134,8 +134,9 @@ export function CheckoutView() {
       }
 
       // If ZiniPay invoice was generated successfully, redirect user to the hosted payment URL
-      if (json.data?.paymentUrl) {
-        window.location.href = json.data.paymentUrl;
+      const paymentUrl = json.data?.GatewayPageURL || json.data?.paymentUrl;
+      if (paymentUrl) {
+        window.location.href = paymentUrl;
       } else {
         setErrorMessage("Payment gateway URL was not generated. Please try again.");
         setIsSubmitting(false);

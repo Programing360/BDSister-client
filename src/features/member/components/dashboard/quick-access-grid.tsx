@@ -36,7 +36,7 @@ const quickActions: QuickAction[] = [
   {
     title: "Sister Marketplace",
     description: "Discover curated products created by women entrepreneurs in Bangladesh.",
-    href: "/member/marketplace",
+    href: "/marketplace",
     icon: ShoppingBag,
     color: "bg-amber-50 text-amber-600",
   },
@@ -97,9 +97,7 @@ export function QuickAccessGrid() {
                   {action.title}
                 </h3>
 
-                <p className="mt-1 text-xs leading-relaxed text-gray-500">
-                  {action.description}
-                </p>
+                <p className="mt-1 text-xs leading-relaxed text-gray-500">{action.description}</p>
               </div>
 
               <div className="mt-4 flex items-center gap-1.5 text-xs font-bold text-[#5B46F6]">

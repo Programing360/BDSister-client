@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireServerSession } from "@/lib/auth/session";
 import { getBusinessById } from "@/lib/services/business-service";
 import { BusinessVerificationView } from "@/features/business/components";
+import { toPlainObject } from "@/lib/utils/serialize";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -30,5 +31,5 @@ export default async function BusinessVerificationPage({ params }: Props) {
     redirect("/member/business");
   }
 
-  return <BusinessVerificationView business={business} />;
+  return <BusinessVerificationView business={toPlainObject(business)} />;
 }

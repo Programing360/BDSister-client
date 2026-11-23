@@ -1,8 +1,11 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">System Configuration</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import { Metadata } from "next";
+import { SystemSettingsView } from "@/features/admin/system/components/system-settings-view";
+
+export const metadata: Metadata = {
+  title: "System Settings | BDSisters Admin",
+  description: "Global platform parameters, maintenance mode, and registration controls.",
+};
+
+export default function AdminSystemSettingsPage() {
+  return <SystemSettingsView />;
 }

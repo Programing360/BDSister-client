@@ -12,3 +12,7 @@ export * from "./category";
 export * from "./cart";
 export * from "./order";
 export * from "./payment";
+export * from "./forum";
+export * from "./goals";
+export * from "./cms-client";
+export * from "./notification";

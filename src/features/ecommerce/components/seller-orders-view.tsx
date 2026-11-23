@@ -24,6 +24,8 @@ import {
   getPaymentStatusBadge,
   getItemFulfillmentBadge,
 } from "../utils/ecommerce-utils";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 export function SellerOrdersView() {
   const [orders, setOrders] = useState<OrderDocument[]>([]);
@@ -35,13 +37,27 @@ export function SellerOrdersView() {
     async function fetchSellerOrders() {
       setIsLoading(true);
       try {
-        const res = await fetch("/api/member/seller/orders");
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.data)) {
-            setOrders(json.data);
+        let orderList: OrderDocument[] = [];
+        try {
+          const apiRes = await apiClient.get<any>(API_ENDPOINTS.ecommerce.orders);
+          const rawOrders = apiRes.data?.orders || apiRes.data?.data || (Array.isArray(apiRes.data) ? apiRes.data : null);
+          if (rawOrders && Array.isArray(rawOrders) && rawOrders.length > 0) {
+            orderList = rawOrders;
+          }
+        } catch {
+          // Fallback to existing endpoint
+        }
+
+        if (orderList.length === 0) {
+          const res = await fetch("/api/member/seller/orders");
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && Array.isArray(json.data)) {
+              orderList = json.data;
+            }
           }
         }
+        setOrders(orderList);
       } catch (err) {
         console.error("Failed to load seller orders:", err);
       } finally {

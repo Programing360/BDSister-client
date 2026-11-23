@@ -1,17 +1,13 @@
 import React from "react";
 import type { Metadata } from "next";
-import { requireServerSession } from "@/lib/auth/session";
-import { getBusinessesByOwnerId } from "@/lib/services/business-service";
-import { BusinessListView } from "@/features/business/components";
+import { MemberBusinessView } from "@/features/member/components/member-business-view";
 
 export const metadata: Metadata = {
-  title: "My Businesses | BDSisters Member",
-  description: "Manage your registered businesses, accreditation status, and storefronts.",
+  title: "My Business & Brands | BDSisters",
+  description: "Manage your sisterhood business profile, brand roles, and publishing subscription.",
+  robots: { index: false, follow: false },
 };
 
-export default async function MemberBusinessesPage() {
-  const session = await requireServerSession("/member/business");
-  const businesses = await getBusinessesByOwnerId(session.user.id);
-
-  return <BusinessListView businesses={businesses} />;
+export default function MemberBusinessPage() {
+  return <MemberBusinessView />;
 }

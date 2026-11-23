@@ -39,7 +39,7 @@ export function BusinessTableToolbar({
   const hasActiveFilters = search || statusFilter !== "ALL" || verificationFilter !== "ALL" || categoryFilter !== "ALL";
 
   return (
-    <div className="bg-white border border-gray-200/80 rounded-xl p-3.5 shadow-xs space-y-3">
+    <div className="bg-white shadow-sm shadow-gray-400 rounded-xl p-3.5 space-y-3">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Search */}
         <div className="relative flex-1 max-w-md">
@@ -49,7 +49,7 @@ export function BusinessTableToolbar({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by business name, code, owner or city..."
-            className="w-full pl-9 pr-3.5 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#5B46F6]/20 focus:border-[#5B46F6] text-gray-900 placeholder:text-gray-400"
+            className="w-full pl-9 pr-3.5 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-0  text-gray-900 placeholder:text-gray-400"
           />
           {search && (
             <button
@@ -113,7 +113,7 @@ export function BusinessTableToolbar({
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value)}
-          className="px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#5B46F6] text-gray-700"
+          className="px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-0 focus:ring-[#5B46F6] text-gray-700 outline-0"
         >
           <option value="ALL">All Statuses</option>
           <option value="APPROVED">Approved</option>
@@ -128,7 +128,7 @@ export function BusinessTableToolbar({
         <select
           value={verificationFilter}
           onChange={(e) => onVerificationFilterChange(e.target.value)}
-          className="px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#5B46F6] text-gray-700"
+          className="px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-0 focus:ring-[#5B46F6] text-gray-700"
         >
           <option value="ALL">All Verifications</option>
           <option value="VERIFIED">Verified</option>
@@ -142,7 +142,7 @@ export function BusinessTableToolbar({
         <select
           value={categoryFilter}
           onChange={(e) => onCategoryFilterChange(e.target.value)}
-          className="px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#5B46F6] text-gray-700 max-w-xs truncate"
+          className="px-2.5 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-0 focus:ring-[#5B46F6] text-gray-700 max-w-xs truncate"
         >
           <option value="ALL">All Categories</option>
           {INITIAL_BUSINESS_CATEGORIES.map((cat) => (

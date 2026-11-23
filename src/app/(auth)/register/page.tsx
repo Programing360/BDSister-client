@@ -8,7 +8,8 @@ import { Loader2 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Create Free Account",
-  description: "Join BDSisters.org, the premier professional and personal development platform for Bangladeshi women.",
+  description:
+    "Join BDSisters.org, the premier professional and personal development platform for Bangladeshi women.",
 };
 
 export default async function RegisterPage() {

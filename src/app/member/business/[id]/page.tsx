@@ -5,6 +5,7 @@ import { requireServerSession } from "@/lib/auth/session";
 import { getBusinessById } from "@/lib/services/business-service";
 import { getShopByBusinessId } from "@/lib/services/shop-service";
 import { BusinessManagementView } from "@/features/business/components";
+import { toPlainObject } from "@/lib/utils/serialize";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -36,5 +37,5 @@ export default async function BusinessDetailsPage({ params }: Props) {
 
   const shop = await getShopByBusinessId(id);
 
-  return <BusinessManagementView business={business} shop={shop} />;
+  return <BusinessManagementView business={toPlainObject(business)} shop={toPlainObject(shop)} />;
 }

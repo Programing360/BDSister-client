@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Better Auth session validation endpoint
-const AUTH_SESSION_ENDPOINT = "/api/auth/get-session";
-
 // Route prefixes to protect
 const ADMIN_PREFIX = "/admin";
 const MEMBER_PREFIX = "/member";
@@ -12,42 +9,67 @@ const ADMIN_LOGIN = "/admin/login";
 // Auth routes that should redirect authenticated users to their dashboard
 const PUBLIC_AUTH_ROUTES = ["/login", "/register"];
 
-const ADMIN_ROLES = [
-  "SUPER_ADMIN",
-  "ADMIN",
-  "MODERATOR",
-  "FINANCE_ADMIN",
-  "CONTENT_MANAGER",
-  "SUPPORT_AGENT",
-];
+// শুধুমাত্র Admin ও SuperAdmin রোলগুলো (এখান থেকে "member" সরানো হয়েছে)
+const ADMIN_NORMALIZED_SET = new Set([
+  "superadmin",
+  "admin",
+  "moderator",
+  "financeadmin",
+  "contentmanager",
+  "supportagent",
+]);
+
+// Member এবং Admin উভয়েই যেন /member অ্যাক্সেস করতে পারে তার জন্য সেট
+const MEMBER_ACCESS_SET = new Set([
+  "member",
+  "user",
+  ...ADMIN_NORMALIZED_SET,
+]);
+
+function normalizeRole(role?: string | null): string {
+  if (!role) return "";
+  return role.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+}
+
+function isUserAdmin(role?: string | null): boolean {
+  return ADMIN_NORMALIZED_SET.has(normalizeRole(role));
+}
+
+function canAccessMember(role?: string | null): boolean {
+  return MEMBER_ACCESS_SET.has(normalizeRole(role));
+}
 
 /**
- * Lightweight session check via Better Auth's cookie.
- * Full server-side session verification happens in layout/page server components.
- * Middleware acts as an early navigation guard only.
+ * Express JWT কুকি থেকে পেলোড ডিকোড করার হেল্পার
  */
-async function getSessionFromRequest(request: NextRequest): Promise<{
-  user?: { role?: string; status?: string };
-} | null> {
+function getJwtUserFromRequest(request: NextRequest): {
+  id?: string;
+  role?: string;
+  status?: string;
+} | null {
   try {
-    const sessionCookie =
-      request.cookies.get("better-auth.session_token") ??
-      request.cookies.get("__Secure-better-auth.session_token");
+    const token = request.cookies.get("token")?.value ?? request.cookies.get("auth_token")?.value;
 
-    if (!sessionCookie) return null;
+    if (!token) return null;
 
-    // Call Better Auth's session API to validate
-    const sessionUrl = new URL(AUTH_SESSION_ENDPOINT, request.url);
-    const response = await fetch(sessionUrl.toString(), {
-      headers: {
-        cookie: request.headers.get("cookie") ?? "",
-      },
-    });
+    const parts = token.split(".");
+    if (parts.length !== 3 || !parts[1]) return null;
 
-    if (!response.ok) return null;
+    // Base64Url ডিকোড
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(base64)) as {
+      id?: string;
+      role?: string;
+      status?: string;
+      exp?: number;
+    };
 
-    const data = (await response.json()) as { user?: { role?: string; status?: string } } | null;
-    return data;
+    // টোকেনের মেয়াদ শেষ হয়েছে কি না চেক করা
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return null;
+    }
+
+    return payload;
   } catch {
     return null;
   }
@@ -56,12 +78,7 @@ async function getSessionFromRequest(request: NextRequest): Promise<{
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
-  // Skip middleware for static files and internal Next.js assets
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api/auth") ||
-    pathname.includes(".")
-  ) {
+  if (pathname.startsWith("/_next") || pathname.startsWith("/api/auth") || pathname.includes(".")) {
     return NextResponse.next();
   }
 
@@ -70,50 +87,61 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isAdminLoginRoute = pathname === ADMIN_LOGIN;
   const isAuthRoute = PUBLIC_AUTH_ROUTES.includes(pathname);
 
-  // If not a protected route or auth route, let it pass immediately
   if (!isAdminRoute && !isMemberRoute && !isAuthRoute) {
     return NextResponse.next();
   }
 
-  // Allow admin login page without active session check
   if (isAdminLoginRoute) {
     return NextResponse.next();
   }
 
-  const session = await getSessionFromRequest(request);
-  const userRole = session?.user?.role;
+  const user = getJwtUserFromRequest(request);
+  const userRole = user?.role;
+  const hasAdminRole = isUserAdmin(userRole);
+  const hasMemberAccess = canAccessMember(userRole);
 
   // --- Auth routes redirect for already authenticated users ---
   if (isAuthRoute) {
-    if (session?.user) {
-      const destination = userRole && ADMIN_ROLES.includes(userRole) ? "/admin" : "/member";
+    const hasAuthError = request.nextUrl.searchParams.has("error");
+    if (user && userRole && !hasAuthError) {
+      const destination = hasAdminRole ? "/admin" : "/member";
       return NextResponse.redirect(new URL(destination, request.url));
     }
     return NextResponse.next();
   }
 
-  // --- Admin route protection ---
+  // --- Admin route protection (Only Admin / SuperAdmin) ---
   if (isAdminRoute) {
-    if (!session || !userRole) {
+    if (!user || !userRole) {
       const loginUrl = new URL(ADMIN_LOGIN, request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    if (!ADMIN_ROLES.includes(userRole)) {
-      // Authenticated but not an admin — redirect to member dashboard
+    if (!hasAdminRole) {
       return NextResponse.redirect(new URL("/member", request.url));
     }
 
-    return NextResponse.next();
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-pathname", pathname);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
   }
 
-  // --- Member route protection ---
+  // --- Member route protection (Member, User, Admin & SuperAdmin all allowed) ---
   if (isMemberRoute) {
-    if (!session || !userRole) {
+    if (!user || !userRole) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    if (!hasMemberAccess) {
+      return NextResponse.redirect(new URL("/login", request.url));
     }
 
     return NextResponse.next();
@@ -123,10 +151,5 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/member/:path*",
-    "/login",
-    "/register",
-  ],
+  matcher: ["/admin/:path*", "/member/:path*", "/login", "/register"],
 };

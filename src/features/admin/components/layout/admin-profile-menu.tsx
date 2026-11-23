@@ -13,11 +13,11 @@ import {
   ExternalLink,
   Loader2,
 } from "lucide-react";
-import { useSession, signOut } from "@/lib/auth/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 
 export function AdminProfileMenu() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -45,7 +45,7 @@ export function AdminProfileMenu() {
   const handleSignOut = async () => {
     setIsSigningOut(true);
     try {
-      await signOut();
+      await logout();
       router.push("/login");
       router.refresh();
     } catch (err) {
@@ -57,9 +57,9 @@ export function AdminProfileMenu() {
     }
   };
 
-  const adminName = session?.user?.name || "Sister Administrator";
-  const adminEmail = session?.user?.email || "admin@bdsisters.org";
-  const adminRole = (session?.user as { role?: string } | undefined)?.role || "SUPER_ADMIN";
+  const adminName = user?.name || "Sister Administrator";
+  const adminEmail = user?.email || "admin@bdsisters.org";
+  const adminRole = user?.role || "SUPER_ADMIN";
 
   // Derive initials
   const initials = adminName
@@ -112,7 +112,7 @@ export function AdminProfileMenu() {
               <span className="inline-flex items-center rounded-md bg-purple-100 px-2 py-0.5 text-[10px] font-black text-[#5B46F6]">
                 {adminRole}
               </span>
-              {!session?.user && (
+              {!user && (
                 <span className="text-[9px] font-medium text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
                   Dev Mode
                 </span>

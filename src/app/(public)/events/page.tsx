@@ -3,15 +3,7 @@ import { Section } from "@/components/layout/section";
 import { CTASection } from "@/components/shared/cta-section";
 import { EventsView } from "@/features/public/events/components/events-view";
 import { publicService } from "@/features/public/services/public-service";
-import {
-  Calendar,
-  Sparkles,
-  Users,
-  Video,
-  MapPin,
-  ShieldCheck,
-  CheckCircle2,
-} from "lucide-react";
+import { Calendar, Sparkles, Users, Video, MapPin, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export const metadata = {
   title: "Events & Workshops | BDSisters.org",
@@ -43,26 +35,36 @@ export default async function EventsPage() {
             </h1>
 
             <p className="text-base sm:text-lg text-text-secondary leading-relaxed max-w-2xl">
-              From virtual masterclasses with international export mentors to intimate city circles in Dhaka, Chattogram, and Sylhet. Connect, learn, and grow together in a vetted safe environment.
+              From virtual masterclasses with international export mentors to intimate city circles
+              in Dhaka, Chattogram, and Sylhet. Connect, learn, and grow together in a vetted safe
+              environment.
             </p>
 
             {/* Metrics Ribbon */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 w-full max-w-2xl">
               <div className="rounded-2xl border border-border/70 bg-surface/60 p-3.5 backdrop-blur-sm">
                 <span className="text-2xl font-extrabold text-primary block">4,800+</span>
-                <span className="text-[11px] font-semibold text-text-secondary">Sister Participants</span>
+                <span className="text-[11px] font-semibold text-text-secondary">
+                  Sister Participants
+                </span>
               </div>
               <div className="rounded-2xl border border-border/70 bg-surface/60 p-3.5 backdrop-blur-sm">
                 <span className="text-2xl font-extrabold text-text-primary block">52+</span>
-                <span className="text-[11px] font-semibold text-text-secondary">Masterclasses Hosted</span>
+                <span className="text-[11px] font-semibold text-text-secondary">
+                  Masterclasses Hosted
+                </span>
               </div>
               <div className="rounded-2xl border border-border/70 bg-surface/60 p-3.5 backdrop-blur-sm">
                 <span className="text-2xl font-extrabold text-primary block">100%</span>
-                <span className="text-[11px] font-semibold text-text-secondary">Free RSVP Access</span>
+                <span className="text-[11px] font-semibold text-text-secondary">
+                  Free RSVP Access
+                </span>
               </div>
               <div className="rounded-2xl border border-border/70 bg-surface/60 p-3.5 backdrop-blur-sm">
                 <span className="text-2xl font-extrabold text-text-primary block">8</span>
-                <span className="text-[11px] font-semibold text-text-secondary">Divisions Reached</span>
+                <span className="text-[11px] font-semibold text-text-secondary">
+                  Divisions Reached
+                </span>
               </div>
             </div>
           </div>

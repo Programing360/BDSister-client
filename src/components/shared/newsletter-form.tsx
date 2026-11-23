@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify";
 import { Mail, CheckCircle2 } from "lucide-react";
+import { communicationService } from "@/lib/services/communication-service";
 
 export function NewsletterForm() {
   const [email, setEmail] = useState("");
@@ -20,11 +21,15 @@ export function NewsletterForm() {
     }
 
     setIsLoading(true);
-    // Simulate brief network submission
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsLoading(false);
-    setIsSubscribed(true);
-    toast.success("Thank you for subscribing to BDSisters updates!");
+    try {
+      const res = await communicationService.subscribeNewsletter(email);
+      setIsSubscribed(true);
+      toast.success(res.message || "Thank you for subscribing to BDSisters updates!");
+    } catch {
+      toast.error("Subscription could not be processed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isSubscribed) {

@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { ArchiveListView } from "@/features/admin/events/components/archive/archive-list-view";
+import { AdminEventsView } from "@/features/admin/events/components/admin-events-view";
 
 export const metadata: Metadata = {
   title: "Event Media & Archive | BDSisters Admin",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function EventArchivePage() {
-  return <ArchiveListView />;
+  return <AdminEventsView mode="archive" />;
 }

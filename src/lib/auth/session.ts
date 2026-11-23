@@ -1,4 +1,4 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "./auth";
 import type { AuthSession, AuthUser, UserRole } from "@/types/auth";
@@ -12,21 +12,95 @@ export const ADMIN_ROLES: UserRole[] = [
   "SUPPORT_AGENT",
 ];
 
+function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3 || !parts[1]) return null;
+    const decoded = Buffer.from(parts[1], "base64url").toString("utf-8");
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function normalizeUserRole(rawRole?: string): UserRole {
+  const cleaned = (rawRole || "MEMBER").replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+  const roleMap: Record<string, UserRole> = {
+    SUPERADMIN: "SUPER_ADMIN",
+    ADMIN: "ADMIN",
+    MODERATOR: "MODERATOR",
+    FINANCEADMIN: "FINANCE_ADMIN",
+    CONTENTMANAGER: "CONTENT_MANAGER",
+    SUPPORTAGENT: "SUPPORT_AGENT",
+    MEMBER: "MEMBER",
+    USER: "MEMBER",
+  };
+  return roleMap[cleaned] || "MEMBER";
+}
+
 /**
  * Get the current session on the server.
- * Returns null if no active session exists or token is invalid.
+ * Checks Better Auth first, then falls back to Express JWT cookie (`token` / `auth_token`).
  */
 export async function getServerSession(): Promise<AuthSession | null> {
+  // 1. Try Better Auth session
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
     });
 
-    if (!session?.user || !session.session) {
+    if (session?.user && session.session) {
+      return session as unknown as AuthSession;
+    }
+  } catch {
+    // Continue to JWT cookie fallback
+  }
+
+  // 2. Fallback: Decode Express JWT token from cookies
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("token")?.value ?? cookieStore.get("auth_token")?.value;
+
+    if (!token) return null;
+
+    const payload = decodeJwtPayload(token);
+    if (!payload) return null;
+
+    const exp = typeof payload.exp === "number" ? payload.exp : undefined;
+    if (exp && exp * 1000 < Date.now()) {
       return null;
     }
 
-    return session as unknown as AuthSession;
+    const nestedUser = (payload.user as Record<string, unknown> | undefined) ?? {};
+    const id = String(payload.id ?? payload._id ?? payload.sub ?? nestedUser.id ?? "");
+    if (!id) return null;
+
+    const rawRole = String(payload.role ?? nestedUser.role ?? "MEMBER");
+    const role = normalizeUserRole(rawRole);
+    const rawStatus = String(payload.status ?? nestedUser.status ?? "ACTIVE").toUpperCase();
+
+    const user = {
+      id,
+      name: String(payload.name ?? payload.fullName ?? nestedUser.name ?? "Sister Member"),
+      fullName: String(payload.fullName ?? payload.name ?? nestedUser.fullName ?? "Sister Member"),
+      email: String(payload.email ?? nestedUser.email ?? ""),
+      role,
+      status: rawStatus,
+      image: (payload.image ?? payload.profilePicture ?? nestedUser.image ?? null) as string | null,
+      profilePicture: (payload.profilePicture ?? payload.image ?? nestedUser.profilePicture ?? null) as
+        | string
+        | null,
+    } as unknown as AuthUser;
+
+    return {
+      user,
+      session: {
+        id: `jwt_${id}`,
+        userId: id,
+        token,
+        expiresAt: exp ? new Date(exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    } as unknown as AuthSession;
   } catch {
     return null;
   }

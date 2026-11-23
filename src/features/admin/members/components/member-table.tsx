@@ -2,25 +2,17 @@ import React from "react";
 import Link from "next/link";
 import {
   Eye,
-  Edit2,
+  ShieldCheck,
+  UserCog,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck,
   MapPin,
-  Check,
 } from "lucide-react";
-import { AdminMemberDetail } from "../types/admin-member";
-import {
-  AccountStatusBadge,
-  MembershipBadge,
-  IdentityVerificationBadge,
-} from "./member-status-badges";
+import { BackendMember } from "./members-list-view";
+import { MemberActionType } from "./member-action-dialog";
 
 interface MemberTableProps {
-  members: AdminMemberDetail[];
-  selectedIds: string[];
-  onToggleSelect: (id: string) => void;
-  onToggleSelectAll: () => void;
+  members: BackendMember[];
   currentPage: number;
   totalPages: number;
   pageSize: number;
@@ -28,13 +20,11 @@ interface MemberTableProps {
   onPageSizeChange: (size: number) => void;
   totalMembersCount: number;
   isLoading?: boolean;
+  onOpenAction: (member: BackendMember, type: MemberActionType) => void;
 }
 
 export function MemberTable({
   members,
-  selectedIds,
-  onToggleSelect,
-  onToggleSelectAll,
   currentPage,
   totalPages,
   pageSize,
@@ -42,53 +32,62 @@ export function MemberTable({
   onPageSizeChange,
   totalMembersCount,
   isLoading = false,
+  onOpenAction,
 }: MemberTableProps) {
-  const isAllSelected =
-    members.length > 0 && members.every((m) => selectedIds.includes(m.id));
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "Active":
+        return "bg-[#5B9891]/15 text-[#467A74] border-[#5B9891]/30";
+      case "Pending":
+        return "bg-[#F2B55D]/25 text-[#D98408] border-[#F2B55D]/50";
+      case "Rejected":
+      case "Suspended":
+        return "bg-rose-50 text-rose-700 border-rose-200";
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getRoleBadge = (role: string) => {
+    if (role === "SuperAdmin" || role === "Admin") {
+      return "bg-gray-900 text-white border-gray-900";
+    }
+    if (role === "PaidMember") {
+      return "bg-[#F7DFC7] text-[#D98408] border-[#D98408]/30";
+    }
+    return "bg-[#FAF8F5] text-gray-700 border-gray-200";
+  };
 
   return (
-    <div className="rounded-2xl border border-gray-200/80 bg-white shadow-2xs overflow-hidden">
-      {/* Table Container */}
+    <div className="rounded-2xl shadow-sm shadow-gray-400 transition-all duration-200 border-gray-200/80 bg-white overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="bg-gray-50/80 text-[11px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+          <thead className="bg-[#0e1f21] text-[11px] font-bold uppercase tracking-wider text-white border-b border-gray-100">
             <tr>
-              <th className="py-3 px-3.5 w-10 text-center">
-                <input
-                  type="checkbox"
-                  checked={isAllSelected}
-                  onChange={onToggleSelectAll}
-                  aria-label="Select all visible members"
-                  className="rounded border-gray-300 text-[#5B46F6] focus:ring-[#5B46F6]"
-                />
-              </th>
-              <th className="py-3 px-3.5">Member</th>
-              <th className="py-3 px-3.5">Member ID</th>
-              <th className="py-3 px-3.5">Phone Number</th>
-              <th className="py-3 px-3.5 text-center">Membership</th>
-              <th className="py-3 px-3.5 text-center">Account Status</th>
-              <th className="py-3 px-3.5 text-center">Identity Verification</th>
-              <th className="py-3 px-3.5">Joined Date</th>
-              <th className="py-3 px-3.5 text-center">Actions</th>
+              <th className="py-3.5 px-4">Sister Profile</th>
+              <th className="py-3.5 px-4">Referrer</th>
+              <th className="py-3.5 px-4 text-center">Assigned Role</th>
+              <th className="py-3.5 px-4 text-center">Account Status</th>
+              <th className="py-3.5 px-4">Joined Date</th>
+              <th className="py-3.5 px-4 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 font-medium">
             {isLoading ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-xs text-gray-400 animate-pulse">
-                  Loading member directory...
+                <td colSpan={6} className="py-12 text-center text-xs text-gray-400 animate-pulse">
+                  Loading live member records...
                 </td>
               </tr>
             ) : members.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-12 text-center text-xs text-gray-500">
-                  No members found matching your search and filter criteria.
+                <td colSpan={6} className="py-12 text-center text-xs text-gray-500">
+                  No members found matching your search or filter criteria.
                 </td>
               </tr>
             ) : (
               members.map((member) => {
-                const isSelected = selectedIds.includes(member.id);
-                const initials = member.name
+                const initials = (member.fullName || "BD")
                   .split(" ")
                   .map((n) => n[0])
                   .filter(Boolean)
@@ -96,100 +95,97 @@ export function MemberTable({
                   .join("")
                   .toUpperCase();
 
-                return (
-                  <tr
-                    key={member.id}
-                    className={`transition ${
-                      isSelected
-                        ? "bg-purple-50/40"
-                        : "hover:bg-purple-50/20"
-                    }`}
-                  >
-                    {/* Checkbox */}
-                    <td className="py-3 px-3.5 text-center">
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => onToggleSelect(member.id)}
-                        aria-label={`Select ${member.name}`}
-                        className="rounded border-gray-300 text-[#5B46F6] focus:ring-[#5B46F6]"
-                      />
-                    </td>
+                const referrerName =
+                  typeof member.referredBy === "object" && member.referredBy !== null
+                    ? member.referredBy.fullName || member.referredBy.email
+                    : member.referredBy || "Direct / Unspecified";
 
-                    {/* Member Cell */}
-                    <td className="py-3 px-3.5">
+                return (
+                  <tr key={member._id} className="hover:bg-[#F7DFC7]/20 transition">
+                    {/* Member Info */}
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-purple-100 font-bold text-[#5B46F6] text-xs">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#5B9891]/15 font-bold text-[#467A74] text-xs">
                           {initials}
                         </div>
                         <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-gray-900">{member.name}</span>
-                            {member.verificationStatus === "VERIFIED" && (
-                              <ShieldCheck className="h-3.5 w-3.5 text-[#5B46F6]" />
-                            )}
-                          </div>
+                          <p className="font-bold text-gray-900">{member.fullName}</p>
                           <p className="text-[11px] text-gray-500">{member.email}</p>
-                          {member.location?.city && (
-                            <p className="flex items-center gap-0.5 text-[10px] text-gray-400 mt-0.5">
-                              <MapPin className="h-2.5 w-2.5" />
-                              {member.location.city}, {member.location.district}
+                          {(member.district || member.country) && (
+                            <p className="flex items-center gap-1 text-[10px] text-gray-400 mt-0.5">
+                              <MapPin className="h-2.5 w-2.5 text-[#5B9891]" />
+                              {[member.district, member.country].filter(Boolean).join(", ")}
                             </p>
                           )}
                         </div>
                       </div>
                     </td>
 
-                    {/* Member ID */}
-                    <td className="py-3 px-3.5 font-mono text-gray-700 font-bold">
-                      {member.memberId}
+                    {/* Referrer */}
+                    <td className="py-3.5 px-4 text-gray-600 text-[11px]">
+                      {referrerName}
                     </td>
 
-                    {/* Phone */}
-                    <td className="py-3 px-3.5 text-gray-600 font-mono text-[11px]">
-                      {member.phone}
+                    {/* Role */}
+                    <td className="py-3.5 px-4 text-center">
+                      <span
+                        className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${getRoleBadge(
+                          member.role
+                        )}`}
+                      >
+                        {member.role}
+                      </span>
                     </td>
 
-                    {/* Membership Type */}
-                    <td className="py-3 px-3.5 text-center">
-                      <MembershipBadge
-                        type={member.membershipType}
-                        plan={member.membershipPlan}
-                      />
-                    </td>
-
-                    {/* Account Status */}
-                    <td className="py-3 px-3.5 text-center">
-                      <AccountStatusBadge status={member.accountStatus} />
-                    </td>
-
-                    {/* Identity Verification Status */}
-                    <td className="py-3 px-3.5 text-center">
-                      <IdentityVerificationBadge status={member.verificationStatus} />
+                    {/* Status */}
+                    <td className="py-3.5 px-4 text-center">
+                      <span
+                        className={`inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${getStatusBadge(
+                          member.status
+                        )}`}
+                      >
+                        {member.status}
+                      </span>
                     </td>
 
                     {/* Joined Date */}
-                    <td className="py-3 px-3.5 text-gray-500 text-[11px]">
-                      {member.joinedDate}
+                    <td className="py-3.5 px-4 text-gray-500 text-[11px]">
+                      {new Date(member.createdAt).toLocaleDateString("en-BD", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3 px-3.5 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center justify-end gap-1.5">
                         <Link
-                          href={`/admin/members/${member.id}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] font-bold text-gray-700 hover:border-[#5B46F6] hover:text-[#5B46F6] transition shadow-2xs"
+                          href={`/admin/members/${member._id}`}
+                          title="Inspect profile & NID/Passport"
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#5B9891]/30 bg-white px-2.5 py-1.5 text-[11px] font-bold text-[#467A74] hover:bg-[#5B9891] hover:text-white transition"
                         >
                           <Eye className="h-3 w-3" />
-                          <span>View</span>
+                          <span>Inspect ID</span>
                         </Link>
-                        <Link
-                          href={`/admin/members/${member.id}/edit`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] font-bold text-gray-700 hover:border-[#5B46F6] hover:text-[#5B46F6] transition shadow-2xs"
+
+                        <button
+                          type="button"
+                          onClick={() => onOpenAction(member, "UPDATE_STATUS")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-[#D98408]/30 bg-[#F7DFC7]/50 px-2.5 py-1.5 text-[11px] font-bold text-[#D98408] hover:bg-[#D98408] hover:text-white transition"
                         >
-                          <Edit2 className="h-3 w-3" />
-                          <span>Edit</span>
-                        </Link>
+                          <ShieldCheck className="h-3 w-3" />
+                          <span>Status</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => onOpenAction(member, "UPDATE_ROLE")}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-gray-700 hover:border-gray-900 transition"
+                        >
+                          <UserCog className="h-3 w-3" />
+                          <span>Role</span>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -201,44 +197,41 @@ export function MemberTable({
       </div>
 
       {/* Pagination Footer */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-gray-100 p-4 bg-gray-50/50 text-xs text-gray-500">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-gray-100 p-4 bg-[#FAF8F5] text-xs text-gray-500">
         <div className="flex items-center gap-2">
-          <span>Rows per page:</span>
+          <span>Rows:</span>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 focus:outline-hidden"
+            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700"
           >
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
           </select>
-          <span className="text-gray-400">•</span>
+          <span>•</span>
           <span>
-            Total: <strong>{totalMembersCount}</strong> registered sisters
+            Total: <strong>{totalMembersCount}</strong> members
           </span>
         </div>
 
-        {/* Page Switcher */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-gray-600 mr-2">
-            Page {currentPage} of {Math.max(totalPages, 1)}
+          <span className="mr-2">
+            Page {currentPage} of {totalPages}
           </span>
-
           <button
             type="button"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage <= 1}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-[#5B46F6] hover:text-[#5B46F6] disabled:opacity-40 transition shadow-2xs"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-[#5B9891] hover:text-[#5B9891] disabled:opacity-40"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-
           <button
             type="button"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-[#5B46F6] hover:text-[#5B46F6] disabled:opacity-40 transition shadow-2xs"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-[#5B9891] hover:text-[#5B9891] disabled:opacity-40"
           >
             <ChevronRight className="h-4 w-4" />
           </button>

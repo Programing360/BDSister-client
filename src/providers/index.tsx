@@ -4,6 +4,7 @@ import { HeroUIAppProvider } from "./heroui-provider";
 import { QueryProvider } from "./query-provider";
 import { ToastProvider } from "./toast-provider";
 import { AosProvider } from "./aos-provider";
+import { HoverTooltipProvider } from "./hover-tooltip-provider";
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -19,8 +20,10 @@ export function AppProviders({ children }: AppProvidersProps) {
     <QueryProvider>
       <HeroUIAppProvider>
         <AosProvider>
-          {children}
-          <ToastProvider />
+          <HoverTooltipProvider>
+            {children}
+            <ToastProvider />
+          </HoverTooltipProvider>
         </AosProvider>
       </HeroUIAppProvider>
     </QueryProvider>

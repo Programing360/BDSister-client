@@ -1,8 +1,13 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Billing & Payments</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import React from "react";
+import type { Metadata } from "next";
+import { MemberBillingView } from "@/features/member/components/member-billing-view";
+
+export const metadata: Metadata = {
+    title: "Billing & Invoices | BDSisters",
+    description: "View your ZiniPay membership and business publishing payment receipts.",
+    robots: { index: false, follow: false },
+};
+
+export default function MemberBillingPage() {
+    return <MemberBillingView />;
 }

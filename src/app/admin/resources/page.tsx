@@ -1,5 +1,6 @@
 import { Metadata } from "next";
-import { ResourcesOverviewView } from "@/features/admin/resources/components/overview/resources-overview-view";
+
+import { AdminResourcesView } from "@/features/admin/resources/components/admin-resources-view";
 
 export const metadata: Metadata = {
   title: "Resource Library & Learning Management | BDSisters Admin",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminResourcesPage() {
-  return <ResourcesOverviewView />;
+  return <AdminResourcesView />;
 }

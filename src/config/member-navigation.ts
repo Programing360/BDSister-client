@@ -1,191 +1,65 @@
-import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
-  User,
-  ShieldCheck,
-  Sparkles,
-  Settings,
-  Briefcase,
+  UserCircle,
+  Compass,
+  Building2,
   Store,
-  ShoppingBag,
-  Package,
-  Boxes,
-  Heart,
-  Users,
   MessageSquare,
   Calendar,
-  Compass,
-  GraduationCap,
   BookOpen,
-  FolderArchive,
-  CreditCard,
+  ShoppingBag,
   Receipt,
-  Bell,
-  HelpCircle,
+  UserPlus,
+  type LucideIcon,
 } from "lucide-react";
 
 export interface MemberNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
-  badge?: string | number;
-  isPlanned?: boolean;
+  badge?: string;
 }
 
 export interface MemberNavGroup {
+  id: string;
   label: string;
   items: MemberNavItem[];
 }
 
 export const memberNavGroups: MemberNavGroup[] = [
   {
-    label: "Overview",
+    id: "personal-growth",
+    label: "Personal & Growth",
     items: [
-      {
-        label: "Dashboard",
-        href: "/member",
-        icon: LayoutDashboard,
-      },
+      { label: "Member Overview", href: "/member", icon: LayoutDashboard },
+      { label: "My Profile & ID", href: "/member/profile", icon: UserCircle },
+      { label: "Discover Yourself", href: "/member/discover", icon: Compass },
     ],
   },
   {
-    label: "My Account",
+    id: "enterprise-commerce",
+    label: "Enterprise & Shop",
     items: [
-      {
-        label: "My Profile",
-        href: "/member/profile",
-        icon: User,
-      },
-      {
-        label: "Profile Verification",
-        href: "/member/profile/verification",
-        icon: ShieldCheck,
-      },
-      {
-        label: "Skills & Interests",
-        href: "/member/skills",
-        icon: Sparkles,
-      },
-      {
-        label: "Account Settings",
-        href: "/member/settings",
-        icon: Settings,
-      },
+      { label: "My Business & Brands", href: "/member/business", icon: Building2 },
+      { label: "Seller Center", href: "/member/seller", icon: Store, badge: "Pro" },
+      { label: "My Orders & Reviews", href: "/member/orders", icon: ShoppingBag },
     ],
   },
   {
-    label: "Business & Commerce",
+    id: "sisterhood-network",
+    label: "Sisterhood Network",
     items: [
-      {
-        label: "My Business",
-        href: "/member/business",
-        icon: Briefcase,
-      },
-      {
-        label: "My Shop",
-        href: "/member/shop",
-        icon: Store,
-      },
-      {
-        label: "My Products",
-        href: "/member/products",
-        icon: Package,
-      },
-      {
-        label: "Inventory",
-        href: "/member/products/inventory",
-        icon: Boxes,
-      },
-      {
-        label: "Marketplace",
-        href: "/member/marketplace",
-        icon: ShoppingBag,
-      },
-      {
-        label: "My Orders",
-        href: "/member/orders",
-        icon: Package,
-      },
-      {
-        label: "Merchant Orders",
-        href: "/member/seller/orders",
-        icon: Receipt,
-      },
-      {
-        label: "Saved Wishlist",
-        href: "/member/wishlist",
-        icon: Heart,
-      },
+      { label: "Community Forums", href: "/member/community", icon: MessageSquare },
+      { label: "Events & Tickets", href: "/member/events", icon: Calendar },
+      { label: "Resource Library", href: "/member/resources", icon: BookOpen },
     ],
   },
   {
-    label: "Community",
+    id: "account-referrals",
+    label: "Account & Referrals",
     items: [
-      {
-        label: "Community Feed",
-        href: "/member/community",
-        icon: Users,
-      },
-      {
-        label: "Direct Messages",
-        href: "/member/messages",
-        icon: MessageSquare,
-      },
-      {
-        label: "Sisterhood Events",
-        href: "/member/events",
-        icon: Calendar,
-      },
-      {
-        label: "Job Opportunities",
-        href: "/member/jobs",
-        icon: Compass,
-      },
-    ],
-  },
-  {
-    label: "Learning & Growth",
-    items: [
-      {
-        label: "Learning Hub",
-        href: "/member/learning",
-        icon: GraduationCap,
-      },
-      {
-        label: "My Courses",
-        href: "/member/courses",
-        icon: BookOpen,
-      },
-      {
-        label: "Knowledge Resources",
-        href: "/resources",
-        icon: FolderArchive,
-      },
-    ],
-  },
-  {
-    label: "Account & Support",
-    items: [
-      {
-        label: "Membership Tier",
-        href: "/member/membership",
-        icon: CreditCard,
-      },
-      {
-        label: "Billing & Invoices",
-        href: "/member/billing",
-        icon: Receipt,
-      },
-      {
-        label: "Notifications",
-        href: "/member/notifications",
-        icon: Bell,
-      },
-      {
-        label: "Help & Support",
-        href: "/member/support",
-        icon: HelpCircle,
-      },
+      { label: "Refer a Sister", href: "/member/referrals", icon: UserPlus },
+      { label: "Billing & Invoices", href: "/member/billing", icon: Receipt },
     ],
   },
 ];

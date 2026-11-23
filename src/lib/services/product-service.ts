@@ -16,8 +16,8 @@ import {
   calculateInventoryStatus,
   filterProductForPublic,
 } from "@/features/product/utils/product-utils";
-import { getBusinessById } from "@/lib/services/business-service";
-import { getShopByBusinessId } from "@/lib/services/shop-service";
+import { findBusinessById as getBusinessById } from "@/lib/db/repositories/business-repository";
+import { findShopByBusinessId as getShopByBusinessId } from "@/lib/db/repositories/shop-repository";
 
 const COLLECTION_NAME = "products";
 

@@ -1,6 +1,9 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "@/lib/auth/session";
-import { getBusinessesByOwnerId, createBusiness } from "@/lib/services/business-service";
+import {
+  findBusinessesByOwnerId as getBusinessesByOwnerId,
+  insertBusiness as createBusiness,
+} from "@/lib/db/repositories/business-repository";
 import { businessRegistrationSchema } from "@/lib/validations/business";
 import {
   successResponse,

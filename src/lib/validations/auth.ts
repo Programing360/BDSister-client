@@ -34,6 +34,8 @@ export const registerSchema = z
       .trim()
       .min(3, "Referral code is required (min 3 characters)")
       .max(30, "Referral code cannot exceed 30 characters"),
+    docType: z.enum(["NID", "PASSPORT", "ACADEMIC"]).optional(),
+    idNumber: z.string().trim().optional(),
     acceptTerms: z.boolean().refine((val) => val === true, {
       message: "You must accept the Terms and Conditions",
     }),

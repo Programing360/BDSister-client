@@ -1,257 +1,191 @@
 import Link from "next/link";
+
 import { NewsletterForm } from "@/components/shared/newsletter-form";
-import { Heart, Sparkles, ShieldCheck, Mail, Phone, MapPin, Globe } from "lucide-react";
+
+import { Heart, Sparkles, ShieldCheck, MapPin } from "lucide-react";
 
 export function PublicFooter() {
   const year = new Date().getFullYear();
 
+  const sections = [
+    {
+      title: "Organization",
+      links: [
+        { label: "About BDSisters", href: "/about" },
+        { label: "Muhsina Organization", href: "/about/muhsina" },
+        { label: "Mission & 2030 Vision", href: "/about/mission-vision" },
+        { label: "Executive Leadership Team", href: "/about/our-team" },
+      ],
+    },
+    {
+      title: "Ecosystem",
+      links: [
+        { label: "Community Circles", href: "/community" },
+        { label: "Women-Led Businesses", href: "/businesses" },
+        { label: "Artisan Marketplace", href: "/marketplace" },
+        { label: "Skill & Career Academy", href: "/learning" },
+      ],
+    },
+    {
+      title: "Resources & Events",
+      links: [
+        { label: "Upcoming Workshops", href: "/events" },
+        { label: "Legal & Business Toolkits", href: "/resources" },
+        { label: "Frequently Asked Questions", href: "/faq" },
+        { label: "Help & Support Desk", href: "/contact" },
+      ],
+    },
+    {
+      title: "Trust & Governance",
+      links: [
+        { label: "Privacy Policy & Ethics", href: "/privacy-policy" },
+        { label: "Terms & Community Charter", href: "/terms" },
+        { label: "Safe Space Code of Conduct", href: "/community" },
+      ],
+    },
+  ];
+
+  const linkClass =
+    "text-sm text-white/65 transition-all duration-200 hover:translate-x-1 hover:text-white";
+
   return (
-    <footer className="border-t border-border/80 bg-white pt-16 pb-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Top Section: Brand + Newsletter */}
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 pb-14 border-b border-border/80">
-          <div className="lg:col-span-5 space-y-5">
+    <footer className="relative isolate overflow-hidden bg-gradient-to-br from-[#080D2B] via-[#17134A] to-[#292078] text-white">
+      {/* Background Decorations */}
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-[#5B46F6]/20 blur-[110px]" />
+        <div className="absolute -right-32 top-20 h-96 w-96 rounded-full bg-[#5B46F6]/25 blur-[120px]" />
+        <div className="absolute bottom-0 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#5B46F6]/15 blur-[100px]" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 pb-8 pt-16 sm:px-6 lg:px-8">
+        {/* Top Section */}
+        <div className="grid grid-cols-1 gap-12 border-b border-white/10 pb-14 lg:grid-cols-12">
+          {/* Brand */}
+          <div className="space-y-6 lg:col-span-5">
             <Link href="/" className="inline-flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-heading-accent text-white font-black text-lg shadow-soft">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#5B46F6] to-[#3925C9] text-lg font-black text-white shadow-lg shadow-[#5B46F6]/30">
                 BD
               </div>
+
               <div className="flex flex-col">
-                <span className="text-xl font-extrabold tracking-tight text-text-primary">
-                  BDSisters<span className="text-primary">.org</span>
+                <span className="text-2xl font-extrabold tracking-tight text-white">
+                  BDSisters
+                  <span className="text-[#5B46F6]">.org</span>
                 </span>
-                <span className="text-[10px] uppercase tracking-wider text-text-secondary font-medium">
+
+                <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/55">
                   Empowering Bangladeshi Women
                 </span>
               </div>
             </Link>
 
-            <p className="text-xs sm:text-sm text-text-secondary leading-relaxed max-w-md">
-              A premier community, professional networking, personal development,
-              and ethical marketplace platform dedicated to uplifting and connecting
-              Bangladeshi women across the nation and the global diaspora.
+            <p className="max-w-md text-sm leading-7 text-white/65">
+              A premier community, professional networking, personal development, and ethical
+              marketplace platform dedicated to uplifting and connecting Bangladeshi women across
+              the nation and the global diaspora.
             </p>
 
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 max-w-md">
-              <div className="flex items-center gap-2 text-xs text-text-primary font-bold">
-                <ShieldCheck className="h-4 w-4 text-primary" />
+            {/* Organization Card */}
+            <div className="max-w-md rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-md">
+              <div className="flex items-center gap-2 text-sm font-bold text-white">
+                <ShieldCheck className="h-5 w-5 text-[#5B46F6]" />
                 <span>Non-Profit Community Initiative</span>
               </div>
-              <p className="text-[11px] text-text-secondary mt-1">
+
+              <p className="mt-2 text-xs leading-6 text-white/60">
                 Proudly chartered and supported by{" "}
                 <Link
                   href="/about/muhsina"
-                  className="font-bold text-primary hover:underline"
+                  className="font-bold text-[#9B8EFF] transition-colors hover:text-white"
                 >
                   Muhsina Organization
                 </Link>{" "}
                 for affirmative social and economic impact.
               </p>
             </div>
+
+            {/* Location */}
+            <div className="flex items-center gap-2 text-xs text-white/50">
+              <MapPin className="h-4 w-4 text-[#9B8EFF]" />
+              <span>Dhaka • Chattogram • Sylhet</span>
+            </div>
           </div>
 
-          <div className="lg:col-span-7 flex flex-col justify-center">
-            <div className="rounded-3xl bg-gradient-to-br from-white via-surface to-primary/5 p-6 sm:p-8 border border-border/80 shadow-soft">
-              <div className="flex items-center gap-2 mb-1 text-primary">
-                <Sparkles className="h-4 w-4" />
-                <span className="text-xs font-bold uppercase tracking-wider">
-                  Weekly Digest
-                </span>
+          {/* Newsletter */}
+          <div className="flex flex-col justify-center lg:col-span-7">
+            <div className="rounded-3xl border border-white/15 bg-white/[0.07] p-6 shadow-2xl shadow-black/10 backdrop-blur-xl sm:p-8">
+              <div className="mb-3 flex items-center gap-2 text-[#A99EFF]">
+                <Sparkles className="h-5 w-5" />
+                <span className="text-xs font-bold uppercase tracking-[0.16em]">Weekly Digest</span>
               </div>
-              <h3 className="text-lg font-bold text-text-primary">
+
+              <h3 className="text-xl font-bold text-white sm:text-2xl">
                 Stay Connected with the Sisterhood
               </h3>
-              <p className="mt-1 text-xs sm:text-sm text-text-secondary mb-5 leading-relaxed">
-                Receive curated entrepreneur spotlights, upcoming masterclasses, export grants, and community stories directly in your inbox every Thursday.
+
+              <p className="mb-6 mt-2 max-w-xl text-sm leading-6 text-white/65">
+                Receive curated entrepreneur spotlights, upcoming masterclasses, export grants, and
+                community stories directly in your inbox every Thursday.
               </p>
+
               <NewsletterForm />
             </div>
           </div>
         </div>
 
-        {/* Links Navigation Grid */}
-        <div className="grid grid-cols-2 gap-8 py-12 sm:grid-cols-4">
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary border-l-2 border-primary pl-2.5">
-              Organization
-            </h4>
-            <ul className="mt-4 space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link
-                  href="/about"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  About BDSisters
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/muhsina"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Muhsina Organization
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/mission-vision"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Mission &amp; 2030 Vision
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/about/our-team"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Executive Leadership Team
-                </Link>
-              </li>
-            </ul>
-          </div>
+        {/* Navigation Links */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
+          {sections.map((section) => (
+            <div key={section.title}>
+              <h4 className="border-l-[3px] border-[#5B46F6] pl-3 text-xs font-bold uppercase tracking-wider text-white">
+                {section.title}
+              </h4>
 
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary border-l-2 border-primary pl-2.5">
-              Ecosystem
-            </h4>
-            <ul className="mt-4 space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link
-                  href="/community"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Community Circles
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/businesses"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Women-Led Businesses
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/marketplace"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Artisan Marketplace
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/learning"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Skill &amp; Career Academy
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary border-l-2 border-primary pl-2.5">
-              Resources &amp; Events
-            </h4>
-            <ul className="mt-4 space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link
-                  href="/events"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Upcoming Workshops
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/resources"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Legal &amp; Business Toolkits
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/faq"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Frequently Asked Questions
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contact"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Help &amp; Support Desk
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-text-primary border-l-2 border-primary pl-2.5">
-              Trust &amp; Governance
-            </h4>
-            <ul className="mt-4 space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link
-                  href="/privacy-policy"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Privacy Policy &amp; Ethics
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/terms"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Terms &amp; Community Charter
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/community"
-                  className="text-text-secondary hover:text-primary transition-colors"
-                >
-                  Safe Space Code of Conduct
-                </Link>
-              </li>
-              <li>
-                <span className="text-neutral text-xs block pt-1">
-                  Dhaka • Chattogram • Sylhet
-                </span>
-              </li>
-            </ul>
-          </div>
+              <ul className="mt-5 space-y-3">
+                {section.links.map((link) => (
+                  <li key={link.href + link.label}>
+                    <Link href={link.href} className={linkClass}>
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         {/* Bottom Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-border/80 pt-8 text-xs text-text-secondary gap-4">
-          <p className="flex items-center gap-1.5">
+        <div className="flex flex-col items-center justify-between gap-5 border-t border-white/10 pt-8 text-center sm:flex-row sm:text-left">
+          <p className="flex flex-wrap items-center justify-center gap-1.5 text-xs text-white/55">
             <span>© {year} BDSisters.org. Dedicated with</span>
-            <Heart className="h-3.5 w-3.5 text-primary fill-primary" />
+            <Heart className="h-3.5 w-3.5 fill-[#5B46F6] text-[#5B46F6]" />
             <span>to every Bangladeshi woman building her future.</span>
           </p>
-          <div className="flex items-center gap-6 font-medium">
-            <Link
-              href="/privacy-policy"
-              className="hover:text-primary transition-colors"
-            >
+
+          <div className="flex flex-wrap items-center justify-center gap-5 text-xs font-medium">
+            <Link href="/privacy-policy" className={linkClass}>
               Privacy
             </Link>
-            <Link href="/terms" className="hover:text-primary transition-colors">
+
+            <Link href="/terms" className={linkClass}>
               Terms
             </Link>
-            <Link href="/faq" className="hover:text-primary transition-colors">
+
+            <Link href="/faq" className={linkClass}>
               FAQ
             </Link>
-            <Link href="/contact" className="hover:text-primary transition-colors">
+
+            <Link href="/contact" className={linkClass}>
               Contact
             </Link>
           </div>
+        </div>
+
+        {/* Footer Tagline */}
+        <div className="mt-8 text-center">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/30">
+            Together We Grow • Together We Empower
+          </p>
         </div>
       </div>
     </footer>

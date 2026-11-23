@@ -1,8 +1,13 @@
-export default function Page() {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold text-gray-900">Community</h1>
-      <p className="text-gray-500">Coming soon.</p>
-    </div>
-  );
+import React from "react";
+import type { Metadata } from "next";
+import { MemberCommunityView } from "@/features/member/components/member-community-view";
+
+export const metadata: Metadata = {
+  title: "Community Forums | BDSisters",
+  description: "Connect and converse with verified sisters in a safe, moderated environment.",
+  robots: { index: false, follow: false },
+};
+
+export default function MemberCommunityPage() {
+  return <MemberCommunityView />;
 }

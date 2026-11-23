@@ -17,6 +17,7 @@ import {
   XCircle,
   Loader2,
   ExternalLink,
+  Star,
 } from "lucide-react";
 import { OrderDocument } from "@/types/order";
 import {
@@ -24,6 +25,7 @@ import {
   getPaymentStatusBadge,
   getItemFulfillmentBadge,
 } from "../utils/ecommerce-utils";
+import { DualRatingModal } from "./dual-rating-modal";
 
 interface Props {
   orderId: string;
@@ -40,6 +42,10 @@ export function CustomerOrderDetailView({ orderId }: Props) {
   const [cancelReason, setCancelReason] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  // Dual review modal state
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     async function loadOrder() {
@@ -175,6 +181,13 @@ export function CustomerOrderDetailView({ orderId }: Props) {
               Request Cancellation
             </button>
           )}
+          <button
+            onClick={() => setShowReviewModal(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-purple-200 bg-purple-50/80 px-3.5 py-1.5 text-xs font-bold text-[#5B46F6] transition hover:bg-purple-100/80 shadow-xs"
+          >
+            <Star className="h-3.5 w-3.5 fill-[#5B46F6]" />
+            <span>{reviewSubmitted ? "Review Submitted" : "Rate Order & Seller"}</span>
+          </button>
         </div>
       </div>
 
@@ -382,6 +395,16 @@ export function CustomerOrderDetailView({ orderId }: Props) {
           </div>
         </div>
       )}
+
+      {/* Dual Rating Modal */}
+      <DualRatingModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        orderId={order.id}
+        orderNumber={order.orderNumber}
+        items={order.items}
+        onSuccess={() => setReviewSubmitted(true)}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { EventsOverviewView } from "@/features/admin/events/components/overview/events-overview-view";
+import { AdminEventsView } from "@/features/admin/events/components/admin-events-view";
 
 export const metadata: Metadata = {
   title: "Events & Workshops Overview | BDSisters Admin",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminEventsPage() {
-  return <EventsOverviewView />;
+  return <AdminEventsView mode="upcoming" />;
 }

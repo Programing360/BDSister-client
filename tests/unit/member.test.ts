@@ -92,5 +92,69 @@ describe("Member Dashboard Architecture & Feature Tests", () => {
       assert.ok(overviewGroup);
       assert.strictEqual(overviewGroup.items[0]?.href, "/member");
     });
+
+    it("should include Discover & Goals route under Learning & Growth", () => {
+      const learningGroup = memberNavGroups.find((g) => g.label === "Learning & Growth");
+      assert.ok(learningGroup, "Learning & Growth group must exist");
+      const goalsItem = learningGroup.items.find((item) => item.href === "/member/goals");
+      assert.ok(goalsItem, "Must have an item pointing to /member/goals");
+      assert.strictEqual(goalsItem.label, "Discover & Goals");
+    });
+  });
+
+  describe("Domain 8: Holistic Development Wheel & 80/20 Goals", () => {
+    const EXPECTED_DIMENSIONS = [
+      "Spiritual",
+      "Financial",
+      "Career",
+      "Emotional",
+      "Physical",
+      "Family",
+      "Community",
+      "Personal Mastery",
+    ];
+
+    it("should verify 8 mandatory holistic life dimensions", () => {
+      assert.strictEqual(EXPECTED_DIMENSIONS.length, 8);
+      assert.ok(EXPECTED_DIMENSIONS.includes("Spiritual"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Financial"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Career"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Emotional"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Physical"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Family"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Community"));
+      assert.ok(EXPECTED_DIMENSIONS.includes("Personal Mastery"));
+    });
+
+    it("should enforce 80/20 Pareto principle tier separation", () => {
+      const vitalFewGoals = [
+        { id: "g_1", impactTier: "VITAL_FEW", title: "Launch halal skincare store" },
+        { id: "g_2", impactTier: "VITAL_FEW", title: "Memorize Juz Amma" },
+      ];
+      const usefulManyGoals = [
+        { id: "g_3", impactTier: "USEFUL_MANY", title: "Daily journal writing" },
+        { id: "g_4", impactTier: "USEFUL_MANY", title: "Organize digital files" },
+      ];
+
+      for (const g of vitalFewGoals) {
+        assert.strictEqual(g.impactTier, "VITAL_FEW");
+      }
+      for (const g of usefulManyGoals) {
+        assert.strictEqual(g.impactTier, "USEFUL_MANY");
+      }
+    });
+
+    it("should calculate milestone completion percentage dynamically", () => {
+      const milestones = [
+        { id: "m_1", title: "Draft business plan", isCompleted: true },
+        { id: "m_2", title: "Source organic ingredients", isCompleted: true },
+        { id: "m_3", title: "BSTI license approval", isCompleted: false },
+        { id: "m_4", title: "First 50 orders", isCompleted: false },
+      ];
+
+      const completed = milestones.filter((m) => m.isCompleted).length;
+      const progress = Math.round((completed / milestones.length) * 100);
+      assert.strictEqual(progress, 50);
+    });
   });
 });

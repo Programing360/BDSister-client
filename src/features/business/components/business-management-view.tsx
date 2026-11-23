@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -18,11 +18,15 @@ import {
   AlertCircle,
   FileText,
   Calendar,
+  CreditCard,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 import { FaFacebook, FaInstagram, FaLinkedin } from "react-icons/fa";
 import type { BusinessDocument } from "@/types/business";
 import type { ShopDocument } from "@/types/shop";
 import { getBusinessStatusBadge } from "../utils/business-utils";
+import { ZiniPayService } from "@/lib/services/zinipay-service";
 
 interface BusinessManagementViewProps {
   business: BusinessDocument;
@@ -32,6 +36,30 @@ interface BusinessManagementViewProps {
 export function BusinessManagementView({ business, shop }: BusinessManagementViewProps) {
   const statusBadge = getBusinessStatusBadge(business.status);
   const isVerified = business.verificationStatus === "VERIFIED";
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const handleUpgradeSubscription = async () => {
+    setIsUpgrading(true);
+    try {
+      await ZiniPayService.initiatePayment({
+        amount: 999,
+        customerName: business.ownerName || business.name,
+        customerEmail: business.contact.email,
+        customerPhone: business.contact.phone,
+        purpose: "SUBSCRIPTION",
+        autoRedirect: true,
+        metadata: {
+          businessId: business.id,
+          businessName: business.name,
+          tier: "VERIFIED_MERCHANT",
+        },
+      });
+    } catch {
+      alert("Failed to initiate ZiniPay subscription checkout.");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
 
   const locationText = [
     business.location.address,
@@ -223,6 +251,46 @@ export function BusinessManagementView({ business, shop }: BusinessManagementVie
             <span>Contact: {business.contact.phone}</span>
             <span className="font-semibold">{business.contact.email}</span>
           </div>
+        </div>
+
+        {/* Subscription & Featured Merchant Card */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-xl border border-gray-200/80 flex flex-col justify-between space-y-4">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                MERCHANT TIER
+              </span>
+            </div>
+            <h3 className="text-base font-bold text-gray-900">Featured Business Subscription</h3>
+            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              Unlock priority placement on the homepage, verified badge, and zero commission on marketplace transactions.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleUpgradeSubscription}
+            disabled={isUpgrading}
+            className="w-full inline-flex items-center justify-between p-3 rounded-2xl bg-[#5B46F6] hover:bg-[#4C38E0] text-white text-xs font-bold shadow-md shadow-[#5B46F6]/25 transition-all"
+          >
+            {isUpgrading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Connecting ZiniPay...
+              </span>
+            ) : (
+              <>
+                <span className="flex items-center gap-2">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Upgrade to Verified Merchant (৳999/mo)</span>
+                </span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </>
+            )}
+          </button>
         </div>
       </div>
 

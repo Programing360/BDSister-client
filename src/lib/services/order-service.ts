@@ -10,7 +10,7 @@ import type {
 import type { PaymentTransactionDocument } from "@/types/payment";
 import { getCart, clearCart } from "@/lib/services/cart-service";
 import { getProductById } from "@/lib/services/product-service";
-import { getBusinessesByOwnerId } from "@/lib/services/business-service";
+import { findBusinessesByOwnerId as getBusinessesByOwnerId } from "@/lib/db/repositories/business-repository";
 import { ZiniPayService, normalizeZiniPayStatus } from "@/lib/services/zinipay-service";
 import { calculateInventoryStatus } from "@/features/product/utils/product-utils";
 
@@ -101,7 +101,7 @@ export async function createOrderFromCart(params: {
       liveProduct.inventory.quantity < item.quantity
     ) {
       throw new Error(
-        `Insufficient stock for "${liveProduct.name}". Only ${liveProduct.inventory.quantity} units available.`
+        `Insufficient stock for "${liveProduct.name}". Only ${liveProduct.inventory.quantity} units available.`,
       );
     }
 
@@ -142,7 +142,7 @@ export async function createOrderFromCart(params: {
   const now = new Date();
 
   // 2. Prepare hosted invoice with ZiniPay
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:5000";
   const redirectUrl = `${appUrl}/checkout/success`;
   const cancelUrl = `${appUrl}/checkout/cancelled`;
   const webhookUrl = `${appUrl}/api/payments/zinipay/webhook`;
@@ -162,9 +162,7 @@ export async function createOrderFromCart(params: {
   });
 
   if (!invoiceResult.success) {
-    throw new Error(
-      invoiceResult.error || "Failed to initialize payment gateway invoice."
-    );
+    throw new Error(invoiceResult.error || "Failed to initialize payment gateway invoice.");
   }
 
   // 3. Create payment transaction record
@@ -212,7 +210,9 @@ export async function createOrderFromCart(params: {
 
   const db = await getDatabase();
   await db.collection<OrderDocument>(ORDERS_COLLECTION).insertOne(newOrder);
-  await db.collection<PaymentTransactionDocument>(TRANSACTIONS_COLLECTION).insertOne(paymentTransaction);
+  await db
+    .collection<PaymentTransactionDocument>(TRANSACTIONS_COLLECTION)
+    .insertOne(paymentTransaction);
 
   // 5. Clear customer's cart
   await clearCart(params.customerId, params.sessionId);
@@ -295,7 +295,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
     Math.round(verifyResult.amount) !== Math.round(order.totalAmount)
   ) {
     console.error(
-      `[ZiniPay Alert] Amount mismatch! Expected ৳${order.totalAmount}, got ৳${verifyResult.amount}`
+      `[ZiniPay Alert] Amount mismatch! Expected ৳${order.totalAmount}, got ৳${verifyResult.amount}`,
     );
     await db.collection(TRANSACTIONS_COLLECTION).updateOne(
       { invoiceId },
@@ -305,7 +305,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
           rawResponse: verifyResult.raw,
           updatedAt: new Date(),
         },
-      }
+      },
     );
     return {
       success: false,
@@ -327,7 +327,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
           const newStatus = calculateInventoryStatus(
             newQty,
             prod.inventory.lowStockThreshold,
-            prod.inventory.trackInventory
+            prod.inventory.trackInventory,
           );
 
           await db.collection("products").updateOne(
@@ -335,7 +335,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
             {
               $inc: { "inventory.quantity": -item.quantity },
               $set: { "inventory.status": newStatus, updatedAt: now },
-            }
+            },
           );
         }
       } catch (err: any) {
@@ -354,7 +354,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
           paidAt: now,
           updatedAt: now,
         },
-      }
+      },
     );
 
     await db.collection<PaymentTransactionDocument>(TRANSACTIONS_COLLECTION).updateOne(
@@ -368,7 +368,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
           verifiedAt: now,
           updatedAt: now,
         },
-      }
+      },
     );
 
     const updatedOrder = await db
@@ -384,14 +384,15 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
 
   // If status is failed
   if (normalizedStatus === "FAILED" || normalizedStatus === "CANCELLED") {
-    await db.collection<OrderDocument>(ORDERS_COLLECTION).updateOne(
-      { id: order.id },
-      { $set: { paymentStatus: normalizedStatus, updatedAt: now } }
-    );
-    await db.collection(TRANSACTIONS_COLLECTION).updateOne(
-      { invoiceId },
-      { $set: { status: normalizedStatus, rawResponse: verifyResult.raw, updatedAt: now } }
-    );
+    await db
+      .collection<OrderDocument>(ORDERS_COLLECTION)
+      .updateOne({ id: order.id }, { $set: { paymentStatus: normalizedStatus, updatedAt: now } });
+    await db
+      .collection(TRANSACTIONS_COLLECTION)
+      .updateOne(
+        { invoiceId },
+        { $set: { status: normalizedStatus, rawResponse: verifyResult.raw, updatedAt: now } },
+      );
   }
 
   return {
@@ -407,7 +408,7 @@ export async function verifyAndFinalizePayment(invoiceId: string): Promise<{
  */
 export async function getCustomerOrders(
   customerId: string,
-  options: { page?: number; limit?: number; status?: string } = {}
+  options: { page?: number; limit?: number; status?: string } = {},
 ): Promise<{
   orders: OrderDocument[];
   total: number;
@@ -453,7 +454,7 @@ export async function getCustomerOrders(
  */
 export async function getOrderById(
   orderId: string,
-  customerId?: string
+  customerId?: string,
 ): Promise<OrderDocument | null> {
   await ensureIndex();
 
@@ -471,7 +472,7 @@ export async function getOrderById(
  */
 export async function getSellerOrders(
   sellerUserId: string,
-  options: { page?: number; limit?: number; status?: string } = {}
+  options: { page?: number; limit?: number; status?: string } = {},
 ): Promise<{
   orders: Array<{
     id: string;
@@ -527,9 +528,7 @@ export async function getSellerOrders(
 
   // 2. Filter items so the seller sees only their items
   const filteredOrders = rawOrders.map((ord) => {
-    const sellerItems = ord.items.filter((item) =>
-      sellerBizIds.includes(item.businessId)
-    );
+    const sellerItems = ord.items.filter((item) => sellerBizIds.includes(item.businessId));
     const sellerSubtotal = sellerItems.reduce((acc, i) => acc + i.lineTotal, 0);
 
     return {
@@ -602,7 +601,7 @@ export async function updateSellerItemFulfillment(params: {
   // Derive overall order status if all items are dispatched or delivered
   let newOrderStatus = order.orderStatus;
   const allShipped = updatedItems.every(
-    (i) => i.fulfillmentStatus === "SHIPPED" || i.fulfillmentStatus === "DELIVERED"
+    (i) => i.fulfillmentStatus === "SHIPPED" || i.fulfillmentStatus === "DELIVERED",
   );
   const allDelivered = updatedItems.every((i) => i.fulfillmentStatus === "DELIVERED");
 
@@ -622,12 +621,10 @@ export async function updateSellerItemFulfillment(params: {
         orderStatus: newOrderStatus,
         updatedAt: now,
       },
-    }
+    },
   );
 
-  return await db
-    .collection<OrderDocument>(ORDERS_COLLECTION)
-    .findOne({ id: params.orderId });
+  return await db.collection<OrderDocument>(ORDERS_COLLECTION).findOne({ id: params.orderId });
 }
 
 /**
@@ -636,7 +633,7 @@ export async function updateSellerItemFulfillment(params: {
 export async function requestOrderCancellation(
   orderId: string,
   customerId: string,
-  reason: string
+  reason: string,
 ): Promise<OrderDocument | null> {
   const db = await getDatabase();
   const order = await db
@@ -648,7 +645,9 @@ export async function requestOrderCancellation(
   }
 
   if (order.orderStatus === "DELIVERED" || order.orderStatus === "SHIPPED") {
-    throw new Error("Orders that have already been shipped or delivered cannot be cancelled directly.");
+    throw new Error(
+      "Orders that have already been shipped or delivered cannot be cancelled directly.",
+    );
   }
 
   const now = new Date();
@@ -664,7 +663,7 @@ export async function requestOrderCancellation(
           cancellationReason: reason,
           updatedAt: now,
         },
-      }
+      },
     );
   } else {
     // If paid, marks as cancellation requested for seller / support review
@@ -676,11 +675,9 @@ export async function requestOrderCancellation(
           cancellationReason: reason,
           updatedAt: now,
         },
-      }
+      },
     );
   }
 
-  return await db
-    .collection<OrderDocument>(ORDERS_COLLECTION)
-    .findOne({ id: orderId });
+  return await db.collection<OrderDocument>(ORDERS_COLLECTION).findOne({ id: orderId });
 }

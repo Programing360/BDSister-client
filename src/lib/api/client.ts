@@ -1,6 +1,26 @@
 import type { ApiResponse } from "@/types/api";
 
-function getBaseUrl(): string {
+function getBaseUrl(path?: string): string {
+  // Better-Auth internal session & Next.js local auth handlers must hit Next.js origin
+  if (
+    path &&
+    (path.startsWith("/api/auth/get-session") ||
+      path.startsWith("/api/auth/session") ||
+      path.startsWith("/api/auth/sign-in") ||
+      path.startsWith("/api/auth/sign-up") ||
+      path.startsWith("/api/auth/sign-out"))
+  ) {
+    if (typeof window !== "undefined") {
+      return window.location.origin;
+    }
+    const appUrl = process.env["BETTER_AUTH_URL"];
+    if (appUrl) {
+      return appUrl.replace(/\/+$/, "").replace(/\/api$/, "");
+    }
+    return "http://localhost:3000";
+  }
+
+  // All other endpoints (Express backend: /api/cms/*, /api/users/*, /api/business/*, /api/forum/*, etc.)
   const envUrl = process.env["NEXT_PUBLIC_API_URL"] ?? process.env["NEXT_PUBLIC_APP_URL"];
   if (envUrl) {
     // Strip trailing slash and trailing "/api" because all endpoint paths explicitly start with "/api/..."
@@ -12,17 +32,17 @@ function getBaseUrl(): string {
   return "http://localhost:3000";
 }
 
-const BASE_URL = getBaseUrl();
-
 export class ApiError extends Error {
-  constructor(
-    public readonly code: string,
-    message: string,
-    public readonly status: number,
-    public readonly details?: Record<string, string[]>,
-  ) {
+  readonly code: string;
+  readonly status: number;
+  readonly details?: Record<string, string[]>;
+
+  constructor(code: string, message: string, status: number, details?: Record<string, string[]>) {
     super(message);
     this.name = "ApiError";
+    this.code = code;
+    this.status = status;
+    this.details = details;
   }
 }
 
@@ -31,12 +51,25 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   params?: Record<string, string | number | boolean | null | undefined>;
 }
 
-function buildUrl(path: string, params?: Record<string, string | number | boolean | null | undefined>): string {
+function buildUrl(
+  path: string,
+  params?: Record<string, string | number | boolean | null | undefined>,
+): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    if (!params) return path;
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== null && value !== undefined) {
+        searchParams.set(key, String(value));
+      }
+    }
+    const queryString = searchParams.toString();
+    return queryString ? `${path}?${queryString}` : path;
+  }
+
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  const url =
-    path.startsWith("http://") || path.startsWith("https://")
-      ? path
-      : `${BASE_URL}${normalizedPath}`;
+  const baseUrl = getBaseUrl(normalizedPath);
+  const url = `${baseUrl}${normalizedPath}`;
 
   if (!params) return url;
   const searchParams = new URLSearchParams();
@@ -56,7 +89,9 @@ function getAuthHeaders(): Record<string, string> {
       const token =
         localStorage.getItem("token") ||
         localStorage.getItem("auth_token") ||
-        localStorage.getItem("access_token");
+        localStorage.getItem("access_token") ||
+        sessionStorage.getItem("token") ||
+        sessionStorage.getItem("auth_token");
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
       }
@@ -90,7 +125,7 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
         }
 
         const targetLogin = pathname.startsWith("/admin") ? "/admin/login" : "/login";
-        const redirectUrl = `${targetLogin}?callbackUrl=${encodeURIComponent(pathname)}&error=session_expired`;
+        const redirectUrl = `${targetLogin}?expired=true&callbackUrl=${encodeURIComponent(pathname)}`;
 
         setTimeout(() => {
           if (window.location.pathname !== targetLogin) {
@@ -101,12 +136,18 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     }
 
     if (isJson) {
-      const errorData = (await response.json()) as ApiResponse<T>;
+      const rawError = (await response.json()) as {
+        message?: string;
+        code?: string;
+        error?: { code?: string; message?: string; details?: Record<string, string[]> };
+      };
       throw new ApiError(
-        errorData.error?.code ?? "UNAUTHORIZED",
-        errorData.error?.message ?? "Your session has expired. Please sign in again.",
+        rawError.error?.code ?? rawError.code ?? "UNAUTHORIZED",
+        rawError.error?.message ??
+          rawError.message ??
+          "Your session has expired. Please sign in again.",
         401,
-        errorData.error?.details,
+        rawError.error?.details,
       );
     }
     throw new ApiError("UNAUTHORIZED", "Your session has expired. Please sign in again.", 401);
@@ -114,12 +155,17 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 
   if (!response.ok) {
     if (isJson) {
-      const errorData = (await response.json()) as ApiResponse<T>;
+      const rawError = (await response.json()) as {
+        message?: string;
+        code?: string;
+        errors?: Record<string, string[]>;
+        error?: { code?: string; message?: string; details?: Record<string, string[]> };
+      };
       throw new ApiError(
-        errorData.error?.code ?? "HTTP_ERROR",
-        errorData.error?.message ?? response.statusText,
+        rawError.error?.code ?? rawError.code ?? "HTTP_ERROR",
+        rawError.error?.message ?? rawError.message ?? response.statusText,
         response.status,
-        errorData.error?.details,
+        rawError.error?.details ?? rawError.errors,
       );
     }
     throw new ApiError("HTTP_ERROR", response.statusText, response.status);
@@ -139,15 +185,27 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   const { body, params, headers = {}, ...rest } = options;
   const authHeaders = getAuthHeaders();
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
+  const requestHeaders: Record<string, string> = {
+    ...authHeaders,
+    ...(headers as Record<string, string>),
+  };
+
+  if (!isFormData) {
+    if (!requestHeaders["Content-Type"] && !requestHeaders["content-type"]) {
+      requestHeaders["Content-Type"] = "application/json";
+    }
+  } else {
+    // When sending FormData, let fetch/browser automatically generate the multipart/form-data boundary
+    delete requestHeaders["Content-Type"];
+    delete requestHeaders["content-type"];
+  }
 
   const response = await fetch(buildUrl(path, params), {
     method,
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders,
-      ...headers,
-    },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    headers: requestHeaders,
+    body: isFormData ? (body as BodyInit) : body !== undefined ? JSON.stringify(body) : undefined,
     credentials: "include",
     ...rest,
   });
@@ -156,14 +214,12 @@ async function request<T>(
 }
 
 export const apiClient = {
-  get: <T>(path: string, options?: RequestOptions) =>
-    request<T>("GET", path, options),
+  get: <T>(path: string, options?: RequestOptions) => request<T>("GET", path, options),
   post: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>("POST", path, { ...options, body }),
   put: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>("PUT", path, { ...options, body }),
   patch: <T>(path: string, body?: unknown, options?: RequestOptions) =>
     request<T>("PATCH", path, { ...options, body }),
-  delete: <T>(path: string, options?: RequestOptions) =>
-    request<T>("DELETE", path, options),
+  delete: <T>(path: string, options?: RequestOptions) => request<T>("DELETE", path, options),
 };

@@ -31,11 +31,27 @@ export const ROLE_HIERARCHY: UserRole[] = [
   ROLES.SUPER_ADMIN,
 ];
 
-export function getRoleLevel(role: UserRole): number {
-  const index = ROLE_HIERARCHY.indexOf(role);
+export function normalizeRole(role?: string | null): string {
+  if (!role) return "";
+  return role.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+}
+
+const ADMIN_NORMALIZED_SET = new Set([
+  "superadmin",
+  "admin",
+  "moderator",
+  "financeadmin",
+  "contentmanager",
+  "supportagent",
+]);
+
+export function getRoleLevel(role: UserRole | string): number {
+  const norm = normalizeRole(role);
+  const index = ROLE_HIERARCHY.findIndex((r) => normalizeRole(r) === norm);
   return index === -1 ? 0 : index;
 }
 
-export function isAdminRole(role: UserRole): boolean {
-  return ADMIN_ROLES.includes(role);
+export function isAdminRole(role: UserRole | string | null | undefined): boolean {
+  if (!role) return false;
+  return ADMIN_NORMALIZED_SET.has(normalizeRole(role));
 }

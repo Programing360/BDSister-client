@@ -93,9 +93,8 @@ export function BusinessKpiCards({ kpis }: BusinessKpiCardsProps) {
         return (
           <div
             key={idx}
-            className={`p-3.5 rounded-xl border border-gray-200/80 bg-white shadow-xs transition-all hover:shadow-sm hover:border-[#5B46F6]/30 ${
-              card.alert ? "ring-1 ring-amber-300" : ""
-            }`}
+            className={`p-3.5 rounded-xl shadow-sm shadow-gray-400 hover:bg-[#fcf1e6] transition-all duration-200 border-gray-200/80 bg-white hover:shadow-sm hover:border-[#5B46F6]/30 ${card.alert ? "ring-1 ring-amber-300" : ""
+              }`}
           >
             <div className="flex items-center justify-between gap-1 mb-2">
               <span className="text-xs font-medium text-gray-500 truncate" title={card.label}>

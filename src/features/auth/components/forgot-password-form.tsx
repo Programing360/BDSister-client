@@ -4,9 +4,18 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Mail, AlertCircle, ArrowLeft, ArrowRight, Loader2, CheckCircle2, RotateCw } from "lucide-react";
+import {
+  Mail,
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Loader2,
+  CheckCircle2,
+  RotateCw,
+} from "lucide-react";
 import { forgotPasswordSchema, type ForgotPasswordFormData } from "@/lib/validations/auth";
-import { requestPasswordReset } from "@/lib/auth/auth-client";
+import { apiClient, ApiError } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { AuthInput } from "./auth-input";
 
 export function ForgotPasswordForm() {
@@ -40,30 +49,41 @@ export function ForgotPasswordForm() {
     setErrorMessage(null);
 
     try {
-      const response = await requestPasswordReset({
-        email,
-        redirectTo: "/reset-password",
+      // Express ব্যাকএন্ডের POST /api/auth/forgot-password রাউট কল করা হচ্ছে
+      const response = await apiClient.post(API_ENDPOINTS.auth.forgotPassword, {
+        email: email.trim(),
       });
 
       if (response.error) {
-        setErrorMessage(response.error.message || "Failed to process password reset. Please try again.");
-        setIsLoading(false);
-        return;
+        throw new ApiError(
+          response.error.code,
+          response.error.message,
+          400,
+          response.error.details,
+        );
       }
 
       setIsSubmitted(true);
-      setSubmittedEmail(email);
+      setSubmittedEmail(email.trim());
       setCooldown(60);
       setIsLoading(false);
     } catch (err: unknown) {
       console.warn("[Forgot Password Request Failed]", err);
-      const errorStr = String(err);
-      if (errorStr.includes("Failed to fetch") || errorStr.includes("NetworkError") || errorStr.includes("activeContentBlocker")) {
-        setErrorMessage(
-          "Unable to reach the password reset service. Please check your connection or disable ad-blockers for localhost."
-        );
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message);
       } else {
-        setErrorMessage("A network error occurred. Please try again later.");
+        const errorStr = String(err);
+        if (errorStr.includes("Failed to fetch") || errorStr.includes("NetworkError")) {
+          setErrorMessage(
+            "Unable to reach the server. Please check your connection and try again.",
+          );
+        } else {
+          setErrorMessage(
+            err instanceof Error
+              ? err.message
+              : "A network error occurred. Please try again later.",
+          );
+        }
       }
       setIsLoading(false);
     }
@@ -86,9 +106,7 @@ export function ForgotPasswordForm() {
         </div>
 
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-gray-900">
-            Check Your Email
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Check Your Email</h2>
           <p className="text-sm text-gray-600">
             We have dispatched password reset instructions to:
           </p>
@@ -96,7 +114,8 @@ export function ForgotPasswordForm() {
             {submittedEmail}
           </div>
           <p className="text-xs text-gray-500 pt-1">
-            If an account exists under this address, you will find a secure link valid for 1 hour. Please check your spam folder if you do not see it within a few moments.
+            If an account exists under this address, you will find a secure link valid for 1 hour.
+            Please check your spam folder if you do not see it within a few moments.
           </p>
         </div>
 

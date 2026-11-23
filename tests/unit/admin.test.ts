@@ -54,6 +54,22 @@ import {
   DEMO_COMMUNICATION_SETTINGS,
   DEMO_COMMUNICATION_GROWTH_SERIES,
 } from "../../src/features/admin/communication/data/mock-communication.ts";
+import {
+  DEMO_MUHSINA_KPIS,
+  DEMO_MUHSINA_WINGS,
+  DEMO_MUHSINA_MEMBERS,
+  DEMO_SYNC_LOGS,
+  DEMO_MAPPING_CONFLICTS,
+} from "../../src/features/admin/integrations/muhsina/data/mock-muhsina.ts";
+import {
+  DEMO_SECURITY_KPIS,
+  DEMO_AUDIT_LOGS,
+  DEMO_LOGIN_HISTORY,
+  DEMO_ACTIVE_SESSIONS,
+  DEMO_SECURITY_EVENTS,
+  DEMO_BACKUPS,
+  DEMO_SERVICE_HEALTH,
+} from "../../src/features/admin/security/data/mock-security.ts";
 
 describe("Admin Dashboard Foundation, Layout & Navigation Verification", () => {
   describe("Admin Navigation Structure", () => {
@@ -2486,6 +2502,141 @@ describe("Admin Dashboard Foundation, Layout & Navigation Verification", () => {
             `Missing expected communication nav item: ${label}`
           );
         });
+      });
+    });
+  });
+
+  describe("Admin Step 14 - Muhsina Organization Integration & System Security Verification", () => {
+    describe("Muhsina Integration KPIs & Engine Status", () => {
+      it("should verify total synced members, health rate, and operational status", () => {
+        assert.ok(DEMO_MUHSINA_KPIS.totalSyncedMembers >= 4000);
+        assert.ok(DEMO_MUHSINA_KPIS.syncHealthRate > 95);
+        assert.strictEqual(DEMO_MUHSINA_KPIS.connectedWings, 5);
+        assert.strictEqual(DEMO_MUHSINA_KPIS.syncEngineStatus, "OPERATIONAL");
+        assert.strictEqual(DEMO_MUHSINA_KPIS.webhookStatus, "ACTIVE");
+      });
+    });
+
+    describe("Organizational Wings Directory", () => {
+      it("should verify all 5 connected wings with leads and focus areas", () => {
+        assert.strictEqual(DEMO_MUHSINA_WINGS.length, 5);
+        const wingCodes = DEMO_MUHSINA_WINGS.map((w) => w.code);
+        assert.deepStrictEqual(wingCodes.sort(), ["CoP", "IMBD", "MCPO", "SWSA", "TSPP"].sort());
+
+        DEMO_MUHSINA_WINGS.forEach((w) => {
+          assert.ok(w.id.startsWith("wing-"));
+          assert.ok(w.name.length > 0);
+          assert.ok(w.leadName.length > 0);
+          assert.ok(w.leadEmail.includes("@muhsina.org"));
+          assert.ok(w.membersCount > 0);
+          assert.ok(w.focusAreas.length > 0);
+          assert.strictEqual(w.status, "ACTIVE");
+        });
+      });
+    });
+
+    describe("Cross-Platform Member Mapping & Conflict Review", () => {
+      it("should verify cross-platform member mappings contain dual IDs and confidence scores", () => {
+        assert.ok(DEMO_MUHSINA_MEMBERS.length >= 5);
+        DEMO_MUHSINA_MEMBERS.forEach((m) => {
+          assert.ok(m.bdsistersId.startsWith("BDS-"));
+          assert.ok(m.muhsinaId.startsWith("MUH-"));
+          assert.ok(m.matchConfidence >= 80);
+          assert.ok(["SYNCHRONIZED", "PENDING_SYNC", "CONFLICT", "UNMAPPED"].includes(m.syncStatus));
+        });
+      });
+
+      it("should verify synchronization logs contain duration and execution types", () => {
+        assert.ok(DEMO_SYNC_LOGS.length >= 3);
+        DEMO_SYNC_LOGS.forEach((log) => {
+          assert.ok(log.recordsProcessed > 0);
+          assert.ok(log.durationMs > 0);
+          assert.ok(["SUCCESS", "WARNING", "FAILED"].includes(log.status));
+        });
+      });
+
+      it("should verify conflict items have dual values and resolution severities", () => {
+        assert.ok(DEMO_MAPPING_CONFLICTS.length >= 3);
+        DEMO_MAPPING_CONFLICTS.forEach((c) => {
+          assert.ok(c.bdsistersValue.length > 0);
+          assert.ok(c.muhsinaValue.length > 0);
+          assert.ok(["HIGH", "MEDIUM", "LOW"].includes(c.severity));
+          assert.ok(["PENDING_REVIEW", "RESOLVED_LOCAL", "RESOLVED_REMOTE", "DISMISSED"].includes(c.status));
+        });
+      });
+    });
+
+    describe("System Security & Audit Controls", () => {
+      it("should verify security KPIs, 2FA adoption, and audit logging", () => {
+        assert.ok(DEMO_SECURITY_KPIS.securityScore >= 90);
+        assert.ok(DEMO_SECURITY_KPIS.twoFactorAdoptionRate > 80);
+        assert.ok(DEMO_SECURITY_KPIS.activeAdminSessions > 0);
+
+        assert.ok(DEMO_AUDIT_LOGS.length >= 4);
+        DEMO_AUDIT_LOGS.forEach((log) => {
+          assert.ok(log.adminEmail.includes("@bdsisters.org"));
+          assert.ok(log.ipAddress.length > 0);
+          assert.ok(["SUCCESS", "DENIED", "FLAGGED"].includes(log.status));
+        });
+      });
+
+      it("should verify login history, active sessions, and security events", () => {
+        assert.ok(DEMO_LOGIN_HISTORY.length >= 4);
+        assert.ok(DEMO_ACTIVE_SESSIONS.some((s) => s.isCurrentSession));
+        assert.ok(DEMO_SECURITY_EVENTS.length >= 2);
+        DEMO_SECURITY_EVENTS.forEach((e) => {
+          assert.ok(e.mitigationAction.length > 0);
+          assert.ok(["RESOLVED", "INVESTIGATING", "OPEN"].includes(e.status));
+        });
+      });
+
+      it("should verify database backups integrity and service health monitoring", () => {
+        assert.ok(DEMO_BACKUPS.length >= 3);
+        DEMO_BACKUPS.forEach((b) => {
+          assert.ok(b.checksum.startsWith("sha256:"));
+          assert.strictEqual(b.status, "VERIFIED_INTEGRAL");
+        });
+
+        assert.ok(DEMO_SERVICE_HEALTH.length >= 5);
+        DEMO_SERVICE_HEALTH.forEach((srv) => {
+          assert.strictEqual(srv.status, "HEALTHY");
+          assert.ok(srv.uptime.includes("%"));
+        });
+      });
+    });
+
+    describe("Admin Navigation & Centralized Routes Compliance", () => {
+      it("should verify all Step 14 routes are properly registered in ROUTES.admin", async () => {
+        const { ROUTES } = await import("../../src/config/routes.ts");
+        assert.strictEqual(ROUTES.admin.muhsina, "/admin/integrations/muhsina");
+        assert.strictEqual(ROUTES.admin.muhsinaWings, "/admin/integrations/muhsina/wings");
+        assert.strictEqual(ROUTES.admin.muhsinaMembers, "/admin/integrations/muhsina/members");
+        assert.strictEqual(ROUTES.admin.muhsinaConflicts, "/admin/integrations/muhsina/conflicts");
+        assert.strictEqual(ROUTES.admin.muhsinaSync, "/admin/integrations/muhsina/synchronization");
+        assert.strictEqual(ROUTES.admin.muhsinaSettings, "/admin/integrations/muhsina/settings");
+        assert.strictEqual(ROUTES.admin.security, "/admin/security");
+        assert.strictEqual(ROUTES.admin.securityAuditLogs, "/admin/security/audit-logs");
+        assert.strictEqual(ROUTES.admin.securityLoginHistory, "/admin/security/login-history");
+        assert.strictEqual(ROUTES.admin.securitySessions, "/admin/security/sessions");
+        assert.strictEqual(ROUTES.admin.securityTwoFactor, "/admin/security/two-factor");
+        assert.strictEqual(ROUTES.admin.securityEvents, "/admin/security/events");
+        assert.strictEqual(ROUTES.admin.securityPrivacy, "/admin/security/privacy");
+        assert.strictEqual(ROUTES.admin.systemBackups, "/admin/system/backups");
+        assert.strictEqual(ROUTES.admin.systemHealth, "/admin/system/health");
+        assert.strictEqual(ROUTES.admin.systemApiMonitoring, "/admin/system/api-monitoring");
+        assert.strictEqual(ROUTES.admin.systemErrors, "/admin/system/errors");
+      });
+
+      it("should verify Integrations and System navigation groups contain Step 14 children", () => {
+        const intGroup = adminNavGroups.find((g) => g.id === "integrations");
+        assert.ok(intGroup, "Integrations group missing");
+        const muhItem = intGroup.items.find((i) => i.label === "Muhsina Organization");
+        assert.ok(muhItem && muhItem.children && muhItem.children.length >= 6);
+
+        const sysGroup = adminNavGroups.find((g) => g.id === "system");
+        assert.ok(sysGroup, "System group missing");
+        const secItem = sysGroup.items.find((i) => i.label === "Security & Access");
+        assert.ok(secItem && secItem.children && secItem.children.length >= 6);
       });
     });
   });

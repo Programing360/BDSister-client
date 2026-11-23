@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "react-toastify";
 import { Send, CheckCircle2, ShieldCheck, Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { communicationService } from "@/lib/services/communication-service";
 
 const contactSchema = z.object({
   fullName: z.string().min(2, "Please enter your full name (at least 2 characters)"),
@@ -46,14 +47,18 @@ export function ContactForm() {
     },
   });
 
-  const onSubmit = async (_data: ContactFormData) => {
+  const onSubmit = async (data: ContactFormData) => {
     setIsSubmitting(true);
-    // Simulate API roundtrip
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast.success("Thank you! Your message has been sent to our team.");
-    reset();
+    try {
+      const res = await communicationService.submitContact(data);
+      setIsSubmitted(true);
+      toast.success(res.message || "Thank you! Your message has been sent to our team.");
+      reset();
+    } catch {
+      toast.error("Message could not be submitted. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSubmitted) {

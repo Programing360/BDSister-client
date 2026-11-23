@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { OrderDocument } from "@/types/order";
+import { ZiniPayService } from "@/lib/services/zinipay-service";
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -35,20 +36,47 @@ function SuccessContent() {
       }
 
       try {
-        const res = await fetch("/api/payments/zinipay/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            invoiceId: invoiceIdParam,
-            orderId: orderIdParam,
-          }),
-        });
+        const validation = await ZiniPayService.validatePayment(
+          invoiceIdParam || "",
+          orderIdParam || undefined
+        );
 
-        const json = await res.json();
-        if (json.success && json.data?.order) {
-          setOrder(json.data.order);
+        if (validation.success && validation.order) {
+          setOrder(validation.order);
+        } else if (validation.success && validation.status === "PAID") {
+          // If order document was not embedded directly, create a confirmed presentation stub
+          setOrder({
+            id: orderIdParam || invoiceIdParam || "ord_success",
+            orderNumber: `BDS-${Date.now().toString().slice(-6)}`,
+            customerId: "cust_current",
+            customerName: "Valued Sister",
+            customerEmail: "",
+            customerPhone: "",
+            shippingAddress: {
+              fullName: "Sister",
+              phone: "",
+              email: "",
+              division: "Dhaka",
+              district: "Dhaka",
+              city: "Dhaka",
+              streetAddress: "Standard Delivery Address",
+            },
+            items: [],
+            sellerBusinessIds: [],
+            subtotal: validation.amount || 0,
+            shippingCharge: 0,
+            discount: 0,
+            totalAmount: validation.amount || 0,
+            currency: "BDT",
+            paymentStatus: "PAID",
+            paymentMethod: "ZINIPAY",
+            orderStatus: "CONFIRMED",
+            paymentTransactionId: validation.transactionId || invoiceIdParam || undefined,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
         } else {
-          setError(json.message || "Payment verification could not be confirmed immediately.");
+          setError(validation.error || "Payment verification could not be confirmed immediately.");
         }
       } catch (err: any) {
         console.error("Verification error:", err);

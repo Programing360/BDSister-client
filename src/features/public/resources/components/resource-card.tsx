@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Download, FileText, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Download, ArrowRight, CheckCircle2 } from "lucide-react";
 import type { Resource } from "@/types/public";
 import { Badge } from "@/components/ui/badge";
 
@@ -83,8 +83,8 @@ export function ResourceCard({ resource }: ResourceCardProps) {
         </div>
 
         {/* Footer Action */}
-        <div className="mt-5 border-t border-border/80 pt-4 flex items-center justify-between text-xs">
-          <span className="font-semibold text-primary">Free Community Resource</span>
+        <div className="mt-5 border-t border-border/80 pt-4 flex items-center  text-xs ">
+          {/* <span className="font-semibold text-primary">Free Community Resource</span> */}
           <Link
             href={`/resources/${resource.slug}`}
             className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3.5 py-1.5 font-semibold text-white shadow-xs transition-all duration-200 hover:bg-primary-hover hover:shadow-button"

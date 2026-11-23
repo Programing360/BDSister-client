@@ -39,16 +39,53 @@ export function CartView({ initialCart }: CartViewProps) {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   React.useEffect(() => {
-    if (!initialCart) {
-      fetch("/api/cart")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && data.data) {
-            setCart(data.data);
+    async function initCart() {
+      try {
+        // 1. Sync guest cart from localStorage if present
+        if (typeof window !== "undefined") {
+          const guestCartRaw = localStorage.getItem("bdsisters_guest_cart");
+          if (guestCartRaw) {
+            try {
+              const guestItems = JSON.parse(guestCartRaw);
+              if (Array.isArray(guestItems) && guestItems.length > 0) {
+                for (const item of guestItems) {
+                  if (item.productId) {
+                    await fetch("/api/cart", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        productId: item.productId,
+                        quantity: item.quantity || 1,
+                      }),
+                    });
+                  }
+                }
+                localStorage.removeItem("bdsisters_guest_cart");
+              }
+            } catch (syncErr) {
+              console.warn("Guest cart sync note:", syncErr);
+            }
           }
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
+        }
+
+        // 2. Fetch live server cart
+        const res = await fetch("/api/cart");
+        const data = await res.json();
+        if (data.success && data.data) {
+          setCart(data.data);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("bdsisters_synced_cart", JSON.stringify(data.data));
+          }
+        }
+      } catch (err) {
+        console.error("Cart loading error:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    if (!initialCart) {
+      initCart();
     }
   }, [initialCart]);
 

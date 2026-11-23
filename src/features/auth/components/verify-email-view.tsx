@@ -3,8 +3,17 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Mail, CheckCircle2, AlertCircle, ArrowRight, Loader2, RotateCw, Sparkles } from "lucide-react";
-import { verifyEmail, sendVerificationEmail } from "@/lib/auth/auth-client";
+import {
+  Mail,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  Loader2,
+  RotateCw,
+  Sparkles,
+} from "lucide-react";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 export function VerifyEmailView() {
   const router = useRouter();
@@ -23,7 +32,7 @@ export function VerifyEmailView() {
   const [resendSuccess, setResendSuccess] = useState(false);
   const [cooldown, setCooldown] = useState(0);
 
-  // Auto-verify token on mount if provided
+  // ১. ইমেইলের লিংক থেকে token পেলে Express ব্যাকএন্ডের POST /api/auth/verify-email কল করা
   useEffect(() => {
     if (!token) return;
 
@@ -31,17 +40,15 @@ export function VerifyEmailView() {
 
     async function executeVerification() {
       try {
-        const response = await verifyEmail({
-          query: {
-            token: token as string,
-          },
+        const response = await apiClient.post(API_ENDPOINTS.auth.verifyEmail, {
+          token,
         });
 
         if (!isMounted) return;
 
         if (response.error) {
           setVerificationError(
-            response.error.message || "This verification link has expired or is invalid."
+            response.error.message || "This verification link has expired or is invalid.",
           );
           setIsVerifying(false);
           return;
@@ -50,9 +57,9 @@ export function VerifyEmailView() {
         setVerificationSuccess(true);
         setIsVerifying(false);
 
-        // Auto-redirect to member area after 2.5 seconds
+        // ইমেইল ভেরিফাই হওয়ার পর লগইন পেজে (বা মেম্বার এরিয়ায়) রিডাইরেক্ট
         setTimeout(() => {
-          router.push("/member");
+          router.push("/login");
         }, 2500);
       } catch (err: unknown) {
         if (!isMounted) return;
@@ -78,16 +85,17 @@ export function VerifyEmailView() {
     return () => clearInterval(interval);
   }, [cooldown]);
 
+  // ২. Resend বাটনে ক্লিক করলে Express ব্যাকএন্ডের POST /api/auth/resend-verification কল করা
   const handleResend = async () => {
     if (!emailInput || cooldown > 0 || isResending) return;
 
     setIsResending(true);
     setResendSuccess(false);
+    setVerificationError(null);
 
     try {
-      const response = await sendVerificationEmail({
-        email: emailInput,
-        callbackURL: "/verify-email",
+      const response = await apiClient.post("/api/auth/resend-verification", {
+        email: emailInput.trim(),
       });
 
       if (response.error) {
@@ -114,9 +122,7 @@ export function VerifyEmailView() {
           <Loader2 className="h-10 w-10 animate-spin" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-black text-gray-900">
-            Verifying Your Account...
-          </h2>
+          <h2 className="text-2xl font-black text-gray-900">Verifying Your Account...</h2>
           <p className="text-sm text-gray-600">
             Please wait a moment while we validate your credentials and activate your membership.
           </p>
@@ -135,21 +141,19 @@ export function VerifyEmailView() {
         <div className="space-y-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
             <Sparkles className="h-3.5 w-3.5" />
-            Verified Sisterhood Member
+            Email Verified
           </span>
-          <h2 className="text-2xl font-black text-gray-900">
-            Email Verified Successfully!
-          </h2>
+          <h2 className="text-2xl font-black text-gray-900">Email Verified Successfully!</h2>
           <p className="text-sm text-gray-600 max-w-sm mx-auto">
-            Welcome to BDSisters.org. Your account is now fully active. Redirecting you to your Member Portal...
+            Your email has been verified. Redirecting you to Sign In...
           </p>
         </div>
         <div>
           <Link
-            href="/member"
+            href="/login"
             className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#5B46F6] px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#5B46F6]/25 transition-all hover:bg-[#4d3ad8]"
           >
-            <span>Enter Member Portal</span>
+            <span>Proceed to Sign In</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -165,14 +169,10 @@ export function VerifyEmailView() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B46F6]/10 text-[#5B46F6]">
           <Mail className="h-8 w-8" />
         </div>
-        <h2 className="mt-4 text-2xl font-extrabold text-gray-900">
-          Verify Your Email
-        </h2>
-        <p className="mt-1.5 text-sm text-gray-600">
-          We&apos;ve sent a secure activation link to:
-        </p>
+        <h2 className="mt-4 text-2xl font-extrabold text-gray-900">Verify Your Email</h2>
+        <p className="mt-1.5 text-sm text-gray-600">We&apos;ve sent a secure activation link to:</p>
         {emailInput ? (
-          <div className="mx-auto mt-2 inline-block rounded-xl border border-[#5B46F6]/20 bg-[#5B46F6]/5 px-4 py-1.5 text-sm font-bold text-[#5B46F6]">
+          <div className="mx-auto mt-2 inline-block rounded-xl border border-[#5B46F6]/20 bg-[#5B46F6]/15 px-4 py-1.5 text-sm font-bold text-[#5B46F6]">
             {emailInput}
           </div>
         ) : (
@@ -189,29 +189,37 @@ export function VerifyEmailView() {
       )}
 
       {resendSuccess && (
-        <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 p-4 text-sm text-emerald-800">
-          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-          <p>A fresh verification email has been sent. Please check your inbox.</p>
+        <div className="flex items-start gap-3 rounded-2xl bg-emerald-100/90 p-4 text-sm text-emerald-800">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-800" />
+          <p>Verification email has been sent. Please check your inbox.</p>
         </div>
       )}
 
       {/* Step Instructions */}
-      <div className="rounded-2xl border border-gray-200/80 bg-gray-50/80 p-5 space-y-3">
+      <div className="rounded-2xl shadow border-gray-200/80 bg-gray-50/80 p-5 space-y-3">
         <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500">
           Next steps to activate your access:
         </h3>
         <ol className="space-y-2.5 text-xs text-gray-700">
           <li className="flex items-center gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5B46F6] text-[10px] font-bold text-white">1</span>
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5B46F6] text-[10px] font-bold text-white">
+              1
+            </span>
             <span>Check your email inbox (and spam/promotions folder).</span>
           </li>
           <li className="flex items-center gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5B46F6] text-[10px] font-bold text-white">2</span>
-            <span>Click the <strong>&ldquo;Verify My Email Address&rdquo;</strong> button.</span>
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5B46F6] text-[10px] font-bold text-white">
+              2
+            </span>
+            <span>
+              Click the <strong>&ldquo;Verify Email Address&rdquo;</strong> button.
+            </span>
           </li>
           <li className="flex items-center gap-2">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5B46F6] text-[10px] font-bold text-white">3</span>
-            <span>Access our sisterhood courses, forum, and directory immediately.</span>
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5B46F6] text-[10px] font-bold text-white">
+              3
+            </span>
+            <span>Sign in once your email is verified and your account is approved.</span>
           </li>
         </ol>
       </div>

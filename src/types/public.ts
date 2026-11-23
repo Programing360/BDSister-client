@@ -54,6 +54,8 @@ export interface Product {
   rating: number;
   reviewsCount?: number;
   featured?: boolean;
+  wholesaleEligible?: boolean;
+  discountPercent?: number;
 }
 
 export interface Event {

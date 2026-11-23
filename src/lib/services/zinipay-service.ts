@@ -5,8 +5,7 @@ import type {
 } from "@/types/payment";
 import type { PaymentStatus } from "@/types/order";
 
-const ZINIPAY_BASE_URL =
-  process.env.ZINIPAY_API_BASE_URL || "https://api.zinipay.com";
+const ZINIPAY_BASE_URL = process.env.ZINIPAY_API_BASE_URL || "https://api.zinipay.com";
 const ZINIPAY_API_KEY = process.env.ZINIPAY_API_KEY || "";
 
 /**
@@ -91,10 +90,10 @@ export class ZiniPayService {
     // High-fidelity development / sandbox fallback if no API key is configured
     if (!isZiniPayConfigured()) {
       console.warn(
-        "[ZiniPay] ZINIPAY_API_KEY is not configured in environment. Using Sandbox payment gateway simulator."
+        "[ZiniPay] ZINIPAY_API_KEY is not configured in environment. Using Sandbox payment gateway simulator.",
       );
       const mockInvoiceId = `ZINI-SANDBOX-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:5000";
       const mockPaymentUrl = `${appUrl}/checkout/success?invoice_id=${mockInvoiceId}&mode=sandbox`;
 
       return {
@@ -138,8 +137,7 @@ export class ZiniPayService {
         };
       }
 
-      const invoiceId =
-        data.invoice_id || extractInvoiceIdFromUrl(data.payment_url);
+      const invoiceId = data.invoice_id || extractInvoiceIdFromUrl(data.payment_url);
 
       return {
         success: true,
@@ -231,6 +229,206 @@ export class ZiniPayService {
         status: "FAILED",
         raw: null,
         error: `Network error verifying invoice with ZiniPay: ${err.message}`,
+      };
+    }
+  }
+
+  /**
+   * Client-side / REST API helper: Initiates a ZiniPay payment session
+   * Invokes POST /api/payment/zinipay/init, returning hosted GatewayPageURL / paymentUrl
+   * Auto-redirects browser if autoRedirect: true
+   */
+  static async initiatePayment(params: {
+    amount: number;
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+    purpose?: "ORDER" | "MEMBERSHIP" | "SUBSCRIPTION" | "EVENT";
+    redirectUrl?: string;
+    cancelUrl?: string;
+    autoRedirect?: boolean;
+    metadata?: Record<string, any>;
+  }): Promise<{
+    success: boolean;
+    invoiceId?: string;
+    paymentUrl?: string;
+    GatewayPageURL?: string;
+    error?: string;
+  }> {
+    const appUrl =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_APP_URL || "http://localhost:5000";
+
+    const redirectUrl = params.redirectUrl || `${appUrl}/checkout/success`;
+    const cancelUrl = params.cancelUrl || `${appUrl}/checkout/failed`;
+
+    try {
+      // 1. First attempt to call the backend endpoint /api/payment/zinipay/init
+      try {
+        const { apiClient } = await import("@/lib/api/client");
+        const { API_ENDPOINTS } = await import("@/lib/api/endpoints");
+
+        const res = await apiClient.post<{
+          success?: boolean;
+          paymentUrl?: string;
+          GatewayPageURL?: string;
+          invoiceId?: string;
+          invoice_id?: string;
+          error?: string;
+          message?: string;
+        }>(API_ENDPOINTS.payment.zinipayInit, {
+          amount: params.amount,
+          customerName: params.customerName,
+          customerEmail: params.customerEmail,
+          customerPhone: params.customerPhone,
+          purpose: params.purpose || "ORDER",
+          redirectUrl,
+          cancelUrl,
+          metadata: params.metadata,
+        });
+
+        const targetUrl = res.data?.paymentUrl || res.data?.GatewayPageURL;
+        const invId = res.data?.invoiceId || res.data?.invoice_id;
+
+        if (targetUrl) {
+          if (params.autoRedirect && typeof window !== "undefined") {
+            window.location.href = targetUrl;
+          }
+          return {
+            success: true,
+            invoiceId: invId,
+            paymentUrl: targetUrl,
+            GatewayPageURL: targetUrl,
+          };
+        }
+      } catch (apiErr) {
+        // Backend endpoint not yet running or offline; proceed to fallback
+        console.warn(
+          "[ZiniPayService] Backend init call deferred to client fallback:",
+          (apiErr as Error).message,
+        );
+      }
+
+      // 2. High-fidelity Sandbox / Direct Invoice Fallback
+      const invoice = await this.createInvoice({
+        amount: params.amount,
+        redirectUrl,
+        cancelUrl,
+        customerName: params.customerName,
+        customerEmail: params.customerEmail,
+        metadata: {
+          purpose: params.purpose,
+          ...params.metadata,
+        },
+      });
+
+      if (invoice.success && invoice.paymentUrl) {
+        if (params.autoRedirect && typeof window !== "undefined") {
+          window.location.href = invoice.paymentUrl;
+        }
+        return {
+          success: true,
+          invoiceId: invoice.invoiceId,
+          paymentUrl: invoice.paymentUrl,
+          GatewayPageURL: invoice.paymentUrl,
+        };
+      }
+
+      return {
+        success: false,
+        error: invoice.error || "Failed to initialize payment gateway.",
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message || "Failed to initiate payment.",
+      };
+    }
+  }
+
+  /**
+   * Client-side / REST API helper: Validates payment status
+   * Queries GET /api/payment/zinipay/validate or POST /api/payment/zinipay/verify
+   */
+  static async validatePayment(
+    invoiceId: string,
+    orderId?: string,
+  ): Promise<{
+    success: boolean;
+    status: PaymentStatus;
+    transactionId?: string;
+    amount?: number;
+    error?: string;
+    order?: any;
+  }> {
+    if (!invoiceId) {
+      return {
+        success: false,
+        status: "FAILED",
+        error: "Missing invoice identifier for verification.",
+      };
+    }
+
+    try {
+      // 1. First attempt to call the REST validation endpoint
+      try {
+        const { apiClient } = await import("@/lib/api/client");
+        const res = await apiClient.get<{
+          success: boolean;
+          status?: string;
+          transactionId?: string;
+          amount?: number;
+          order?: any;
+          data?: any;
+          message?: string;
+        }>("/api/payment/zinipay/validate", {
+          params: { invoice_id: invoiceId, order_id: orderId },
+        });
+
+        if (res.data?.success) {
+          const rawStatus = res.data.status || res.data.data?.status || "PAID";
+          return {
+            success: true,
+            status: normalizeZiniPayStatus(rawStatus),
+            transactionId: res.data.transactionId || res.data.data?.transactionId,
+            amount: res.data.amount || res.data.data?.totalAmount,
+            order: res.data.order || res.data.data?.order,
+          };
+        }
+      } catch (validateErr) {
+        // Fallback to POST /api/payments/zinipay/verify
+        const verifyRes = await fetch("/api/payments/zinipay/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ invoiceId, orderId }),
+        });
+        const json = await verifyRes.json();
+        if (json.success && json.data) {
+          return {
+            success: true,
+            status: normalizeZiniPayStatus(json.data.status || "COMPLETED"),
+            transactionId: json.data.transactionId,
+            amount: json.data.totalAmount,
+            order: json.data.order,
+          };
+        }
+      }
+
+      // 2. Fallback to direct verification
+      const direct = await this.verifyInvoice(invoiceId);
+      return {
+        success: direct.success,
+        status: normalizeZiniPayStatus(direct.status),
+        transactionId: direct.transactionId,
+        amount: direct.amount,
+        error: direct.error,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        status: "FAILED",
+        error: err.message || "Failed to validate payment transaction.",
       };
     }
   }

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "@/lib/auth/session";
-import { updateShopPolicies } from "@/lib/services/shop-service";
+import { modifyShopPolicies as updateShopPolicies } from "@/lib/db/repositories/shop-repository";
 import { shopPoliciesSchema } from "@/lib/validations/shop";
 import {
   successResponse,

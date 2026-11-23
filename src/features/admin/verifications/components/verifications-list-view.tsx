@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
@@ -8,6 +8,7 @@ import {
   Sparkles,
   Info,
   Clock,
+  Loader2,
 } from "lucide-react";
 import { VerificationKpiCards } from "./verification-kpi-cards";
 import { VerificationTable } from "./verification-table";
@@ -16,6 +17,9 @@ import {
   DEMO_VERIFICATION_KPIS,
   DEMO_VERIFICATION_DISCLAIMER,
 } from "../data/admin-verifications-data";
+import { AdminVerificationSubmission } from "../types/admin-verification";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
 interface VerificationsListViewProps {
   initialStatusFilter?: string;
@@ -29,21 +33,97 @@ export function VerificationsListView({
   const [activeFilter, setActiveFilter] = useState(initialStatusFilter);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+  const [submissions, setSubmissions] = useState<AdminVerificationSubmission[]>(
+    DEMO_VERIFICATION_SUBMISSIONS
+  );
+  const [kpis, setKpis] = useState(DEMO_VERIFICATION_KPIS);
 
-  const handleRefresh = () => {
+  const fetchLiveSubmissions = async () => {
+    try {
+      const res = await apiClient.get<any[]>(API_ENDPOINTS.verification.adminList);
+      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
+        const liveList = res.data.map((item) => ({
+          id: item.id,
+          submissionId: item.id.startsWith("ver_") || item.id.startsWith("BDS-")
+            ? item.id
+            : `BDS-VER-${item.id.slice(-6).toUpperCase()}`,
+          memberId: item.userId || "BDS-MEM-NEW",
+          memberName: item.userName || "Sister Member",
+          memberEmail: item.userEmail || "",
+          memberPhone: "+880 1700-000000",
+          memberAvatar: null,
+          memberLocation: "Dhaka, Bangladesh",
+          documentType: item.docType === "PASSPORT" ? "PASSPORT" : "NATIONAL_ID",
+          documentNumberMasked: item.idNumberMasked
+            ? `${item.docType || "NID"}: ${item.idNumberMasked}`
+            : "NID: ****",
+          submittedAt: item.submittedAt
+            ? new Date(item.submittedAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })
+            : "Recent",
+          status: item.status,
+          assignedReviewer: item.assignedOfficerName
+            ? { name: item.assignedOfficerName, role: "Female Verification Officer" }
+            : undefined,
+          priority: item.priority || "NORMAL",
+          isUrgent: item.status === "PENDING",
+          documents: [
+            {
+              id: `doc_${item.id}_front`,
+              type: item.docType === "PASSPORT" ? "PASSPORT_PAGE" : "NID_FRONT",
+              title: `${item.docType || "NID"} Front Scan`,
+              samplePreviewWatermark: "BDSISTERS SECURE VAULT",
+              uploadedAt: item.submittedAt || new Date().toISOString(),
+              fileSize: "2.4 MB",
+              fileFormat: "IMAGE/PDF",
+            },
+          ],
+          reviewHistory: [],
+          rejectionReason: item.rejectionReason,
+          adminReviewNotes: item.adminNotes,
+        }));
+
+        setSubmissions(liveList as AdminVerificationSubmission[]);
+
+        // Recalculate KPIs based on live records
+        const pending = liveList.filter((s) => s.status === "PENDING").length;
+        const underReview = liveList.filter((s) => s.status === "UNDER_REVIEW").length;
+        const verified = liveList.filter((s) => s.status === "APPROVED").length;
+        const rejected = liveList.filter((s) => s.status === "REJECTED").length;
+        const actionReq = liveList.filter((s) => s.status === "ACTION_REQUIRED").length;
+
+        setKpis({
+          totalSubmissions: liveList.length,
+          pendingReview: pending,
+          underReview,
+          verified,
+          rejected,
+          actionRequired: actionReq,
+        });
+      }
+    } catch {
+      // Retain demo fallback dataset
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveSubmissions();
+  }, []);
+
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-      setFeedbackToast("Verification submissions refreshed from queue.");
-      setTimeout(() => setFeedbackToast(null), 3000);
-    }, 600);
+    await fetchLiveSubmissions();
+    setIsRefreshing(false);
+    setFeedbackToast("Verification submissions refreshed from queue.");
+    setTimeout(() => setFeedbackToast(null), 3000);
   };
 
   const displayedSubmissions = isPendingQueueOnly
-    ? DEMO_VERIFICATION_SUBMISSIONS.filter(
-        (s) => s.status === "PENDING" || s.status === "UNDER_REVIEW"
-      )
-    : DEMO_VERIFICATION_SUBMISSIONS;
+    ? submissions.filter((s) => s.status === "PENDING" || s.status === "UNDER_REVIEW")
+    : submissions;
 
   return (
     <div className="space-y-6">
@@ -126,7 +206,7 @@ export function VerificationsListView({
 
       {/* KPI Cards */}
       <VerificationKpiCards
-        kpis={DEMO_VERIFICATION_KPIS}
+        kpis={kpis}
         activeFilter={activeFilter}
         onFilterClick={(status) => setActiveFilter(status)}
       />

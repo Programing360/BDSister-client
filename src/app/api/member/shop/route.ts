@@ -1,10 +1,10 @@
 import { NextRequest } from "next/server";
 import { getServerSession } from "@/lib/auth/session";
 import {
-  getShopByBusinessId,
-  getShopsByOwnerId,
-  createOrUpdateShop,
-} from "@/lib/services/shop-service";
+  findShopByBusinessId as getShopByBusinessId,
+  findShopsByOwnerId as getShopsByOwnerId,
+  saveShop as createOrUpdateShop,
+} from "@/lib/db/repositories/shop-repository";
 import { fullShopUpdateSchema } from "@/lib/validations/shop";
 import {
   successResponse,

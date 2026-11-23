@@ -5,6 +5,7 @@ import { Section } from "@/components/layout/section";
 import { SectionHeading } from "@/components/shared/section-heading";
 import { CTASection } from "@/components/shared/cta-section";
 import { Button } from "@/components/ui/button";
+import { CommunityGuestTeaser } from "@/features/public/community/components/community-guest-teaser";
 import {
   Users,
   ShieldCheck,
@@ -202,6 +203,21 @@ export default function CommunityPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </Container>
+      </Section>
+
+      {/* 2.5 ACTIVE DISCUSSIONS TEASER (MEMBERS ONLY BLUR PREVIEW) */}
+      <Section spacing="lg" className="bg-surface/60 border-t border-border/80">
+        <Container size="lg">
+          <SectionHeading
+            badge="Live Community Buzz"
+            title="Trending Discussions Inside the Sisterhood"
+            description="Preview what sisters across Bangladesh are asking, learning, and collaborating on right now."
+          />
+
+          <div className="mt-12">
+            <CommunityGuestTeaser />
           </div>
         </Container>
       </Section>

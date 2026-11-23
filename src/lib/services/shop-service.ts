@@ -1,227 +1,123 @@
-import { getDatabase } from "@/lib/db/mongodb";
+import { apiClient } from "@/lib/api/client";
 import type { ShopDocument, PublicShopProfile, ShopPolicies } from "@/types/shop";
 import { generateSlug } from "@/lib/validations/business";
-import { getBusinessById } from "./business-service";
 import { filterShopForPublic } from "@/features/shop/utils/shop-utils";
 
-const COLLECTION_NAME = "shops";
-
-let indexEnsured = false;
-async function ensureIndex() {
-  if (indexEnsured) return;
-  try {
-    const db = await getDatabase();
-    await db.collection(COLLECTION_NAME).createIndex({ id: 1 }, { unique: true });
-    await db.collection(COLLECTION_NAME).createIndex({ businessId: 1 }, { unique: true });
-    await db.collection(COLLECTION_NAME).createIndex({ slug: 1 }, { unique: true });
-    await db.collection(COLLECTION_NAME).createIndex({ ownerId: 1 });
-    indexEnsured = true;
-  } catch (err) {
-    console.warn("[ShopService] Index initialization deferred:", (err as Error).message);
-  }
-}
-
 /**
- * Generate unique shop slug
+ * Generate unique shop slug client-side
  */
-export async function generateUniqueShopSlug(name: string, excludeId?: string): Promise<string> {
+export async function generateUniqueShopSlug(name: string): Promise<string> {
   const baseSlug = generateSlug(name) || "sister-shop";
-  let slug = baseSlug;
-  let counter = 1;
-
-  try {
-    const db = await getDatabase();
-    while (true) {
-      const existing = await db.collection<ShopDocument>(COLLECTION_NAME).findOne({
-        slug,
-        ...(excludeId ? { id: { $ne: excludeId } } : {}),
-      });
-
-      if (!existing) {
-        return slug;
-      }
-
-      counter++;
-      slug = `${baseSlug}-${counter}`;
-    }
-  } catch {
-    return `${baseSlug}-${Date.now().toString().slice(-4)}`;
-  }
+  return `${baseSlug}-${Date.now().toString().slice(-4)}`;
 }
 
 /**
- * Retrieve shop by associated business ID
+ * Retrieve shop by associated business ID via REST API
  */
 export async function getShopByBusinessId(businessId: string): Promise<ShopDocument | null> {
   if (!businessId) return null;
-  await ensureIndex();
-
   try {
-    const db = await getDatabase();
-    return await db.collection<ShopDocument>(COLLECTION_NAME).findOne({ businessId });
+    const res = await apiClient.get<{ shop?: ShopDocument }>("/api/member/shop", {
+      params: { businessId },
+    });
+    if (res.data?.shop) {
+      return res.data.shop;
+    }
   } catch (err) {
     console.warn("[ShopService] Lookup by businessId failed:", (err as Error).message);
-    return null;
   }
+  return null;
 }
 
 /**
- * Retrieve shop by unique slug
+ * Retrieve shop by unique slug via REST API
  */
 export async function getShopBySlug(slug: string): Promise<ShopDocument | null> {
   if (!slug) return null;
-  await ensureIndex();
-
   try {
-    const db = await getDatabase();
-    return await db.collection<ShopDocument>(COLLECTION_NAME).findOne({ slug });
+    const res = await apiClient.get<{ shop?: ShopDocument }>(`/api/member/shop?slug=${encodeURIComponent(slug)}`);
+    if (res.data?.shop) {
+      return res.data.shop;
+    }
   } catch (err) {
     console.warn("[ShopService] Lookup by slug failed:", (err as Error).message);
-    return null;
   }
+  return null;
 }
 
 /**
- * Retrieve all shops owned by member
+ * Retrieve all shops owned by member via REST API
  */
-export async function getShopsByOwnerId(ownerId: string): Promise<ShopDocument[]> {
-  if (!ownerId) return [];
-  await ensureIndex();
-
+export async function getShopsByOwnerId(_ownerId?: string): Promise<ShopDocument[]> {
   try {
-    const db = await getDatabase();
-    return await db.collection<ShopDocument>(COLLECTION_NAME).find({ ownerId }).toArray();
+    const res = await apiClient.get<{ shops?: ShopDocument[] }>("/api/member/shop");
+    if (res.data?.shops && Array.isArray(res.data.shops)) {
+      return res.data.shops;
+    }
   } catch (err) {
     console.warn("[ShopService] Lookup by ownerId failed:", (err as Error).message);
-    return [];
   }
+  return [];
 }
 
 /**
- * Create or configure a shop for an approved or pending business
+ * Create or configure a shop for an approved or pending business via REST API
  */
 export async function createOrUpdateShop(
-  ownerId: string,
+  _ownerId: string,
   businessId: string,
   data: Partial<ShopDocument>
 ): Promise<ShopDocument> {
-  if (!ownerId || !businessId) {
-    throw new Error("Owner ID and Business ID are required.");
+  if (!businessId) {
+    throw new Error("Business ID is required.");
   }
 
-  const business = await getBusinessById(businessId);
-  if (!business) {
-    throw new Error("Associated business not found.");
-  }
-
-  if (business.ownerId !== ownerId) {
-    throw new Error("Unauthorized: You do not own this business.");
-  }
-
-  await ensureIndex();
-
-  const existingShop = await getShopByBusinessId(businessId);
-  const shopId = existingShop ? existingShop.id : `shop_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-
-  let slug = existingShop?.slug || "";
-  if (!slug || (data.name && data.name !== existingShop?.name)) {
-    slug = await generateUniqueShopSlug(data.name || business.name, existingShop?.id);
-  } else if (data.slug && data.slug !== existingShop?.slug) {
-    slug = await generateUniqueShopSlug(data.slug, existingShop?.id);
-  }
-
-  // If business is not yet approved, shop cannot be ACTIVE
-  let status = data.status || existingShop?.status || "DRAFT";
-  if (status === "ACTIVE" && business.status !== "APPROVED") {
-    status = "PENDING_REVIEW";
-  }
-
-  const shopDoc: ShopDocument = {
-    id: shopId,
+  const res = await apiClient.post<{ shop: ShopDocument }>("/api/member/shop", {
     businessId,
-    ownerId,
-    businessName: business.name,
-    businessSlug: business.slug,
-    name: data.name || existingShop?.name || `${business.name} Shop`,
-    slug,
-    shortDescription: data.shortDescription ?? existingShop?.shortDescription ?? business.shortDescription,
-    logo: data.logo !== undefined ? data.logo : (existingShop?.logo ?? business.logo),
-    banner: data.banner !== undefined ? data.banner : (existingShop?.banner ?? business.coverImage),
-    supportEmail: data.supportEmail ?? existingShop?.supportEmail ?? business.contact.email,
-    supportPhone: data.supportPhone ?? existingShop?.supportPhone ?? business.contact.phone,
-    policies: {
-      ...(existingShop?.policies || {}),
-      ...(data.policies || {}),
-    },
-    status,
-    productCount: existingShop?.productCount || 0,
-    totalOrdersCount: existingShop?.totalOrdersCount || 0,
-    createdAt: existingShop?.createdAt || new Date(),
-    updatedAt: new Date(),
-  };
+    ...data,
+  });
 
-  try {
-    const db = await getDatabase();
-    await db.collection(COLLECTION_NAME).updateOne(
-      { businessId },
-      { $set: shopDoc },
-      { upsert: true }
-    );
-
-    // Update business reference
-    await db.collection("businesses").updateOne(
-      { id: businessId },
-      {
-        $set: {
-          shopId,
-          hasActiveShop: status === "ACTIVE",
-          updatedAt: new Date(),
-        },
-      }
-    );
-
-    return shopDoc;
-  } catch (err) {
-    console.warn("[ShopService] Save shop deferred or error:", (err as Error).message);
-    return shopDoc;
+  if (res.error) {
+    throw new Error(res.error.message || "Failed to configure shop.");
   }
+
+  if (!res.data?.shop) {
+    throw new Error("No shop document returned by server.");
+  }
+
+  return res.data.shop;
 }
 
 /**
- * Update shop policies
+ * Update shop policies via REST API
  */
 export async function updateShopPolicies(
   businessId: string,
-  ownerId: string,
+  _ownerId: string,
   policies: ShopPolicies
 ): Promise<ShopDocument> {
-  const shop = await getShopByBusinessId(businessId);
-  if (!shop) {
-    throw new Error("Shop not found for this business.");
-  }
-  if (shop.ownerId !== ownerId) {
-    throw new Error("Unauthorized to edit shop policies.");
+  if (!businessId) {
+    throw new Error("Business ID is required.");
   }
 
-  const updatedPolicies = {
-    ...shop.policies,
+  const res = await apiClient.put<{ shop: ShopDocument }>("/api/member/shop/policies", {
+    businessId,
     ...policies,
-  };
+  });
 
-  try {
-    const db = await getDatabase();
-    await db.collection(COLLECTION_NAME).updateOne(
-      { businessId },
-      { $set: { policies: updatedPolicies, updatedAt: new Date() } }
-    );
-    return { ...shop, policies: updatedPolicies, updatedAt: new Date() };
-  } catch {
-    return { ...shop, policies: updatedPolicies };
+  if (res.error) {
+    throw new Error(res.error.message || "Failed to update shop policies.");
   }
+
+  if (!res.data?.shop) {
+    throw new Error("No updated shop returned by server.");
+  }
+
+  return res.data.shop;
 }
 
 /**
- * Retrieve public shop profile by slug
+ * Retrieve public shop profile by slug via REST API
  */
 export async function getPublicShopBySlug(
   slug: string,
@@ -231,8 +127,5 @@ export async function getPublicShopBySlug(
   const shop = await getShopBySlug(slug);
   if (!shop) return null;
 
-  const business = await getBusinessById(shop.businessId);
-  const isVerified = business?.verificationStatus === "VERIFIED";
-
-  return filterShopForPublic(shop, isVerified, { viewerUserId, isAdmin });
+  return filterShopForPublic(shop, shop.status === "ACTIVE", { viewerUserId, isAdmin });
 }

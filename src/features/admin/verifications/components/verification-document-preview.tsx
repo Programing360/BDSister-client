@@ -72,74 +72,89 @@ export function VerificationDocumentPreview({
         </div>
       </div>
 
-      {/* Synthetic Document Viewer Stage */}
+      {/* Synthetic or Real Document Viewer Stage */}
       {activeDoc ? (
         <div className="space-y-3">
           <div className="relative rounded-2xl bg-gray-950/90 dark:bg-black/90 p-6 flex items-center justify-center min-h-[320px] overflow-hidden border border-gray-800">
             {/* Watermark Diagonal Overlay */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-25 select-none rotate-[-25deg]">
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-25 select-none rotate-[-25deg] z-20">
               <span className="font-black text-2xl sm:text-3xl tracking-widest text-white border-4 border-dashed border-white px-8 py-4 uppercase">
-                {activeDoc.samplePreviewWatermark || "DEMO SAMPLE / BDSISTERS NID PREVIEW"}
+                {activeDoc.samplePreviewWatermark || "BDSISTERS NID PREVIEW"}
               </span>
             </div>
 
-            {/* Synthetic Document Visual Card */}
-            <div
-              className={`w-full max-w-md rounded-2xl bg-linear-to-br from-emerald-900/40 via-teal-900/40 to-slate-900 border-2 border-emerald-500/40 p-6 text-white shadow-2xl transition-transform duration-200 relative ${
-                isZoomed ? "scale-110 z-10" : "scale-100"
-              }`}
-            >
-              {/* Card Header */}
-              <div className="flex items-center justify-between border-b border-emerald-500/30 pb-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300">
-                    BD
-                  </div>
-                  <div>
-                    <span className="text-[10px] tracking-wider uppercase text-emerald-300 block font-bold">
-                      People&apos;s Republic of Bangladesh
-                    </span>
-                    <span className="text-xs font-bold tracking-tight">
-                      {activeDoc.title}
-                    </span>
-                  </div>
-                </div>
-                <Lock className="w-4 h-4 text-emerald-400" />
+            {/* If live presigned URL from vault exists, display real decrypted scan */}
+            {activeDoc.previewUrl ? (
+              <div
+                className={`max-w-xl w-full flex items-center justify-center transition-transform duration-200 z-10 ${
+                  isZoomed ? "scale-125" : "scale-100"
+                }`}
+              >
+                <img
+                  src={activeDoc.previewUrl}
+                  alt={activeDoc.title}
+                  className="max-h-[460px] w-auto max-w-full rounded-xl object-contain shadow-2xl border border-gray-700 bg-black/40"
+                />
               </div>
+            ) : (
+              /* Synthetic Document Visual Card */
+              <div
+                className={`w-full max-w-md rounded-2xl bg-linear-to-br from-emerald-900/40 via-teal-900/40 to-slate-900 border-2 border-emerald-500/40 p-6 text-white shadow-2xl transition-transform duration-200 relative ${
+                  isZoomed ? "scale-110 z-10" : "scale-100"
+                }`}
+              >
+                {/* Card Header */}
+                <div className="flex items-center justify-between border-b border-emerald-500/30 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300">
+                      BD
+                    </div>
+                    <div>
+                      <span className="text-[10px] tracking-wider uppercase text-emerald-300 block font-bold">
+                        People&apos;s Republic of Bangladesh
+                      </span>
+                      <span className="text-xs font-bold tracking-tight">
+                        {activeDoc.title}
+                      </span>
+                    </div>
+                  </div>
+                  <Lock className="w-4 h-4 text-emerald-400" />
+                </div>
 
-              {/* Card Body */}
-              <div className="flex gap-4 items-center">
-                <div className="w-20 h-24 rounded-lg bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center text-center p-2 shrink-0">
-                  <span className="text-[9px] text-emerald-400 font-mono">
-                    SYNTHETIC PHOTO
-                  </span>
-                </div>
-                <div className="space-y-1.5 text-xs">
-                  <div>
-                    <span className="text-[9px] text-emerald-400 uppercase tracking-wider block">
-                      Synthetic Sample Identifier
-                    </span>
-                    <span className="font-mono font-bold text-emerald-200">
-                      {documentNumberMasked}
+                {/* Card Body */}
+                <div className="flex gap-4 items-center">
+                  <div className="w-20 h-24 rounded-lg bg-emerald-950/80 border border-emerald-500/30 flex items-center justify-center text-center p-2 shrink-0">
+                    <span className="text-[9px] text-emerald-400 font-mono">
+                      SYNTHETIC PHOTO
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[9px] text-emerald-400 uppercase tracking-wider block">
-                      Verification Hash
-                    </span>
-                    <span className="font-mono text-[10px] text-gray-400">
-                      SHA256: 7f83b165...demo
-                    </span>
+                  <div className="space-y-1.5 text-xs">
+                    <div>
+                      <span className="text-[9px] text-emerald-400 uppercase tracking-wider block">
+                        Synthetic Sample Identifier
+                      </span>
+                      <span className="font-mono font-bold text-emerald-200">
+                        {documentNumberMasked}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-emerald-400 uppercase tracking-wider block">
+                        Verification Hash
+                      </span>
+                      <span className="font-mono text-[10px] text-gray-400">
+                        SHA256: 7f83b165...demo
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Card Footer */}
-              <div className="mt-4 pt-3 border-t border-emerald-500/20 flex items-center justify-between text-[10px] text-emerald-400/80">
-                <span>FORMAT: {activeDoc.fileFormat}</span>
-                <span>SIZE: {activeDoc.fileSize}</span>
+                {/* Card Footer */}
+                <div className="mt-4 pt-3 border-t border-emerald-500/20 flex items-center justify-between text-[10px] text-emerald-400/80">
+                  <span>FORMAT: {activeDoc.fileFormat}</span>
+                  <span>SIZE: {activeDoc.fileSize}</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Document metadata summary */}

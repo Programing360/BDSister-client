@@ -7,7 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, ArrowRight, Loader2, CheckCircle2, ShieldAlert } from "lucide-react";
 import { resetPasswordSchema, type ResetPasswordFormData } from "@/lib/validations/auth";
-import { resetPassword } from "@/lib/auth/auth-client";
+import { apiClient, ApiError } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { PasswordInput } from "./password-input";
 import { PasswordStrength } from "./password-strength";
 
@@ -43,11 +44,10 @@ export function ResetPasswordForm() {
           <ShieldAlert className="h-8 w-8" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-gray-900">
-            Invalid or Expired Token
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Invalid or Expired Token</h2>
           <p className="text-sm text-gray-600">
-            The reset link is missing or has expired. For your account security, password reset tokens expire after 1 hour.
+            The reset link is missing or has expired. For your account security, password reset
+            tokens expire after 1 hour.
           </p>
         </div>
         <Link
@@ -66,17 +66,19 @@ export function ResetPasswordForm() {
     setErrorMessage(null);
 
     try {
-      const response = await resetPassword({
-        newPassword: data.password,
-        token: data.token,
+      // Express ব্যাকএন্ডের POST /api/auth/reset-password রাউটে { token, password } পাঠানো হচ্ছে
+      const response = await apiClient.post(API_ENDPOINTS.auth.resetPassword, {
+        token: data.token || token,
+        password: data.password,
       });
 
       if (response.error) {
-        setErrorMessage(
-          response.error.message || "Failed to reset password. The link may have expired."
+        throw new ApiError(
+          response.error.code,
+          response.error.message,
+          400,
+          response.error.details,
         );
-        setIsLoading(false);
-        return;
       }
 
       setIsSuccess(true);
@@ -85,7 +87,15 @@ export function ResetPasswordForm() {
       }, 2000);
     } catch (err: unknown) {
       console.warn("[Reset Password Request Failed]", err);
-      setErrorMessage("A network error occurred. Please check your connection and try again.");
+      if (err instanceof ApiError) {
+        setErrorMessage(err.message);
+      } else {
+        setErrorMessage(
+          err instanceof Error
+            ? err.message
+            : "A network error occurred. Please check your connection and try again.",
+        );
+      }
       setIsLoading(false);
     }
   };
@@ -97,9 +107,7 @@ export function ResetPasswordForm() {
           <CheckCircle2 className="h-8 w-8" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-gray-900">
-            Password Reset Successful!
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900">Password Reset Successful!</h2>
           <p className="text-sm text-gray-600">
             Your password has been securely updated. Redirecting you to the sign in page...
           </p>

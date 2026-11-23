@@ -43,15 +43,16 @@ export function ProductCard({ product }: ProductCardProps) {
           >
             {product.category}
           </Badge>
-          {/* {product.featured && (
-            <Badge
-              variant="primary"
-              size="sm"
-              className="bg-primary/95 text-white shadow-xs"
-            >
-              Featured
-            </Badge>
-          )} */}
+          {product.originalPrice && product.originalPrice > product.price && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-500 text-white shadow-xs">
+              {product.discountPercent || Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+            </span>
+          )}
+          {product.wholesaleEligible && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#5B46F6] text-white shadow-xs">
+              Wholesale Eligible
+            </span>
+          )}
         </div>
 
         {/* Wishlist Button */}
@@ -105,14 +106,39 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Price & Primary CTA */}
-        <div className="mt-5 flex items-center justify-between border-t border-border/80 pt-4">
+        <div className="mt-5 items-center justify-between border-t border-border/80 pt-4">
           <div>
-            <span className="text-[11px] font-medium text-text-secondary block">
-              Price
-            </span>
-            <span className="text-lg font-extrabold text-primary">
-              ৳{product.price.toLocaleString("en-BD")}
-            </span>
+            {product.originalPrice && product.originalPrice > product.price ? (
+              <div className="space-y-0.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                    <span>MRP</span>
+                    <span className="line-through">৳{product.originalPrice.toLocaleString("en-BD")}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.2 rounded">
+                      Special
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-lg font-extrabold text-[#5B46F6]">
+                    ৳{product.price.toLocaleString("en-BD")}
+                  </span>
+
+                </div>
+              </div>
+            ) : (
+              <div>
+                <span className="text-[11px] font-medium text-text-secondary block">
+                  Price
+                </span>
+                <span className="text-lg font-extrabold text-primary">
+                  ৳{product.price.toLocaleString("en-BD")}
+                </span>
+
+              </div>
+            )}
           </div>
 
           <Link

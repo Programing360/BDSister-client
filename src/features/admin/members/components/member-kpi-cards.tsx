@@ -1,16 +1,14 @@
 import React from "react";
-import {
-  Users,
-  UserCheck,
-  UserPlus,
-  Crown,
-  UserX,
-  ShieldAlert,
-} from "lucide-react";
-import { MemberKpiData } from "../types/admin-member";
+import { Users, UserCheck, Clock, Crown, UserX } from "lucide-react";
 
 interface MemberKpiCardsProps {
-  kpis: MemberKpiData;
+  kpis: {
+    total: number;
+    active: number;
+    pending: number;
+    paid: number;
+    suspended: number;
+  };
   isLoading?: boolean;
 }
 
@@ -19,61 +17,53 @@ export function MemberKpiCards({ kpis, isLoading = false }: MemberKpiCardsProps)
     {
       id: "total",
       label: "Total Members",
-      value: kpis.totalMembers.toLocaleString(),
+      value: kpis.total.toLocaleString(),
       subtext: "All registered sisters",
       icon: Users,
-      color: "bg-purple-50 text-[#5B46F6] border-purple-100",
+      color: "bg-[#5B9891]/12 text-[#5B9891] border-[#5B9891]/25",
     },
     {
       id: "active",
-      label: "Active Members",
-      value: kpis.activeMembers.toLocaleString(),
-      subtext: "Active in last 30 days",
+      label: "Active & Published",
+      value: kpis.active.toLocaleString(),
+      subtext: "Verified & approved",
       icon: UserCheck,
-      color: "bg-emerald-50 text-emerald-700 border-emerald-100",
+      color: "bg-[#5B9891]/15 text-[#467A74] border-[#5B9891]/30",
     },
     {
-      id: "free",
-      label: "Free Members",
-      value: kpis.freeMembers.toLocaleString(),
-      subtext: "Community tier base",
-      icon: UserPlus,
-      color: "bg-gray-50 text-gray-700 border-gray-200",
+      id: "pending",
+      label: "Pending Approval",
+      value: kpis.pending.toLocaleString(),
+      subtext: "Awaiting manual review",
+      icon: Clock,
+      color: "bg-[#F2B55D]/25 text-[#D98408] border-[#F2B55D]/40",
     },
     {
       id: "paid",
-      label: "Paid Members (Pro)",
-      value: kpis.paidMembers.toLocaleString(),
-      subtext: "Verified entrepreneurs",
+      label: "Paid Members",
+      value: kpis.paid.toLocaleString(),
+      subtext: "Entrepreneur & forum access",
       icon: Crown,
-      color: "bg-purple-50 text-[#5B46F6] border-purple-200",
+      color: "bg-[#F7DFC7]/70 text-[#D98408] border-[#D98408]/30",
     },
     {
       id: "suspended",
-      label: "Suspended / Banned",
-      value: kpis.suspendedMembers.toLocaleString(),
-      subtext: "Policy or audit hold",
+      label: "Suspended / Rejected",
+      value: kpis.suspended.toLocaleString(),
+      subtext: "Restricted accounts",
       icon: UserX,
-      color: "bg-rose-50 text-rose-700 border-rose-100",
-    },
-    {
-      id: "verifications",
-      label: "Pending Verifications",
-      value: kpis.pendingVerifications.toLocaleString(),
-      subtext: "NID/Passport queue",
-      icon: ShieldAlert,
-      color: "bg-amber-50 text-amber-800 border-amber-100",
+      color: "bg-rose-50 text-rose-700 border-rose-200",
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
       {cards.map((c) => {
         const Icon = c.icon;
         return (
           <div
             key={c.id}
-            className="flex flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-4 shadow-2xs transition hover:border-[#5B46F6]/30"
+            className="flex flex-col justify-between rounded-2xl shadow-sm shadow-gray-400 hover:bg-[#fcf1e6] transition-all duration-200 bg-white p-4 "
           >
             {isLoading ? (
               <div className="space-y-2 animate-pulse">
@@ -88,17 +78,15 @@ export function MemberKpiCards({ kpis, isLoading = false }: MemberKpiCardsProps)
                     {c.label}
                   </span>
                   <div
-                    className={`flex h-7 w-7 items-center justify-center rounded-lg border ${c.color}`}
+                    className={`flex h-8 w-8 items-center justify-center rounded-xl border ${c.color}`}
                   >
-                    <Icon className="h-3.5 w-3.5" />
+                    <Icon className="h-4 w-4" />
                   </div>
                 </div>
 
-                <div className="mt-2">
-                  <p className="text-xl font-black text-gray-900">{c.value}</p>
-                  <p className="mt-0.5 text-[10px] text-gray-400 truncate">
-                    {c.subtext}
-                  </p>
+                <div className="mt-3">
+                  <p className="text-2xl font-black text-gray-900">{c.value}</p>
+                  <p className="mt-0.5 text-[11px] text-gray-400 truncate">{c.subtext}</p>
                 </div>
               </>
             )}
