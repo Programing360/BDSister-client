@@ -1,5 +1,8 @@
-import { PublicHeader } from "@/components/layout/public-header";
+import React from "react";
 import { PublicFooter } from "@/components/layout/public-footer";
+import { PublicNavbar } from "@/components/layout/public-navbar";
+import { CartProvider } from "@/context/cart-context";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 export default function PublicLayout({
   children,
@@ -7,10 +10,13 @@ export default function PublicLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col">
-      <PublicHeader />
-      <main className="flex-1">{children}</main>
-      <PublicFooter />
-    </div>
+    <CartProvider>
+      <div className="flex min-h-screen flex-col bg-[#FAF8F5]">
+        <PublicNavbar />
+        <main className="flex-1">{children}</main>
+        <PublicFooter />
+        <CartDrawer />
+      </div>
+    </CartProvider>
   );
 }

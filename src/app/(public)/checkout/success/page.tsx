@@ -93,7 +93,7 @@ function SuccessContent() {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-3">
         <Loader2 className="h-10 w-10 animate-spin text-[#5B46F6]" />
-        <h2 className="text-lg font-bold text-gray-900">Verifying Payment with ZiniPay...</h2>
+        <h2 className="text-lg font-bold text-gray-900">Verifying Payment with Mobile Banking...</h2>
         <p className="text-sm text-gray-500">Please do not refresh or close this window.</p>
       </div>
     );
@@ -133,7 +133,7 @@ function SuccessContent() {
           <CheckCircle2 className="h-10 w-10" />
         </div>
         <span className="mt-4 inline-block rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200/70">
-          Payment Verified • ZiniPay Confirmed
+          Payment Verified •
         </span>
         <h1 className="mt-2 text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">
           Thank You! Your Order is Placed.

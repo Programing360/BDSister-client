@@ -16,3 +16,12 @@ export * from "./forum";
 export * from "./goals";
 export * from "./cms-client";
 export * from "./notification";
+export type {
+  KeyAreaItem,
+  ProductItem,
+  ForumTopicPreview,
+  WingItem,
+  EventItem,
+  ResourceItem,
+  SectionExplainer,
+} from "@/lib/data";

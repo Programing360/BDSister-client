@@ -74,7 +74,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [
       { label: "Pages & Blocks CMS", href: "/admin/content/pages", icon: FileText },
       { label: "Menu & Positioning", href: "/admin/content/menu", icon: Menu },
-      { label: "Section Hover Help", href: "/admin/content/section-help", icon: HelpCircle },
+      { label: "Section Hover Help", href: "/admin/content/hover-help", icon: HelpCircle },
       { label: "Forum Categories", href: "/admin/forums/categories", icon: MessageSquare },
       { label: "Forum Moderation", href: "/admin/forums/moderation", icon: ShieldAlert },
       { label: "Upcoming Events", href: "/admin/events", icon: Calendar },

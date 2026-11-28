@@ -126,6 +126,7 @@ export function MemberCommunityView() {
         setError(null);
         try {
             await apiClient.post(API_ENDPOINTS.forum.addComment(postId), {
+                comment: commentText.trim(),
                 content: commentText.trim(),
             });
             setCommentText("");

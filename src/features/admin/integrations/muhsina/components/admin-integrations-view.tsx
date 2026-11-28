@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { KeyRound, Plus, Ban, RefreshCw, Copy, CheckCircle2 } from "lucide-react";
+import { KeyRound, Plus, Ban, RefreshCw, Copy, CheckCircle2, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
@@ -19,6 +19,7 @@ export function AdminIntegrationsView() {
     const [newlyGeneratedKey, setNewlyGeneratedKey] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchKeys = useCallback(async () => {
         setIsLoading(true);
@@ -41,6 +42,7 @@ export function AdminIntegrationsView() {
 
     const handleGenerateKey = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError(null);
         try {
             const res = await apiClient.post<{ rawKey?: string; data?: { rawKey?: string } }>(
                 API_ENDPOINTS.admin.apiKeys,
@@ -51,7 +53,7 @@ export function AdminIntegrationsView() {
             if (generated) setNewlyGeneratedKey(generated);
             await fetchKeys();
         } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to generate API key.");
+            setError(err instanceof Error ? err.message : "Failed to generate API key.");
         }
     };
 
@@ -89,6 +91,13 @@ export function AdminIntegrationsView() {
                     <span>Refresh</span>
                 </button>
             </div>
+
+            {error && (
+                <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 animate-in fade-in">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                    <span>{error}</span>
+                </div>
+            )}
 
             {/* Newly Generated Key Alert */}
             {newlyGeneratedKey && (

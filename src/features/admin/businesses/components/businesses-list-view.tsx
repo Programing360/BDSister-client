@@ -15,9 +15,12 @@ import {
   MousePointerClick,
   Banknote,
   RotateCcw,
+  MoreVertical,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { decodeHtmlEntities, slugify } from "@/lib/utils/format";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 export interface BackendBrand {
   _id?: string;
@@ -51,6 +54,12 @@ export function BusinessesListView() {
   const [error, setError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [modalTarget, setModalTarget] = useState<{
+    business: BackendBusiness;
+    newStatus: "Paid" | "Unpaid";
+  } | null>(null);
+  const [isSubmittingModal, setIsSubmittingModal] = useState(false);
 
   const [query, setQuery] = useState("");
   const [subFilter, setSubFilter] = useState<"ALL" | "Paid" | "Unpaid">("ALL");
@@ -60,18 +69,50 @@ export function BusinessesListView() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  // Close dropdown on outside click or Escape key
+  useEffect(() => {
+    if (!openDropdownId) return;
+
+    const handleDocumentClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("[data-action-menu]")) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener("click", handleDocumentClick);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("click", handleDocumentClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [openDropdownId]);
+
   const fetchBusinesses = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get<{ data?: BackendBusiness[] }>(
-        API_ENDPOINTS.admin.businesses
-      );
-      const raw = res as unknown as { data?: BackendBusiness[] } | BackendBusiness[];
-      const list = Array.isArray(raw) ? raw : raw.data || [];
+      const res = await apiClient.get<any>(API_ENDPOINTS.admin.businesses);
+      const raw = res as any;
+      const list: BackendBusiness[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.data)
+        ? raw.data
+        : Array.isArray(raw?.data?.businesses)
+        ? raw.data.businesses
+        : Array.isArray(raw?.businesses)
+        ? raw.businesses
+        : [];
       setBusinesses(list);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load business profiles.");
+      setBusinesses([]);
     } finally {
       setIsLoading(false);
     }
@@ -81,10 +122,10 @@ export function BusinessesListView() {
     fetchBusinesses();
   }, [fetchBusinesses]);
 
-  const handleToggleSubscription = async (
-    business: BackendBusiness,
-    newStatus: "Paid" | "Unpaid"
-  ) => {
+  const handleConfirmModal = async () => {
+    if (!modalTarget) return;
+    const { business, newStatus } = modalTarget;
+    setIsSubmittingModal(true);
     setUpdatingId(business._id);
     try {
       await apiClient.patch(
@@ -92,18 +133,24 @@ export function BusinessesListView() {
         { subscriptionStatus: newStatus }
       );
       showToast(
-        `Business subscription updated to ${newStatus}. Brands ${newStatus === "Paid" ? "published" : "unpublished"
+        `Business subscription updated to ${newStatus}. Brands ${
+          newStatus === "Paid" ? "published" : "unpublished"
         } automatically.`
       );
+      setModalTarget(null);
       await fetchBusinesses();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update subscription status.");
+      showToast(err instanceof Error ? err.message : "Failed to update subscription status.");
     } finally {
+      setIsSubmittingModal(false);
       setUpdatingId(null);
     }
   };
 
   const kpis = useMemo(() => {
+    if (!Array.isArray(businesses)) {
+      return { total: 0, paid: 0, unpaid: 0, totalBrands: 0, totalClicks: 0 };
+    }
     const total = businesses.length;
     const paid = businesses.filter((b) => b.subscriptionStatus === "Paid").length;
     const unpaid = total - paid;
@@ -120,6 +167,9 @@ export function BusinessesListView() {
   }, [businesses]);
 
   const filteredBusinesses = useMemo(() => {
+    if (!Array.isArray(businesses)) {
+      return [];
+    }
     return businesses.filter((b) => {
       if (subFilter !== "ALL" && b.subscriptionStatus !== subFilter) return false;
       if (query.trim()) {
@@ -127,7 +177,9 @@ export function BusinessesListView() {
         const ownerName = (b.userId?.fullName || "").toLowerCase();
         const ownerEmail = (b.userId?.email || "").toLowerCase();
         const brandMatch = b.brands?.some((br) =>
-          (br.brandName || "").toLowerCase().includes(q)
+          decodeHtmlEntities(br.brandName || "")
+            .toLowerCase()
+            .includes(q)
         );
         if (!ownerName.includes(q) && !ownerEmail.includes(q) && !brandMatch) {
           return false;
@@ -333,19 +385,27 @@ export function BusinessesListView() {
                       <td className="py-3.5 px-4">
                         <div className="flex flex-wrap gap-1.5">
                           {biz.brands && biz.brands.length > 0 ? (
-                            biz.brands.map((br, idx) => (
-                              <span
-                                key={idx}
-                                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-[#FAF8F5] px-2.5 py-1 text-[11px] font-semibold text-gray-800"
-                              >
-                                {br.brandName}
-                                {br.roleInBusiness && (
-                                  <span className="text-[10px] text-gray-400">
-                                    ({br.roleInBusiness})
-                                  </span>
-                                )}
-                              </span>
-                            ))
+                            biz.brands.map((br, idx) => {
+                              const brandSlug = br._id || slugify(br.brandName);
+                              return (
+                                <Link
+                                  key={idx}
+                                  href={`/brands/${brandSlug}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={`View live public page for ${decodeHtmlEntities(br.brandName)}`}
+                                  className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-[#FAF8F5] px-2.5 py-1 text-[11px] font-semibold text-gray-800 hover:border-[#5B9891] hover:text-[#5B9891] hover:bg-[#5B9891]/5 transition shadow-2xs"
+                                >
+                                  <span>{decodeHtmlEntities(br.brandName)}</span>
+                                  {br.roleInBusiness && (
+                                    <span className="text-[10px] text-gray-400">
+                                      ({decodeHtmlEntities(br.roleInBusiness)})
+                                    </span>
+                                  )}
+                                  <ExternalLink className="h-2.5 w-2.5 text-gray-400 group-hover:text-[#5B9891]" />
+                                </Link>
+                              );
+                            })
                           ) : (
                             <span className="text-[11px] text-gray-400">No brands added</span>
                           )}
@@ -370,36 +430,61 @@ export function BusinessesListView() {
                       </td>
 
                       {/* Actions */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/admin/businesses/${biz._id}`}
-                            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-bold text-gray-700 hover:border-[#5B9891] hover:text-[#5B9891] transition"
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap shrink-0">
+                        <div className="relative inline-block text-left" data-action-menu>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdownId((curr) => (curr === biz._id ? null : biz._id));
+                            }}
+                            aria-expanded={openDropdownId === biz._id}
+                            aria-label={`Actions for ${decodeHtmlEntities(biz.userId?.fullName || "business")}`}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 hover:border-[#5B9891] hover:text-[#5B9891] hover:bg-[#5B9891]/5 transition shadow-2xs cursor-pointer"
                           >
-                            <ExternalLink className="h-3 w-3" />
-                            <span>Details</span>
-                          </Link>
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
 
-                          {biz.subscriptionStatus === "Unpaid" ? (
-                            <button
-                              type="button"
-                              disabled={updatingId === biz._id}
-                              onClick={() => handleToggleSubscription(biz, "Paid")}
-                              className="inline-flex items-center gap-1 rounded-lg bg-[#5B9891] px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-[#467A74] transition disabled:opacity-50"
-                            >
-                              <Banknote className="h-3 w-3" />
-                              <span>Mark Paid & Publish</span>
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              disabled={updatingId === biz._id}
-                              onClick={() => handleToggleSubscription(biz, "Unpaid")}
-                              className="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[11px] font-bold text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
-                            >
-                              <XCircle className="h-3 w-3" />
-                              <span>Unpublish</span>
-                            </button>
+                          {/* Floating 3-Dot Action Dropdown Menu */}
+                          {openDropdownId === biz._id && (
+                            <div className="absolute right-0 z-30 mt-1.5 w-48 origin-top-right rounded-2xl border border-gray-100 bg-white py-1.5 shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-150">
+                              <Link
+                                href={`/admin/businesses/${biz._id}`}
+                                onClick={() => setOpenDropdownId(null)}
+                                className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-gray-700 hover:bg-[#FAF8F5] hover:text-[#5B9891] transition"
+                              >
+                                <ExternalLink className="h-3.5 w-3.5 text-gray-400" />
+                                <span>View Details</span>
+                              </Link>
+
+                              <div className="my-1 border-t border-gray-100" />
+
+                              {biz.subscriptionStatus === "Paid" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    setModalTarget({ business: biz, newStatus: "Unpaid" });
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                >
+                                  <XCircle className="h-3.5 w-3.5 text-rose-500" />
+                                  <span>Unpublish Brands</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenDropdownId(null);
+                                    setModalTarget({ business: biz, newStatus: "Paid" });
+                                  }}
+                                  className="flex w-full items-center gap-2 px-3.5 py-2 text-xs font-bold text-[#467A74] hover:bg-[#5B9891]/10 transition cursor-pointer"
+                                >
+                                  <Banknote className="h-3.5 w-3.5 text-[#5B9891]" />
+                                  <span>Mark Paid &amp; Publish</span>
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </td>
@@ -411,6 +496,56 @@ export function BusinessesListView() {
           </table>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {modalTarget && (
+        <ConfirmationModal
+          isOpen={Boolean(modalTarget)}
+          isLoading={isSubmittingModal}
+          variant={modalTarget.newStatus === "Paid" ? "primary" : "danger"}
+          icon={modalTarget.newStatus === "Paid" ? Banknote : XCircle}
+          title={
+            modalTarget.newStatus === "Paid"
+              ? "Approve Subscription & Publish Brands"
+              : "Unpublish & Revoke Subscription"
+          }
+          confirmText={
+            modalTarget.newStatus === "Paid" ? "Approve & Publish" : "Unpublish Brands"
+          }
+          description={
+            modalTarget.newStatus === "Paid" ? (
+              <div className="space-y-2">
+                <p>
+                  Are you sure you want to mark the subscription for{" "}
+                  <strong>{decodeHtmlEntities(modalTarget.business.userId?.fullName || "this sister")}</strong> as{" "}
+                  <strong className="text-[#5B9891]">Paid</strong>?
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  This will automatically publish all registered brands (
+                  {modalTarget.business.brands?.map((b) => decodeHtmlEntities(b.brandName)).join(", ") ||
+                    "all brands"}
+                  ) on the public directory, marketplace, and search listings.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p>
+                  Are you sure you want to unpublish the business profile for{" "}
+                  <strong>{decodeHtmlEntities(modalTarget.business.userId?.fullName || "this sister")}</strong>?
+                </p>
+                <p className="text-[11px] text-rose-600">
+                  All registered brands will be immediately hidden from public view and
+                  affiliate traffic collection will be paused until subscription fee is renewed.
+                </p>
+              </div>
+            )
+          }
+          onClose={() => {
+            if (!isSubmittingModal) setModalTarget(null);
+          }}
+          onConfirm={handleConfirmModal}
+        />
+      )}
     </div>
   );
 }

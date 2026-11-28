@@ -5,18 +5,13 @@ import Link from "next/link";
 import { DEMO_AUDIT_LOGS, type AdminAuditLog } from "../data/mock-security";
 import { Button } from "@/components/ui/button";
 import {
-  Activity,
   Search,
-  Filter,
   CheckCircle2,
-  ShieldAlert,
-  Calendar,
-  ChevronRight,
   Download,
 } from "lucide-react";
 
 export function AuditLogsView() {
-  const [logs, setLogs] = useState<AdminAuditLog[]>(DEMO_AUDIT_LOGS);
+  const [logs] = useState<AdminAuditLog[]>(DEMO_AUDIT_LOGS);
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("all");
 

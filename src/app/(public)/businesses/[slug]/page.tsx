@@ -79,7 +79,7 @@ export default async function BusinessDetailPage({
   const coverImage = business.coverImage || "/images/placeholders/biz-cover-1.jpg";
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col pt-24 sm:pt-28">
       {/* Top Breadcrumb Bar */}
       <div className="bg-surface/70 border-b border-border/80 py-3.5">
         <Container size="lg">

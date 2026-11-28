@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { ZiniPayService } from "@/lib/services/zinipay-service";
@@ -16,7 +16,7 @@ interface EventRsvpActionProps {
 
 export function EventRsvpAction({ event }: EventRsvpActionProps) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +24,7 @@ export function EventRsvpAction({ event }: EventRsvpActionProps) {
   const isFree = !event.price || event.price === 0;
 
   const handleAction = async () => {
-    if (!session?.user) {
+    if (!user) {
       router.push(`/login?redirect=/events/${event.slug}`);
       return;
     }
@@ -65,8 +65,8 @@ export function EventRsvpAction({ event }: EventRsvpActionProps) {
           amount: event.price!,
           purpose: "EVENT",
           metadata: { eventId: event.id, eventTitle: event.title },
-          customerName: session.user.name || "Sister Member",
-          customerEmail: session.user.email || "sister@bdsisters.org",
+          customerName: user.name || (user as any).fullName || "Sister Member",
+          customerEmail: user.email || "sister@bdsisters.org",
         });
 
         if (payInit.paymentUrl) {
@@ -140,7 +140,7 @@ export function EventRsvpAction({ event }: EventRsvpActionProps) {
       </Button>
 
       <p className="text-[11px] text-center text-text-secondary">
-        {session?.user
+        {user
           ? "Confirmed instantly under your sisterhood account."
           : "Requires free BDSisters membership to verify identity."}
       </p>

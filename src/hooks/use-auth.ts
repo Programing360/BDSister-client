@@ -39,19 +39,12 @@ function getStoredToken(): string | null {
 
 // ─── Module-level cache & deduplication (prevents duplicate /me requests) ───
 let cachedUser: AuthUser | null = null;
-let cachedToken: string | null = null;
+let hasCheckedSession = false;
 let inFlightRequest: Promise<AuthUser | null> | null = null;
 
 async function resolveCurrentUser(forceRefresh = false): Promise<AuthUser | null> {
-  const token = getStoredToken();
-  if (!token) {
-    cachedUser = null;
-    cachedToken = null;
-    return null;
-  }
-
-  // Return cached user if token hasn't changed and refresh wasn't forced
-  if (!forceRefresh && cachedUser && cachedToken === token) {
+  // Return cached user if session has already been checked and refresh wasn't forced
+  if (!forceRefresh && hasCheckedSession && cachedUser) {
     return cachedUser;
   }
 
@@ -62,12 +55,30 @@ async function resolveCurrentUser(forceRefresh = false): Promise<AuthUser | null
 
   inFlightRequest = (async () => {
     try {
-      const response = await apiClient.get<{ data?: Record<string, unknown> }>(
+      const response = await apiClient.get<Record<string, unknown>>(
         API_ENDPOINTS.auth.me
       );
 
-      const raw = response as unknown as { data?: Record<string, unknown> };
-      const userData = raw.data;
+      const raw = response as unknown as Record<string, unknown>;
+      const rawData = raw?.data as Record<string, unknown> | undefined;
+
+      // Extract userData safely from raw.data?.user ?? raw.data ?? raw.user ?? (raw._id || raw.id ? raw : null)
+      const rawCandidate =
+        (rawData?.user as Record<string, unknown> | undefined) ??
+        rawData ??
+        (raw?.user as Record<string, unknown> | undefined) ??
+        (raw?._id || raw?.id ? raw : null);
+
+      const userData =
+        rawCandidate &&
+        typeof rawCandidate === "object" &&
+        Boolean(
+          (rawCandidate as Record<string, unknown>)._id ||
+            (rawCandidate as Record<string, unknown>).id ||
+            (rawCandidate as Record<string, unknown>).email
+        )
+          ? (rawCandidate as Record<string, unknown>)
+          : null;
 
       if (userData) {
         const mappedUser = {
@@ -79,15 +90,17 @@ async function resolveCurrentUser(forceRefresh = false): Promise<AuthUser | null
         } as unknown as AuthUser;
 
         cachedUser = mappedUser;
-        cachedToken = token;
+        hasCheckedSession = true;
         return mappedUser;
       }
 
       cachedUser = null;
-      cachedToken = null;
+      hasCheckedSession = true;
       return null;
     } catch {
-      return cachedUser;
+      cachedUser = null;
+      hasCheckedSession = true;
+      return null;
     } finally {
       inFlightRequest = null;
     }
@@ -98,17 +111,10 @@ async function resolveCurrentUser(forceRefresh = false): Promise<AuthUser | null
 
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<AuthUser | null>(cachedUser);
-  const [isLoading, setIsLoading] = useState<boolean>(!cachedUser);
+  const [isLoading, setIsLoading] = useState<boolean>(!hasCheckedSession);
 
   const loadUser = useCallback(async (force = false) => {
-    const token = getStoredToken();
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
-    if (!cachedUser || force) {
+    if (!hasCheckedSession || force) {
       setIsLoading(true);
     }
 
@@ -128,12 +134,13 @@ export function useAuth(): UseAuthReturn {
       // Proceed with local cleanup
     } finally {
       cachedUser = null;
-      cachedToken = null;
+      hasCheckedSession = false;
       inFlightRequest = null;
 
       if (typeof window !== "undefined") {
         localStorage.removeItem("token");
         localStorage.removeItem("auth_token");
+        localStorage.removeItem("access_token");
         localStorage.removeItem("user");
         document.cookie = "token=; path=/; max-age=0";
         document.cookie = "auth_token=; path=/; max-age=0";
@@ -144,16 +151,20 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  const hasRole = (role: UserRole | string): boolean => {
+  const hasRole = useCallback((role: UserRole | string): boolean => {
     if (!user?.role) return false;
     return normalizeRole(user.role) === normalizeRole(role);
-  };
+  }, [user?.role]);
 
-  const hasAnyRole = (roles: Array<UserRole | string>): boolean => {
+  const hasAnyRole = useCallback((roles: Array<UserRole | string>): boolean => {
     if (!user?.role) return false;
     const current = normalizeRole(user.role);
     return roles.some((r) => normalizeRole(r) === current);
-  };
+  }, [user?.role]);
+
+  const refreshUser = useCallback(async () => {
+    await loadUser(true);
+  }, [loadUser]);
 
   const adminRoles = [
     "SuperAdmin",
@@ -176,7 +187,7 @@ export function useAuth(): UseAuthReturn {
     isMember: hasAnyRole(["Member", "PaidMember"]),
     hasRole,
     hasAnyRole,
-    refreshUser: () => loadUser(true),
+    refreshUser,
     logout,
   };
 }

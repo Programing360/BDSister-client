@@ -105,7 +105,7 @@ export function MemberEventsView() {
     if (tab === "archive") {
       setLoadingArchive(true);
       apiClient
-        .get<ArchivedEvent[]>(API_ENDPOINTS.events.archive)
+        .get<ArchivedEvent[]>(API_ENDPOINTS.events.archiveList)
         .then((res) => {
           if (res.data && Array.isArray(res.data) && res.data.length > 0) {
             setArchive(res.data);

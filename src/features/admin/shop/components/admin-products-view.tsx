@@ -45,14 +45,21 @@ export function AdminProductsView() {
         setIsLoading(true);
         setError(null);
         try {
-            const res = await apiClient.get<{ data?: BackendProduct[] }>(
-                API_ENDPOINTS.ecommerce.products
-            );
-            const raw = res as unknown as { data?: BackendProduct[] } | BackendProduct[];
-            const list = Array.isArray(raw) ? raw : raw.data || [];
+            const res = await apiClient.get<any>(API_ENDPOINTS.ecommerce.products);
+            const raw = res as any;
+            const list: BackendProduct[] = Array.isArray(raw)
+                ? raw
+                : Array.isArray(raw?.data)
+                ? raw.data
+                : Array.isArray(raw?.data?.products)
+                ? raw.data.products
+                : Array.isArray(raw?.products)
+                ? raw.products
+                : [];
             setProducts(list);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to load products and services.");
+            setProducts([]);
         } finally {
             setIsLoading(false);
         }
@@ -75,13 +82,17 @@ export function AdminProductsView() {
             setTimeout(() => setToastMessage(null), 3500);
             await fetchProducts();
         } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to delete product.");
+            setToastMessage(err instanceof Error ? err.message : "Failed to delete product.");
+            setTimeout(() => setToastMessage(null), 3500);
         } finally {
             setDeletingId(null);
         }
     };
 
     const filteredProducts = useMemo(() => {
+        if (!Array.isArray(products)) {
+            return [];
+        }
         return products.filter((p) => {
             const itemType = p.type || "Product";
             if (typeFilter !== "ALL" && itemType !== typeFilter) return false;

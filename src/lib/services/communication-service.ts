@@ -38,7 +38,13 @@ export const communicationService = {
     try {
       const res = await apiClient.post<ContactSubmissionResponse>(
         API_ENDPOINTS.contact.submit,
-        payload
+        {
+          name: payload.fullName || (payload as any).name,
+          email: payload.email,
+          phone: payload.phone,
+          subject: payload.subject,
+          message: payload.message,
+        }
       );
       if (res.data) return res.data;
     } catch (err) {

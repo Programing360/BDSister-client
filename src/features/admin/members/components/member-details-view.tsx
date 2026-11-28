@@ -35,7 +35,10 @@ interface FullMemberProfile extends BackendMember {
   identityVerification?: {
     verificationStatus?: string;
     documentType?: string;
+    docType?: string;
+    idNumber?: string;
     nidOrPassportUrl?: string;
+    backImageUrl?: string;
     submittedAt?: string;
     auditLog?: Array<{
       action: string;
@@ -338,23 +341,86 @@ export function MemberDetailsView({ userId }: MemberDetailsViewProps) {
               Confidential: Only authorized administrators can inspect NID/Passport documents. Access is logged.
             </p>
 
-            {member.identityVerification?.nidOrPassportUrl ? (
-              <div className="space-y-3">
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                  <img
-                    src={member.identityVerification.nidOrPassportUrl}
-                    alt="Member NID or Passport"
-                    className="w-full max-h-56 object-contain"
-                  />
-                </div>
-                <a
-                  href={member.identityVerification.nidOrPassportUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-[#5B9891] px-4 py-2 text-xs font-bold text-white hover:bg-[#467A74] transition"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" /> Open Full Resolution Document
-                </a>
+            {/* Document Metadata (docType & idNumber) */}
+            <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50/80 p-3 rounded-xl border border-gray-100">
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Document Type
+                </span>
+                <span className="inline-block mt-0.5 px-2 py-0.5 rounded-md font-bold text-[11px] bg-[#5B9891]/10 text-[#467A74]">
+                  {member.identityVerification?.docType === "PASSPORT"
+                    ? "Passport"
+                    : member.identityVerification?.docType === "ACADEMIC"
+                    ? "Academic / Student ID"
+                    : "National ID (NID)"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                  Document / ID Number
+                </span>
+                <span className="font-semibold text-gray-900 tracking-wider">
+                  {member.identityVerification?.idNumber || "Not Provided"}
+                </span>
+              </div>
+            </div>
+
+            {/* Document Images (Front & Back) */}
+            {member.identityVerification?.nidOrPassportUrl || member.identityVerification?.backImageUrl ? (
+              <div className="space-y-4">
+                {/* Front Image */}
+                {member.identityVerification?.nidOrPassportUrl && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#5B9891]" />
+                        Front Side
+                      </span>
+                      <a
+                        href={member.identityVerification.nidOrPassportUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-[#5B9891] hover:underline inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Full View
+                      </a>
+                    </div>
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                      <img
+                        src={member.identityVerification.nidOrPassportUrl}
+                        alt="Front Side Document"
+                        className="w-full max-h-52 object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Back Image */}
+                {member.identityVerification?.backImageUrl && (
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#D98408]" />
+                        Back Side
+                      </span>
+                      <a
+                        href={member.identityVerification.backImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-bold text-[#D98408] hover:underline inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Full View
+                      </a>
+                    </div>
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                      <img
+                        src={member.identityVerification.backImageUrl}
+                        alt="Back Side Document"
+                        className="w-full max-h-52 object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-6 text-center text-xs text-gray-400">

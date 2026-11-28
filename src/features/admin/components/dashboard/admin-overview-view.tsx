@@ -113,7 +113,7 @@ function AdminOverviewContent() {
       await apiClient.patch(API_ENDPOINTS.admin.updateUserStatus(userId), { status });
       await fetchAnalytics();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update user status.");
+      setError(err instanceof Error ? err.message : "Failed to update user status.");
     } finally {
       setActionLoadingId(null);
     }

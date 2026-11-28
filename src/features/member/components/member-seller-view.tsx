@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
     Store,
     Plus,
@@ -10,16 +10,22 @@ import {
     CheckCircle2,
     AlertCircle,
     Truck,
+    UploadCloud,
+    Loader2,
+    X,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import { SectionHelpTooltip } from "@/components/shared/section-help-tooltip";
+import { uploadSignedToCloudinary } from "@/lib/cloudinary/cloudinary";
 
 interface SellerProductItem {
     _id: string;
     title: string;
     brandName?: string;
     category?: string;
+    subCategory?: string;
+    images?: string[];
     mrpPrice?: number;
     salePrice: number;
     wholesalePrice?: number;
@@ -56,7 +62,12 @@ export function MemberSellerView() {
     const [selectedBrandKey, setSelectedBrandKey] = useState("");
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
-    const [category, setCategory] = useState("Modest Fashion");
+    const [listingType, setListingType] = useState<"Product" | "Service">("Product");
+    const [subCategory, setSubCategory] = useState("Modest Fashion & Apparel");
+    const [imageUrl, setImageUrl] = useState("");
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [imageUploadError, setImageUploadError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [mrpPrice, setMrpPrice] = useState("");
     const [salePrice, setSalePrice] = useState("");
     const [isWholesaleEligible, setIsWholesaleEligible] = useState(false);
@@ -80,17 +91,31 @@ export function MemberSellerView() {
             ]);
 
             if (prodRes.status === "fulfilled") {
-                const rawP = prodRes.value as unknown as
-                    | { data?: SellerProductItem[] }
-                    | SellerProductItem[];
-                setProducts(Array.isArray(rawP) ? rawP : rawP.data || []);
+                const rawP = prodRes.value as any;
+                const list = Array.isArray(rawP)
+                    ? rawP
+                    : Array.isArray(rawP?.data)
+                    ? rawP.data
+                    : Array.isArray(rawP?.data?.products)
+                    ? rawP.data.products
+                    : Array.isArray(rawP?.products)
+                    ? rawP.products
+                    : [];
+                setProducts(list);
             }
 
             if (ordersRes.status === "fulfilled") {
-                const rawO = ordersRes.value as unknown as
-                    | { data?: SellerOrderItem[] }
-                    | SellerOrderItem[];
-                setSellerOrders(Array.isArray(rawO) ? rawO : rawO.data || []);
+                const rawO = ordersRes.value as any;
+                const list = Array.isArray(rawO)
+                    ? rawO
+                    : Array.isArray(rawO?.data)
+                    ? rawO.data
+                    : Array.isArray(rawO?.data?.orders)
+                    ? rawO.data.orders
+                    : Array.isArray(rawO?.orders)
+                    ? rawO.orders
+                    : [];
+                setSellerOrders(list);
             }
 
             if (bizRes.status === "fulfilled") {
@@ -117,10 +142,71 @@ export function MemberSellerView() {
         fetchSellerData();
     }, [fetchSellerData]);
 
+    const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            setImageUploadError("Please upload an image file (JPEG, PNG, WebP, or GIF).");
+            return;
+        }
+
+        if (file.size > 8 * 1024 * 1024) {
+            setImageUploadError("Image size must be less than 8MB.");
+            return;
+        }
+
+        setImageUploadError(null);
+        setIsUploadingImage(true);
+
+        try {
+            const uploadedUrl = await uploadSignedToCloudinary(file);
+            setImageUrl(uploadedUrl);
+            showToast("Cover image uploaded to Cloudinary successfully!");
+        } catch (err: unknown) {
+            setImageUploadError(err instanceof Error ? err.message : "Failed to upload image.");
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImageUrl("");
+        setImageUploadError(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
     const handleAddProduct = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!title.trim() || !salePrice || !selectedBrandKey) {
+        if (!selectedBrandKey) {
             setError("Please select one of your registered brands first.");
+            return;
+        }
+
+        if (!title.trim()) {
+            setError("Product title is required.");
+            return;
+        }
+
+        if (!description.trim()) {
+            setError("Product description / story is required. Please provide specifications or details.");
+            return;
+        }
+
+        if (!salePrice || Number(salePrice) <= 0) {
+            setError("Please enter a valid discounted sale price.");
+            return;
+        }
+
+        if (mrpPrice && Number(salePrice) > Number(mrpPrice)) {
+            setError("Discounted sale price must be equal to or less than the MRP price.");
+            return;
+        }
+
+        if (isUploadingImage) {
+            setError("Please wait for the cover image to finish uploading.");
             return;
         }
 
@@ -132,8 +218,10 @@ export function MemberSellerView() {
                 businessId,
                 brandName,
                 title: title.trim(),
-                description: description.trim() || title.trim(),
-                category: category.trim(),
+                description: description.trim(),
+                category: listingType,
+                subCategory: subCategory.trim() || undefined,
+                images: imageUrl.trim() ? [imageUrl.trim()] : [],
                 mrpPrice: mrpPrice ? Number(mrpPrice) : Number(salePrice),
                 salePrice: Number(salePrice),
                 isWholesaleEligible,
@@ -144,10 +232,16 @@ export function MemberSellerView() {
 
             setTitle("");
             setDescription("");
+            setImageUrl("");
+            setImageUploadError(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
             setMrpPrice("");
             setSalePrice("");
             setWholesalePrice("");
-            showToast("Product published to BDSisters Marketplace!");
+            setIsWholesaleEligible(false);
+            showToast("Product listing published successfully to BDSisters Marketplace!");
             await fetchSellerData();
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to add product.");
@@ -288,7 +382,7 @@ export function MemberSellerView() {
             >
                 <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
                     <Store className="h-4 w-4 text-[#5B9891]" />
-                    <h2 className="text-sm font-bold text-gray-900">Add New Product Listing</h2>
+                    <h2 className="text-sm font-bold text-gray-900">Add New Marketplace Listing</h2>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -315,25 +409,137 @@ export function MemberSellerView() {
                         </select>
                     </div>
 
+                    <div>
+                        <label className="block font-bold text-gray-700 mb-1">Listing Type *</label>
+                        <select
+                            value={listingType}
+                            onChange={(e) => setListingType(e.target.value as "Product" | "Service")}
+                            className="w-full rounded-xl border border-gray-200 bg-[#FAF8F5] px-3 py-2 font-bold text-gray-900"
+                            required
+                        >
+                            <option value="Product">Physical Product</option>
+                            <option value="Service">Professional Service</option>
+                        </select>
+                    </div>
+
                     <div className="lg:col-span-2">
-                        <label className="block font-bold text-gray-700 mb-1">Product Title *</label>
+                        <label className="block font-bold text-gray-700 mb-1">Title *</label>
                         <input
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder="e.g. Organic Sundarbans Honey 500g"
+                            placeholder="e.g. Premium Silk Abaya or Graphic Design Package"
                             className="w-full rounded-xl border border-gray-200 bg-[#FAF8F5] px-3 py-2 text-gray-900"
                             required
                         />
                     </div>
 
-                    <div>
-                        <label className="block font-bold text-gray-700 mb-1">Category</label>
+                    <div className="lg:col-span-2">
+                        <label className="block font-bold text-gray-700 mb-1">Niche Category</label>
                         <input
                             type="text"
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
+                            value={subCategory}
+                            onChange={(e) => setSubCategory(e.target.value)}
+                            placeholder="e.g. Modest Fashion & Apparel"
                             className="w-full rounded-xl border border-gray-200 bg-[#FAF8F5] px-3 py-2 text-gray-900"
+                        />
+                    </div>
+
+                    {/* Direct File Upload Widget connected to Cloudinary */}
+                    <div className="sm:col-span-2 lg:col-span-4 space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <label className="block font-bold text-gray-700 text-xs">
+                                Product Cover Image
+                            </label>
+                            {imageUrl && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                                    <CheckCircle2 className="h-3 w-3" /> Uploaded to Cloudinary
+                                </span>
+                            )}
+                        </div>
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            onChange={handleImageFileSelect}
+                            className="hidden"
+                        />
+
+                        {imageUploadError && (
+                            <div className="flex items-center gap-1.5 text-xs text-rose-600 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl">
+                                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                                <span>{imageUploadError}</span>
+                            </div>
+                        )}
+
+                        {imageUrl ? (
+                            <div className="flex items-center gap-4 p-3 rounded-xl border border-gray-200 bg-[#FAF8F5]">
+                                <img
+                                    src={imageUrl}
+                                    alt="Product Preview"
+                                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-xl object-cover border border-gray-200 shrink-0 shadow-xs"
+                                />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-bold text-gray-900 truncate">
+                                        Cover Image Ready
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 truncate mt-0.5 font-mono">
+                                        {imageUrl}
+                                    </p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={isUploadingImage}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-gray-300 bg-white text-[11px] font-bold text-gray-700 hover:bg-gray-50 transition"
+                                        >
+                                            <RefreshCw className="h-3 w-3" /> Replace
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveImage}
+                                            disabled={isUploadingImage}
+                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-rose-200 bg-rose-50 text-[11px] font-bold text-rose-600 hover:bg-rose-100 transition"
+                                        >
+                                            <Trash2 className="h-3 w-3" /> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : isUploadingImage ? (
+                            <div className="flex flex-col items-center justify-center p-6 rounded-xl border-2 border-dashed border-[#5B9891]/60 bg-[#FAF8F5]/50 text-center">
+                                <Loader2 className="h-7 w-7 text-[#5B9891] animate-spin mb-2" />
+                                <p className="text-xs font-bold text-[#467A74]">Uploading to Cloudinary...</p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">Optimizing & securing high-resolution image</p>
+                            </div>
+                        ) : (
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex flex-col items-center justify-center p-5 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#5B9891] bg-[#FAF8F5] hover:bg-white cursor-pointer transition text-center group"
+                            >
+                                <div className="w-10 h-10 rounded-full bg-[#5B9891]/10 flex items-center justify-center text-[#5B9891] group-hover:scale-110 transition mb-2">
+                                    <UploadCloud className="h-5 w-5" />
+                                </div>
+                                <p className="text-xs font-bold text-gray-800">
+                                    Click to upload cover image <span className="text-gray-400 font-normal">or choose file</span>
+                                </p>
+                                <p className="text-[11px] text-gray-500 mt-0.5">
+                                    PNG, JPG, WebP, or GIF up to 8MB
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="sm:col-span-2 lg:col-span-4">
+                        <label className="block font-bold text-gray-700 mb-1">Description / Story *</label>
+                        <textarea
+                            rows={2}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Provide details about fabric, materials, specifications, or deliverables..."
+                            className="w-full rounded-xl border border-gray-200 bg-[#FAF8F5] px-3 py-2 text-gray-900 text-xs resize-none"
+                            required
                         />
                     </div>
 
@@ -411,7 +617,7 @@ export function MemberSellerView() {
                     className="inline-flex items-center gap-1.5 rounded-xl bg-[#5B9891] px-5 py-2 text-xs font-bold text-white hover:bg-[#467A74] transition disabled:opacity-50"
                 >
                     <Plus className="h-4 w-4" />
-                    <span>{isAdding ? "Publishing..." : "Publish Product"}</span>
+                    <span>{isAdding ? "Publishing..." : "Publish Listing"}</span>
                 </button>
             </form>
 
@@ -437,8 +643,31 @@ export function MemberSellerView() {
                             products.map((item) => (
                                 <tr key={item._id} className="hover:bg-[#F7DFC7]/20">
                                     <td className="py-3.5 px-4">
-                                        <p className="font-bold text-gray-900">{item.title}</p>
-                                        <p className="text-[11px] text-[#D98408]">{item.brandName}</p>
+                                        <div className="flex items-center gap-3">
+                                            {item.images?.[0] ? (
+                                                <img
+                                                    src={item.images[0]}
+                                                    alt={item.title}
+                                                    className="h-10 w-10 rounded-lg object-cover border border-gray-100 shrink-0"
+                                                    onError={(e) => {
+                                                        (e.target as HTMLElement).style.display = "none";
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div className="h-10 w-10 rounded-lg bg-[#FAF8F5] border border-gray-100 flex items-center justify-center shrink-0 text-gray-400">
+                                                    <Store className="h-5 w-5 text-gray-400" />
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="font-bold text-gray-900">{item.title}</p>
+                                                <div className="flex items-center gap-1.5 mt-0.5 text-[11px]">
+                                                    <span className="text-[#D98408] font-medium">{item.brandName}</span>
+                                                    {(item.subCategory || item.category) && (
+                                                        <span className="text-gray-400">• {item.subCategory || item.category}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td className="py-3.5 px-4">
                                         <span className="font-black text-gray-900">৳{item.salePrice}</span>

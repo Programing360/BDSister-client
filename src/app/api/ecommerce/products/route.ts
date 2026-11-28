@@ -1,41 +1,58 @@
-import { NextRequest } from "next/server";
-import { successResponse, errorResponse } from "@/lib/api/response";
-import { getPublicProducts } from "@/lib/services/product-service";
+import { NextRequest, NextResponse } from "next/server";
+import { getDatabase } from "@/lib/db/mongodb";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const search = searchParams.get("search") || undefined;
-  const category = searchParams.get("category") || undefined;
-  const inStockOnly = searchParams.get("inStock") === "true";
-  const featuredOnly = searchParams.get("featured") === "true";
-  const wholesaleOnly = searchParams.get("wholesaleOnly") === "true";
-  const minPrice = searchParams.get("minPrice")
-    ? Number(searchParams.get("minPrice"))
-    : undefined;
-  const maxPrice = searchParams.get("maxPrice")
-    ? Number(searchParams.get("maxPrice"))
-    : undefined;
-  const sort = featuredOnly ? "featured" : (searchParams.get("sort") || undefined);
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = parseInt(searchParams.get("limit") || "12", 10);
+  // If Express backend is running, try proxying to Express backend first
+  const backendUrl =
+    process.env.BACKEND_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:5000";
 
   try {
-    const result = await getPublicProducts({
-      search,
-      category,
-      inStockOnly,
-      minPrice,
-      maxPrice,
-      sort,
-      page,
-      limit,
+    const url = new URL(req.url);
+    const backendEndpoint = `${backendUrl.replace(/\/+$/, "")}/api/ecommerce/products${url.search}`;
+    const res = await fetch(backendEndpoint, {
+      headers: {
+        cookie: req.headers.get("cookie") || "",
+        authorization: req.headers.get("authorization") || "",
+      },
+      cache: "no-store",
     });
 
-    return successResponse(result);
-  } catch (err) {
-    return errorResponse(
-      { message: (err as Error).message || "Failed to query e-commerce products" },
-      500
+    if (res.ok) {
+      const data = await res.json();
+      return NextResponse.json(data);
+    }
+  } catch {
+    // If backend proxy fails or backend is unreachable, fallback to direct MongoDB query
+  }
+
+  try {
+    const db = await getDatabase();
+    const query: any = {
+      isDeleted: { $ne: true },
+      isAvailable: { $ne: false },
+    };
+
+    const products = await db
+      .collection("products")
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return NextResponse.json({
+      success: true,
+      data: products,
+      products,
+      count: products.length,
+      total: products.length,
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, message: err.message || "Failed to load products" },
+      { status: 500 }
     );
   }
 }

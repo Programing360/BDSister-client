@@ -27,7 +27,7 @@ export function MemberLayoutShell({ user, children }: MemberLayoutShellProps) {
   }, [mobileDrawerOpen]);
 
   return (
-    <div className="flex min-h-screen bg-[#EAE6F7] text-gray-900">
+    <div className="flex min-h-screen bg-white text-gray-900">
       {/* Desktop Persistent Sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-40 lg:flex lg:w-72 lg:flex-col">
         <MemberSidebar user={user} />

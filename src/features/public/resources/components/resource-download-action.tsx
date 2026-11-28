@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 import type { Resource } from "@/types/public";
@@ -15,7 +15,7 @@ interface ResourceDownloadActionProps {
 
 export function ResourceDownloadAction({ resource }: ResourceDownloadActionProps) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,14 +25,14 @@ export function ResourceDownloadAction({ resource }: ResourceDownloadActionProps
   );
 
   const handleDownload = async () => {
-    if (!session?.user) {
+    if (!user) {
       router.push(`/login?redirect=/resources/${resource.slug}`);
       return;
     }
 
     // Role-based check: Admins always allowed; if premium resource, check user entitlement
-    const userRole = (session.user as any).role || "MEMBER";
-    const membershipTier = (session.user as any).membershipTier || "FREE";
+    const userRole = (user as any).role || "MEMBER";
+    const membershipTier = (user as any).membershipTier || "FREE";
     const isAdmin = ["SUPER_ADMIN", "ADMIN", "CONTENT_MANAGER"].includes(userRole);
     const isPaidMember = ["BASIC", "PREMIUM", "ENTERPRISE"].includes(membershipTier);
 
@@ -135,7 +135,7 @@ export function ResourceDownloadAction({ resource }: ResourceDownloadActionProps
       )}
 
       <p className="text-[11px] text-center text-text-secondary">
-        {session?.user
+        {user
           ? "Free instant download for verified sisters."
           : "Unlocked with your free sister account."}
       </p>

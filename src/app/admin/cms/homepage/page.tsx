@@ -1,10 +1,5 @@
-import { HomepageManagementView } from "@/features/admin/cms/components/homepage/homepage-management-view";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Homepage Management | BDSisters CMS",
-  description: "Configure the BDSisters.org landing page sections, hero messaging, and layout flow.",
-};
-
-export default function AdminCmsHomepagePage() {
-  return <HomepageManagementView />;
+export default function AdminCmsHomepageRedirectPage() {
+  redirect("/admin/content/pages");
 }

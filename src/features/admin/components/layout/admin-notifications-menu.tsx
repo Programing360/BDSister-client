@@ -52,14 +52,23 @@ export function AdminNotificationsMenu() {
     notificationService
       .getNotifications()
       .then((data) => {
+        console.log(data)
         if (isMounted && data && data.length > 0) {
-          const mapped = data.map((n) => ({
-            id: n.id,
-            title: n.title,
-            description: n.message,
-            timestamp: new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            unread: !n.read,
-            type: (n.type.toLowerCase() === "order" ? "order" : n.type.toLowerCase() === "verification" ? "verification" : "business") as "verification" | "order" | "business",
+          const mapped = data.map((n: any, idx: number) => ({
+            id: n.id || n._id || `admin_notif_${idx}`,
+            title: n.title || "Notification",
+            description: n.message || n.description || "",
+            timestamp: n.createdAt
+              ? new Date(n.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "Just now",
+            unread: n.read !== undefined ? !n.read : n.isRead !== undefined ? !n.isRead : true,
+            type: (
+              n.type && typeof n.type === "string" && n.type.toLowerCase() === "order"
+                ? "order"
+                : n.type && typeof n.type === "string" && n.type.toLowerCase() === "verification"
+                  ? "verification"
+                  : "business"
+            ) as "verification" | "order" | "business",
           }));
           setNotifications(mapped);
         }
@@ -135,38 +144,41 @@ export function AdminNotificationsMenu() {
           </div>
 
           <div className="mt-2 divide-y divide-gray-100 max-h-72 overflow-y-auto pr-1">
-            {notifications.map((item) => (
-              <div
-                key={item.id}
-                className={`flex items-start gap-3 p-2.5 rounded-xl transition ${item.unread ? "bg-purple-50/50" : "hover:bg-gray-50"
-                  }`}
-              >
+            {notifications.map((item, index) => {
+              const itemKey = item.id || `admin_notif_${index}`;
+              return (
                 <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs ${item.type === "verification"
+                  key={itemKey}
+                  className={`flex items-start gap-3 p-2.5 rounded-xl transition ${item.unread ? "bg-purple-50/50" : "hover:bg-gray-50"
+                    }`}
+                >
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs ${item.type === "verification"
                       ? "bg-amber-100 text-amber-700"
                       : item.type === "order"
                         ? "bg-emerald-100 text-emerald-700"
                         : "bg-purple-100 text-[#5B46F6]"
-                    }`}
-                >
-                  {item.type === "verification" ? (
-                    <ShieldCheck className="h-4 w-4" />
-                  ) : item.type === "order" ? (
-                    <ShoppingBag className="h-4 w-4" />
-                  ) : (
-                    <FileText className="h-4 w-4" />
-                  )}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
-                    <span className="text-[10px] text-gray-400 shrink-0">{item.timestamp}</span>
+                      }`}
+                  >
+                    {item.type === "verification" ? (
+                      <ShieldCheck className="h-4 w-4" />
+                    ) : item.type === "order" ? (
+                      <ShoppingBag className="h-4 w-4" />
+                    ) : (
+                      <FileText className="h-4 w-4" />
+                    )}
                   </div>
-                  <p className="text-[11px] text-gray-600 line-clamp-2 mt-0.5">{item.description}</p>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-xs font-bold text-gray-900 truncate">{item.title}</p>
+                      <span className="text-[10px] text-gray-400 shrink-0">{item.timestamp}</span>
+                    </div>
+                    <p className="text-[11px] text-gray-600 line-clamp-2 mt-0.5">{item.description}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="border-t border-gray-100 pt-2.5 mt-2 text-center">

@@ -1,10 +1,5 @@
-import { NavigationManagementView } from "@/features/admin/cms/components/navigation/navigation-management-view";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Menus & Navigation | BDSisters CMS",
-  description: "Centralized site menus management.",
-};
-
-export default function AdminCmsMenusPage() {
-  return <NavigationManagementView />;
+export default function AdminCmsMenusRedirect() {
+  redirect("/admin/content/menu");
 }

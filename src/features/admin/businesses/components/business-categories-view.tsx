@@ -77,7 +77,8 @@ export function BusinessCategoriesView() {
 
   const handleDeleteCategory = (cat: BusinessCategoryItem) => {
     if (cat.businessCount > 0) {
-      alert(`Cannot delete category with ${cat.businessCount} active businesses. Please reassign them first.`);
+      setToastMessage(`Cannot delete category with ${cat.businessCount} active businesses. Please reassign them first.`);
+      setTimeout(() => setToastMessage(null), 3500);
       return;
     }
     if (confirm(`Are you sure you want to delete category "${cat.name}"?`)) {

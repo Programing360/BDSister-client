@@ -203,8 +203,10 @@ export const forumService = {
   async getCategories(): Promise<ForumCategory[]> {
     try {
       const res = await apiClient.get<ForumCategory[]>(API_ENDPOINTS.forum.categories);
-      if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-        return res.data;
+      const raw = res as unknown as { data?: ForumCategory[] } | ForumCategory[];
+      const list = Array.isArray(raw) ? raw : Array.isArray(raw?.data) ? raw.data : [];
+      if (list.length > 0) {
+        return list;
       }
     } catch (err) {
       console.warn("[ForumService] Categories API deferred, using fallback:", (err as Error).message);
@@ -356,7 +358,7 @@ export const forumService = {
     try {
       const res = await apiClient.post<ForumComment>(
         API_ENDPOINTS.forum.comments(postId),
-        { content }
+        { comment: content, content }
       );
       if (res.data) return res.data;
     } catch (err) {

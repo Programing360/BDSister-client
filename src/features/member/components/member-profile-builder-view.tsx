@@ -293,10 +293,21 @@ export function MemberProfileBuilderView() {
                         state: profile.state,
                         country: profile.country,
                     },
-                    subjectsOfInterest: profile.subjectsOfInterest,
-                    softwareSkills: profile.softwareSkills,
-                    vocationalSkills: profile.vocationalSkills,
+                    subjectsOfInterest: profile.subjectsOfInterest.map((s) => ({
+                        genre: "General",
+                        subject: s,
+                    })),
+                    softwareSkills: profile.softwareSkills.map((s) => ({
+                        name: s.name,
+                        level: Math.min(5, Math.max(1, Math.round(s.level / 20))),
+                    })),
+                    vocationalSkills: profile.vocationalSkills.map((v) => ({
+                        genre: "General",
+                        skill: v.name,
+                        level: Math.min(5, Math.max(1, Math.round(v.level / 20))),
+                    })),
                     webProfiles: profile.webProfiles.map(({ platform, url }) => ({
+                        label: platform,
                         platform,
                         url,
                     })),

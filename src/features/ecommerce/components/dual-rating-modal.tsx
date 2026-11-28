@@ -59,25 +59,26 @@ export function DualRatingModal({
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    const targetProductId = selectedProductId || items[0]?.productId;
     const payload = {
       orderId,
-      productId: selectedProductId || items[0]?.productId,
+      productId: targetProductId,
       productRating,
+      brandRating: sellerRating,
       sellerRating,
       comment: reviewComment.trim(),
       timestamp: new Date().toISOString(),
     };
 
     try {
-      try {
+      if (targetProductId) {
+        await apiClient.post(API_ENDPOINTS.ecommerce.reviews(targetProductId), {
+          productRating,
+          brandRating: sellerRating,
+          comment: reviewComment.trim(),
+        });
+      } else {
         await apiClient.post(API_ENDPOINTS.ecommerce.orderReviews(orderId), payload);
-      } catch {
-        // Fallback or demo simulation
-        await fetch(`/api/ecommerce/orders/${orderId}/reviews`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }).catch(() => {});
       }
 
       setIsSubmitted(true);

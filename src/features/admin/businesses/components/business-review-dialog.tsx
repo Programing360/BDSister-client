@@ -29,11 +29,13 @@ export function BusinessReviewDialog({
   const [adminNotes, setAdminNotes] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     if (selectedAction === "REJECTED" && !rejectionReason.trim()) {
-      alert("Please provide a rejection reason so the sister entrepreneur receives actionable guidance.");
+      setFormError("Please provide a rejection reason so the sister entrepreneur receives actionable guidance.");
       return;
     }
 
@@ -69,6 +71,13 @@ export function BusinessReviewDialog({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 text-sm">
+          {formError && (
+            <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 animate-in fade-in">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+              <span>{formError}</span>
+            </div>
+          )}
+
           {/* Quick Info summary */}
           <div className="bg-gray-50 rounded-xl p-3 border border-gray-200/80 space-y-2 text-xs">
             <div className="flex items-center justify-between">

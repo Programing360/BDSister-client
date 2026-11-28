@@ -1,6 +1,5 @@
-import React from "react";
-import { AdminSectionHelpView } from "@/features/admin/content/components/admin-section-help-view";
+import { redirect } from "next/navigation";
 
-export default function AdminContentSectionHelpRoute() {
-    return <AdminSectionHelpView />;
+export default function AdminContentSectionHelpRedirect() {
+    redirect("/admin/content/hover-help");
 }

@@ -59,7 +59,12 @@ export async function getServerSession(): Promise<AuthSession | null> {
   // 2. Fallback: Decode Express JWT token from cookies
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value ?? cookieStore.get("auth_token")?.value;
+    const token =
+      cookieStore.get("token")?.value ??
+      cookieStore.get("auth_token")?.value ??
+      cookieStore.get("jwt")?.value ??
+      cookieStore.get("accessToken")?.value ??
+      cookieStore.get("bdsisters_token")?.value;
 
     if (!token) return null;
 

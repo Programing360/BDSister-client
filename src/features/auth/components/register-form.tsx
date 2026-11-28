@@ -60,6 +60,7 @@ export function RegisterForm() {
     handleSubmit,
     watch,
     trigger,
+    setError,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -166,11 +167,14 @@ export function RegisterForm() {
 
       // ২. প্রাপ্ত URL সহ JSON পেলোড তৈরি করা
       // ২. প্রাপ্ত URL সহ ব্যাকএন্ডের স্কিমা অনুযায়ী JSON পেলোড তৈরি করা
+      const trimmedName = data.name.trim();
       const payload = {
-        fullName: data.name.trim(),
+        name: trimmedName,
+        fullName: trimmedName,
         email: data.email.trim(),
         password: data.password,
         referralCode: data.referrerCode?.trim() || undefined,
+        referrerCode: data.referrerCode?.trim() || undefined,
         docType,
         idNumber: idNumber.trim(),
         nidOrPassportUrl: frontImageUrl,
@@ -193,6 +197,24 @@ export function RegisterForm() {
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         setErrorMessage(err.message);
+        if (err.details) {
+          const nameErr = err.details["name"]?.[0] || err.details["fullName"]?.[0];
+          if (nameErr) {
+            setError("name", { type: "server", message: nameErr });
+          }
+          const emailErr = err.details["email"]?.[0];
+          if (emailErr) {
+            setError("email", { type: "server", message: emailErr });
+          }
+          const passwordErr = err.details["password"]?.[0];
+          if (passwordErr) {
+            setError("password", { type: "server", message: passwordErr });
+          }
+          const refErr = err.details["referralCode"]?.[0] || err.details["referrerCode"]?.[0];
+          if (refErr) {
+            setError("referrerCode", { type: "server", message: refErr });
+          }
+        }
       } else {
         setErrorMessage(
           err instanceof Error

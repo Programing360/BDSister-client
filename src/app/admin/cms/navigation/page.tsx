@@ -1,10 +1,5 @@
-import { NavigationManagementView } from "@/features/admin/cms/components/navigation/navigation-management-view";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Navigation & Menus Management | BDSisters CMS",
-  description: "Centralized routing trees for primary header, footer links, mobile drawer, and utility navigation.",
-};
-
-export default function AdminCmsNavigationPage() {
-  return <NavigationManagementView />;
+export default function AdminCmsNavRedirect() {
+  redirect("/admin/content/menu");
 }

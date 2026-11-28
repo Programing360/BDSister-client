@@ -22,27 +22,51 @@ export const API_ENDPOINTS = {
   users: {
     me: "/api/users/me",
     list: "/api/users",
+    directory: "/api/users",
     detail: (id: string) => `/api/users/${id}`,
     profile: "/api/users/profile",
   },
 
   // Domain 3: Business Profiles & Directory
   business: {
-    list: "/api/business",
+    list: "/api/businesses",
     create: "/api/business/create",
     my: "/api/business/my",
     detail: (id: string) => `/api/business/${id}`,
+    brandDetail: (slugOrId: string) => `/api/business/brands/${slugOrId}`,
     updateBrand: (businessId: string, brandId: string) =>
       `/api/business/${businessId}/brands/${brandId}`,
     deleteBrand: (businessId: string, brandId: string) =>
       `/api/business/${businessId}/brands/${brandId}`,
-    trackBrandClick: (businessId: string, brandId: string) =>
-      `/api/business/${businessId}/brands/${brandId}/click`,
+    trackBrandClick: (brandId: string, businessId?: string) =>
+      businessId
+        ? `/api/business/${businessId}/brands/${brandId}/click`
+        : `/api/business/brands/${brandId}/click`,
+    affiliateClick: (businessId: string, brandId?: string) =>
+      brandId
+        ? `/api/business/${businessId}/brands/${brandId}/click`
+        : `/api/business/${businessId}/click`,
     subscription: (id: string) => `/api/business/${id}/subscription`,
+  },
+  brands: {
+    detail: (slugOrId: string) => `/api/business/brands/${slugOrId}`,
+    trackClick: (brandId: string, businessId?: string) =>
+      businessId
+        ? `/api/business/${businessId}/brands/${brandId}/click`
+        : `/api/business/brands/${brandId}/click`,
+  },
+
+  // Reviews & Community Ratings
+  reviews: {
+    list: "/api/reviews",
+    create: "/api/reviews",
+    updateStatus: (id: string) => `/api/reviews/${id}`,
+    byBrand: (brandId: string) => `/api/reviews?targetType=Brand&targetId=${brandId}`,
+    byProduct: (productId: string) => `/api/reviews?targetType=Product&productId=${productId}`,
   },
   // Alias for backward compatibility
   businesses: {
-    list: "/api/business",
+    list: "/api/businesses",
     create: "/api/business/create",
     my: "/api/business/my",
     detail: (id: string) => `/api/business/${id}`,
@@ -62,11 +86,14 @@ export const API_ENDPOINTS = {
     addToCart: "/api/ecommerce/cart/add",
     removeFromCart: (itemId: string) => `/api/ecommerce/cart/${itemId}`,
     clearCart: "/api/ecommerce/cart",
+    orders: "/api/ecommerce/orders",
     createOrder: "/api/ecommerce/orders/create",
     myOrders: "/api/ecommerce/orders/my",
     sellerOrders: "/api/ecommerce/orders/seller",
     updateOrderStatus: (id: string) => `/api/ecommerce/orders/${id}/status`,
     reviews: (productId: string) => `/api/ecommerce/reviews/${productId}`,
+    productReviews: (productId: string) => `/api/ecommerce/reviews/${productId}`,
+    orderReviews: (orderId: string) => `/api/ecommerce/reviews/${orderId}`,
   },
   // Alias for backward compatibility
   marketplace: {
@@ -77,10 +104,18 @@ export const API_ENDPOINTS = {
   // Domain 5: Community & Forum
   forum: {
     posts: "/api/forum/posts",
+    categories: "/api/forum/categories",
+    createCategory: "/api/forum/categories",
+    updateCategory: (id: string) => `/api/forum/categories/${id}`,
+    deleteCategory: (id: string) => `/api/forum/categories/${id}`,
     createPost: "/api/forum/posts/create",
     postDetail: (id: string) => `/api/forum/posts/${id}`,
+    moderatePost: (id: string) => `/api/forum/posts/${id}/moderate`,
+    updatePost: (id: string) => `/api/forum/posts/${id}`,
     deletePost: (id: string) => `/api/forum/posts/${id}`,
     addComment: (id: string) => `/api/forum/posts/${id}/comment`,
+    comments: (id: string) => `/api/forum/posts/${id}/comment`,
+    postComments: (id: string) => `/api/forum/posts/${id}/comments`,
     like: (id: string) => `/api/forum/posts/${id}/like`,
     report: (id: string) => `/api/forum/posts/${id}/report`,
   },
@@ -94,10 +129,15 @@ export const API_ENDPOINTS = {
   // Domain 6: Events & Workshops
   events: {
     list: "/api/events",
+    archiveList: "/api/events?filter=past",
+    myRegistrations: "/api/events/my-registrations",
     create: "/api/events/create",
     detail: (id: string) => `/api/events/${id}`,
+    update: (id: string) => `/api/events/${id}`,
+    delete: (id: string) => `/api/events/${id}`,
     register: (id: string) => `/api/events/${id}/register`,
     rsvp: (id: string) => `/api/events/${id}/register`,
+    ticket: (id: string) => `/api/events/${id}/register`,
     cancel: (id: string) => `/api/events/${id}`,
     archive: (id: string) => `/api/events/${id}/archive`,
   },
@@ -105,6 +145,7 @@ export const API_ENDPOINTS = {
   resources: {
     list: "/api/resources",
     detail: (id: string) => `/api/resources/${id}`,
+    download: (id: string) => `/api/resources/${id}/download`,
     trackDownload: (id: string) => `/api/resources/${id}/download`,
     create: "/api/resources",
     update: (id: string) => `/api/resources/${id}`,
@@ -114,7 +155,7 @@ export const API_ENDPOINTS = {
   // Domain 8: Discover Yourself & Goal Tracking
   goals: {
     list: "/api/goals",
-    create: "/api/goals/create",
+    create: "/api/goals",
     update: (id: string) => `/api/goals/${id}`,
     delete: (id: string) => `/api/goals/${id}`,
     wheel: "/api/goals/wheel",
@@ -126,6 +167,11 @@ export const API_ENDPOINTS = {
     navigation: "/api/cms/navigation",
     page: (slug: string) => `/api/cms/pages/${slug}`,
     lookups: "/api/cms/lookups",
+    blocks: "/api/cms/blocks",
+    blockDetail: (id: string) => `/api/cms/blocks/${id}`,
+    createBlock: "/api/cms/blocks",
+    updateBlockDirect: (id: string) => `/api/cms/blocks/${id}`,
+    deleteBlockDirect: (id: string) => `/api/cms/blocks/${id}`,
     adminPages: "/api/cms/admin/pages",
     createPage: "/api/cms/admin/pages",
     pageDetail: (id: string) => `/api/cms/admin/pages/${id}`,
@@ -144,11 +190,13 @@ export const API_ENDPOINTS = {
     list: "/api/notifications",
     markRead: (id: string) => `/api/notifications/${id}/read`,
     unreadCount: "/api/notifications/unread-count",
+    adminHistory: "/api/notifications/admin/history",
+    adminDelete: (id: string) => `/api/notifications/admin/${id}`,
   },
 
   // Domain 11: Contact Inquiries
   contact: {
-    submit: "/api/contact/submit",
+    submit: "/api/contact",
   },
 
   // Domain 12: Newsletter Subscription
@@ -200,6 +248,11 @@ export const API_ENDPOINTS = {
     // Master Profile Lookups (admin.routes.ts)
     createLookup: "/api/admin/lookups",
     deleteLookup: (id: string) => `/api/admin/lookups/${id}`,
+
+    // Communication & Newsletters (communication.routes.ts)
+    contactMessages: "/api/admin/contact-messages",
+    updateContactMessage: (id: string) => `/api/admin/contact-messages/${id}`,
+    newsletterSubscribers: "/api/admin/newsletter/subscribers",
   },
 
   // Utility upload endpoint

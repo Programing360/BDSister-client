@@ -6,3 +6,4 @@ export * from "./form-field";
 export * from "./loading-spinner";
 export * from "./empty-state";
 export * from "./error-display";
+export * from "./confirmation-modal";

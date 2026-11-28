@@ -3,7 +3,7 @@ import { mongodbAdapter } from "better-auth/adapters/mongodb";
 import { db } from "@/lib/db/mongodb";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email/email-service";
 
-const appUrl = process.env["BETTER_AUTH_URL"] ?? process.env["NEXT_PUBLIC_APP_URL"] ?? "http://localhost:3000";
+const appUrl = process.env["BETTER_AUTH_URL"] ?? "http://localhost:3000";
 
 export const auth = betterAuth({
   secret: process.env["BETTER_AUTH_SECRET"] ?? "bdsisters_super_secret_auth_key_must_be_overridden_in_production_32chars",

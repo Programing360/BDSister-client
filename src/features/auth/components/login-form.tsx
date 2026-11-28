@@ -34,6 +34,21 @@ export function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const isExpired = searchParams.get("expired") === "true";
+
+  // Clean stale storage if expired
+  React.useEffect(() => {
+    if (isExpired && typeof window !== "undefined") {
+      try {
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
+      } catch {
+        // Ignore storage errors
+      }
+    }
+  }, [isExpired]);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(() => {
     if (isExpired) {
       return "Your session has expired. Please sign in again to continue.";

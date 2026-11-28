@@ -12,9 +12,12 @@ import {
   Loader2,
   AlertCircle,
   Calendar,
+  ExternalLink,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
+import { decodeHtmlEntities, slugify } from "@/lib/utils/format";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { BackendBusiness } from "./businesses-list-view";
 
 interface DetailedBusiness extends BackendBusiness {
@@ -31,6 +34,7 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmModalStatus, setConfirmModalStatus] = useState<"Paid" | "Unpaid" | null>(null);
 
   const fetchBusiness = useCallback(async () => {
     setIsLoading(true);
@@ -61,9 +65,10 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
         API_ENDPOINTS.admin.updateBusinessSubscription(business._id),
         { subscriptionStatus: newStatus }
       );
+      setConfirmModalStatus(null);
       await fetchBusiness();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to update subscription.");
+      setError(err instanceof Error ? err.message : "Failed to update subscription.");
     } finally {
       setIsUpdating(false);
     }
@@ -114,7 +119,7 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
         <div>
           <div className="flex items-center gap-2.5">
             <h1 className="text-2xl font-bold text-gray-900">
-              {business.userId?.fullName || "Sister Enterprise"}
+              {decodeHtmlEntities(business.userId?.fullName) || "Sister Enterprise"}
             </h1>
             <span
               className={`rounded-full border px-3 py-0.5 text-xs font-bold ${business.subscriptionStatus === "Paid"
@@ -126,7 +131,7 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            {business.businessSummary || "Multi-brand business profile on BDSisters.org"}
+            {decodeHtmlEntities(business.businessSummary) || "Multi-brand business profile on BDSisters.org"}
           </p>
         </div>
 
@@ -135,8 +140,8 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
             <button
               type="button"
               disabled={isUpdating}
-              onClick={() => handleSubscriptionChange("Paid")}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5B9891] px-4 py-2 text-xs font-bold text-white hover:bg-[#467A74] transition disabled:opacity-50"
+              onClick={() => setConfirmModalStatus("Paid")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#5B9891] px-4 py-2 text-xs font-bold text-white hover:bg-[#467A74] transition disabled:opacity-50 cursor-pointer shadow-xs"
             >
               <CheckCircle2 className="h-4 w-4" /> Approve Paid & Publish All Brands
             </button>
@@ -144,8 +149,8 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
             <button
               type="button"
               disabled={isUpdating}
-              onClick={() => handleSubscriptionChange("Unpaid")}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition disabled:opacity-50"
+              onClick={() => setConfirmModalStatus("Unpaid")}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition disabled:opacity-50 cursor-pointer shadow-xs"
             >
               <XCircle className="h-4 w-4" /> Revoke & Unpublish
             </button>
@@ -170,9 +175,20 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
                     <Building2 className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900">{brand.brandName}</h3>
+                    <Link
+                      href={`/brands/${brand._id || slugify(brand.brandName)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`View live public page for ${decodeHtmlEntities(brand.brandName)}`}
+                      className="group/brand inline-flex items-center gap-1.5 hover:text-[#5B9891] transition"
+                    >
+                      <h3 className="text-sm font-bold text-gray-900 group-hover/brand:text-[#5B9891] transition">
+                        {decodeHtmlEntities(brand.brandName)}
+                      </h3>
+                      <ExternalLink className="h-3 w-3 text-gray-400 group-hover/brand:text-[#5B9891] transition" />
+                    </Link>
                     <p className="text-xs text-gray-500">
-                      Role: <strong>{brand.roleInBusiness || "Founder"}</strong>
+                      Role: <strong>{decodeHtmlEntities(brand.roleInBusiness) || "Founder"}</strong>
                     </p>
                   </div>
                 </div>
@@ -244,6 +260,53 @@ export function BusinessDetailsView({ businessId }: { businessId: string }) {
           </p>
         )}
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmModalStatus && (
+        <ConfirmationModal
+          isOpen={Boolean(confirmModalStatus)}
+          isLoading={isUpdating}
+          variant={confirmModalStatus === "Paid" ? "primary" : "danger"}
+          icon={confirmModalStatus === "Paid" ? CheckCircle2 : XCircle}
+          title={
+            confirmModalStatus === "Paid"
+              ? "Approve Subscription & Publish All Brands"
+              : "Revoke Subscription & Unpublish Brands"
+          }
+          confirmText={
+            confirmModalStatus === "Paid" ? "Approve & Publish" : "Revoke & Unpublish"
+          }
+          description={
+            confirmModalStatus === "Paid" ? (
+              <div className="space-y-2">
+                <p>
+                  Are you sure you want to approve the business subscription for{" "}
+                  <strong>{decodeHtmlEntities(business.userId?.fullName || "this sister")}</strong>?
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  All {business.brands?.length || 0} registered brands will be immediately
+                  marked as Published and made visible across the BDSisters directory.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p>
+                  Are you sure you want to revoke the active subscription for{" "}
+                  <strong>{decodeHtmlEntities(business.userId?.fullName || "this sister")}</strong>?
+                </p>
+                <p className="text-[11px] text-rose-600">
+                  All registered brands will be unpublished from the public directory until
+                  a new subscription fee is paid and verified.
+                </p>
+              </div>
+            )
+          }
+          onClose={() => {
+            if (!isUpdating) setConfirmModalStatus(null);
+          }}
+          onConfirm={() => handleSubscriptionChange(confirmModalStatus)}
+        />
+      )}
     </div>
   );
 }

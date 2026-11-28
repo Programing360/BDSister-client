@@ -23,18 +23,24 @@ export function AdminReviewsView() {
     const fetchProducts = useCallback(async () => {
         setIsLoading(true);
         try {
-            const res = await apiClient.get<{ data?: BackendProduct[] }>(
-                API_ENDPOINTS.ecommerce.products
-            );
-            const raw = res as unknown as { data?: BackendProduct[] } | BackendProduct[];
-            const list = Array.isArray(raw) ? raw : raw.data || [];
+            const res = await apiClient.get<any>(API_ENDPOINTS.ecommerce.products);
+            const raw = res as any;
+            const list: BackendProduct[] = Array.isArray(raw)
+                ? raw
+                : Array.isArray(raw?.data)
+                ? raw.data
+                : Array.isArray(raw?.data?.products)
+                ? raw.data.products
+                : Array.isArray(raw?.products)
+                ? raw.products
+                : [];
             setProducts(list);
             const firstProduct = list[0];
             if (firstProduct && !selectedProductId) {
                 setSelectedProductId(firstProduct._id);
             }
         } catch {
-            // Handled gracefully
+            setProducts([]);
         } finally {
             setIsLoading(false);
         }
@@ -107,8 +113,8 @@ export function AdminReviewsView() {
                     onChange={(e) => setSelectedProductId(e.target.value)}
                     className="w-full max-w-md rounded-xl border border-gray-200 bg-[#FAF8F5] px-3.5 py-2 text-xs font-semibold text-gray-900 focus:border-[#5B9891] focus:outline-hidden"
                 >
-                    {products.length === 0 && <option value="">No products available</option>}
-                    {products.map((p) => (
+                    {(!Array.isArray(products) || products.length === 0) && <option value="">No products available</option>}
+                    {Array.isArray(products) && products.map((p) => (
                         <option key={p._id} value={p._id}>
                             {p.title || p.name} ({p.brandName || "Sister Brand"})
                         </option>

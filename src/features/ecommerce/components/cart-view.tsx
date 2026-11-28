@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ShoppingBag,
@@ -15,155 +14,51 @@ import {
   Store,
   Truck,
   RotateCcw,
-  Loader2,
 } from "lucide-react";
-import type { CartDocument } from "@/types/cart";
+import { useCart } from "@/context/cart-context";
 
-interface CartViewProps {
-  initialCart?: CartDocument;
-}
+const DEFAULT_FALLBACK_SVG =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300' fill='%23FAF8F5'><rect width='400' height='300' fill='%23FAF8F5'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%239CA3AF' font-weight='600'>BDSisters Product</text></svg>";
 
-export function CartView({ initialCart }: CartViewProps) {
+export function CartView() {
   const router = useRouter();
-  const [cart, setCart] = useState<CartDocument>(
-    initialCart || {
-      id: "guest",
-      items: [],
-      subtotal: 0,
-      itemCount: 0,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-  );
-  const [isLoading, setIsLoading] = useState(!initialCart);
+  const { items, totalItems, subtotal, removeItem, updateQuantity, clearCart } = useCart();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  React.useEffect(() => {
-    async function initCart() {
-      try {
-        // 1. Sync guest cart from localStorage if present
-        if (typeof window !== "undefined") {
-          const guestCartRaw = localStorage.getItem("bdsisters_guest_cart");
-          if (guestCartRaw) {
-            try {
-              const guestItems = JSON.parse(guestCartRaw);
-              if (Array.isArray(guestItems) && guestItems.length > 0) {
-                for (const item of guestItems) {
-                  if (item.productId) {
-                    await fetch("/api/cart", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        productId: item.productId,
-                        quantity: item.quantity || 1,
-                      }),
-                    });
-                  }
-                }
-                localStorage.removeItem("bdsisters_guest_cart");
-              }
-            } catch (syncErr) {
-              console.warn("Guest cart sync note:", syncErr);
-            }
-          }
-        }
-
-        // 2. Fetch live server cart
-        const res = await fetch("/api/cart");
-        const data = await res.json();
-        if (data.success && data.data) {
-          setCart(data.data);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("bdsisters_synced_cart", JSON.stringify(data.data));
-          }
-        }
-      } catch (err) {
-        console.error("Cart loading error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    if (!initialCart) {
-      initCart();
-    }
-  }, [initialCart]);
-
-  const handleUpdateQuantity = async (productId: string, newQty: number) => {
+  const handleUpdateQuantity = (productId: string, newQty: number) => {
     setUpdatingId(productId);
-    try {
-      const res = await fetch("/api/cart", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, quantity: newQty }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setCart(data.data);
-      } else {
-        alert(data.error?.message || "Failed to update quantity.");
-      }
-    } catch {
-      alert("Network error updating cart.");
-    } finally {
-      setUpdatingId(null);
-    }
+    updateQuantity(productId, newQty);
+    setTimeout(() => setUpdatingId(null), 150);
   };
 
-  const handleRemoveItem = async (productId: string) => {
+  const handleRemoveItem = (productId: string) => {
     setUpdatingId(productId);
-    try {
-      const res = await fetch(`/api/cart?productId=${productId}`, {
-        method: "DELETE",
-      });
+    removeItem(productId);
+    setTimeout(() => setUpdatingId(null), 150);
+  };
 
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setCart(data.data);
-      } else {
-        alert(data.error?.message || "Failed to remove item.");
-      }
-    } catch {
-      alert("Network error removing item.");
-    } finally {
-      setUpdatingId(null);
+  const handleClearCart = () => {
+    if (typeof window !== "undefined" && window.confirm("Are you sure you want to empty your shopping cart?")) {
+      clearCart();
     }
   };
 
-  const handleClearCart = async () => {
-    if (!window.confirm("Are you sure you want to empty your shopping cart?")) {
-      return;
-    }
-    try {
-      const res = await fetch("/api/cart?clearAll=true", {
-        method: "DELETE",
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setCart(data.data);
-      }
-    } catch {
-      alert("Network error clearing cart.");
-    }
-  };
-
-  if (!cart.items || cart.items.length === 0) {
+  if (!items || items.length === 0) {
     return (
-      <div className="rounded-3xl border border-gray-200/80 bg-white p-12 text-center shadow-sm max-w-2xl mx-auto my-12">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[#5B46F6]/10 text-[#5B46F6] mb-4">
+      <div className="rounded-3xl border border-[#F7DFC7] bg-white p-12 text-center shadow-xs max-w-2xl mx-auto my-12">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[#FAF8F5] text-[#5B9891] border border-[#F7DFC7] mb-4">
           <ShoppingBag className="h-10 w-10" />
         </div>
-        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Your Cart is Empty</h2>
-        <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
-          Explore handcrafted creations, fine Jamdani sarees, natural skincare, and heritage delicacies directly from Bangladeshi women artisans.
+        <h2 className="font-serif text-2xl font-bold text-[#111E28] tracking-tight">Your Cart is Empty</h2>
+        <p className="mt-2 text-sm text-stone-600 max-w-md mx-auto">
+          Explore handcrafted creations, modest fashion, natural skincare, and consulting services directly from verified Bangladeshi sister entrepreneurs.
         </p>
         <div className="mt-8">
           <Link
-            href="/marketplace"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#5B46F6] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#5B46F6]/25 hover:bg-[#4d3ae2] transition-all"
+            href="/shops"
+            className="inline-flex items-center gap-2 rounded-full bg-[#5B9891] px-6 py-3 text-sm font-bold text-white shadow-xs hover:bg-[#467A74] transition-all"
           >
-            <span>Explore Artisan Marketplace</span>
+            <span>Explore Sisterhood Shops</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -174,20 +69,20 @@ export function CartView({ initialCart }: CartViewProps) {
   return (
     <div className="max-w-6xl mx-auto space-y-8 my-4">
       {/* 1. Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-[#F7DFC7]">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-            Shopping Cart ({cart.itemCount} items)
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-[#111E28] tracking-tight">
+            Shopping Cart ({totalItems} {totalItems === 1 ? "item" : "items"})
           </h1>
-          <p className="mt-1 text-xs sm:text-sm text-gray-500">
-            Review your artisan goods before continuing to secure checkout.
+          <p className="mt-1 text-xs sm:text-sm text-stone-600">
+            Review your sisterhood products before continuing to secure ZiniPay escrow checkout.
           </p>
         </div>
 
         <button
           type="button"
           onClick={handleClearCart}
-          className="text-xs font-semibold text-gray-500 hover:text-rose-600 self-start sm:self-auto"
+          className="text-xs font-semibold text-stone-500 hover:text-rose-600 self-start sm:self-auto transition-colors"
         >
           Clear Cart
         </button>
@@ -197,46 +92,51 @@ export function CartView({ initialCart }: CartViewProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Cart Items List */}
         <div className="lg:col-span-8 space-y-4">
-          {cart.items.map((item) => {
-            const isUpdating = updatingId === item.productId;
+          {items.map((item) => {
+            const lineTotal = item.price * item.quantity;
 
             return (
               <div
-                key={item.id}
-                className="rounded-3xl border border-gray-200/80 bg-white p-5 sm:p-6 shadow-sm hover:border-gray-300 transition-all flex flex-col sm:flex-row gap-5 items-start sm:items-center"
+                key={item.productId}
+                className="rounded-3xl border border-[#F7DFC7] bg-white p-5 sm:p-6 shadow-xs hover:border-[#5B9891]/40 transition-all flex flex-col sm:flex-row gap-5 items-start sm:items-center"
               >
                 {/* Thumbnail */}
-                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
-                  <Image
-                    src={item.productImage}
-                    alt={item.productName}
-                    fill
-                    sizes="96px"
-                    className="object-cover"
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-[#F7DFC7] bg-stone-100">
+                  <img
+                    src={item.image || DEFAULT_FALLBACK_SVG}
+                    alt={item.title}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      target.onerror = null;
+                      target.src = DEFAULT_FALLBACK_SVG;
+                    }}
+                    className="w-full h-full object-cover"
                   />
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-1">
-                    <Building2 className="h-3.5 w-3.5 text-[#5B46F6]" />
-                    <span className="font-semibold truncate">{item.businessName}</span>
-                  </div>
+                  {item.brandName && (
+                    <div className="flex items-center gap-1.5 text-xs text-stone-600 mb-1">
+                      <Building2 className="h-3.5 w-3.5 text-[#5B9891]" />
+                      <span className="font-semibold truncate">{item.brandName}</span>
+                    </div>
+                  )}
 
                   <Link
-                    href={`/marketplace/${item.productSlug}`}
-                    className="text-base font-bold text-gray-900 hover:text-[#5B46F6] transition-colors line-clamp-1"
+                    href={`/shops/${item.slug || item.productId}`}
+                    className="font-serif text-base font-bold text-[#111E28] hover:text-[#5B9891] transition-colors line-clamp-1"
                   >
-                    {item.productName}
+                    {item.title}
                   </Link>
 
                   <div className="mt-1 flex items-baseline gap-2">
-                    <span className="font-bold text-sm text-gray-900">
-                      ৳{item.price.toLocaleString()}
+                    <span className="font-bold text-sm text-[#D98408]">
+                      ৳{item.price.toLocaleString("en-BD")}
                     </span>
-                    {item.salePrice && item.regularPrice > item.salePrice && (
-                      <span className="text-xs text-gray-400 line-through">
-                        ৳{item.regularPrice.toLocaleString()}
+                    {item.mrp && item.mrp > item.price && (
+                      <span className="text-xs text-stone-400 line-through">
+                        ৳{item.mrp.toLocaleString("en-BD")}
                       </span>
                     )}
                   </div>
@@ -244,34 +144,24 @@ export function CartView({ initialCart }: CartViewProps) {
 
                 {/* Quantity Controls & Line Total */}
                 <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-3">
-                  <div className="flex items-center rounded-xl border border-gray-200 bg-gray-50 p-1">
+                  <div className="flex items-center rounded-xl border border-stone-200 bg-[#FAF8F5] p-1">
                     <button
                       type="button"
-                      disabled={isUpdating}
-                      onClick={() =>
-                        handleUpdateQuantity(item.productId, item.quantity - 1)
-                      }
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-600 hover:bg-white disabled:opacity-40"
+                      onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-600 hover:bg-white transition-colors"
                       title="Decrease quantity"
                     >
                       <Minus className="h-3.5 w-3.5" />
                     </button>
 
-                    <span className="w-8 text-center text-xs font-bold text-gray-900">
-                      {isUpdating ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin mx-auto text-[#5B46F6]" />
-                      ) : (
-                        item.quantity
-                      )}
+                    <span className="w-8 text-center text-xs font-bold text-[#111E28]">
+                      {item.quantity}
                     </span>
 
                     <button
                       type="button"
-                      disabled={isUpdating || (item.maxQuantity > 0 && item.quantity >= item.maxQuantity)}
-                      onClick={() =>
-                        handleUpdateQuantity(item.productId, item.quantity + 1)
-                      }
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-600 hover:bg-white disabled:opacity-40"
+                      onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-stone-600 hover:bg-white transition-colors"
                       title="Increase quantity"
                     >
                       <Plus className="h-3.5 w-3.5" />
@@ -279,15 +169,14 @@ export function CartView({ initialCart }: CartViewProps) {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-base font-black text-gray-900">
-                      ৳{item.lineTotal.toLocaleString()}
+                    <span className="text-base font-bold text-[#111E28]">
+                      ৳{lineTotal.toLocaleString("en-BD")}
                     </span>
 
                     <button
                       type="button"
-                      disabled={isUpdating}
                       onClick={() => handleRemoveItem(item.productId)}
-                      className="p-1.5 text-gray-400 hover:text-rose-600 transition-colors"
+                      className="p-1.5 text-stone-400 hover:text-rose-600 transition-colors"
                       title="Remove item"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -300,8 +189,8 @@ export function CartView({ initialCart }: CartViewProps) {
 
           <div className="pt-2">
             <Link
-              href="/marketplace"
-              className="inline-flex items-center gap-2 text-xs font-bold text-[#5B46F6] hover:underline"
+              href="/shops"
+              className="inline-flex items-center gap-2 text-xs font-bold text-[#5B9891] hover:underline"
             >
               <span>← Continue Shopping</span>
             </Link>
@@ -309,28 +198,28 @@ export function CartView({ initialCart }: CartViewProps) {
         </div>
 
         {/* Right: Order Summary Card */}
-        <div className="lg:col-span-4 rounded-3xl border border-gray-200/80 bg-white p-6 shadow-sm space-y-6 sticky top-28">
-          <h2 className="text-base font-bold text-gray-900 uppercase tracking-wider">
+        <div className="lg:col-span-4 rounded-3xl border border-[#F7DFC7] bg-white p-6 shadow-xs space-y-6 sticky top-28">
+          <h2 className="font-serif text-base font-bold text-[#111E28] uppercase tracking-wider">
             Order Summary
           </h2>
 
           <div className="space-y-3 text-sm">
-            <div className="flex justify-between text-gray-600">
-              <span>Subtotal ({cart.itemCount} items)</span>
-              <span className="font-bold text-gray-900">
-                ৳{cart.subtotal.toLocaleString()}
+            <div className="flex justify-between text-stone-600">
+              <span>Subtotal ({totalItems} {totalItems === 1 ? "item" : "items"})</span>
+              <span className="font-bold text-[#111E28]">
+                ৳{subtotal.toLocaleString("en-BD")}
               </span>
             </div>
 
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-stone-600">
               <span>Delivery Fee</span>
-              <span className="font-semibold text-gray-700">Calculated at Checkout</span>
+              <span className="font-semibold text-stone-700">Calculated at Checkout</span>
             </div>
 
-            <div className="border-t border-gray-100 pt-3 flex justify-between text-base">
-              <span className="font-bold text-gray-900">Estimated Subtotal</span>
-              <span className="font-black text-[#5B46F6]">
-                ৳{cart.subtotal.toLocaleString()}
+            <div className="border-t border-[#F7DFC7] pt-3 flex justify-between text-base">
+              <span className="font-bold text-[#111E28]">Estimated Subtotal</span>
+              <span className="font-black text-[#D98408]">
+                ৳{subtotal.toLocaleString("en-BD")}
               </span>
             </div>
           </div>
@@ -338,7 +227,7 @@ export function CartView({ initialCart }: CartViewProps) {
           <div className="pt-2">
             <Link
               href="/checkout"
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#5B46F6] py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-[#5B46F6]/25 hover:bg-[#4d3ae2] transition-all"
+              className="w-full flex items-center justify-center gap-2 rounded-full bg-[#D98408] py-3.5 px-6 text-sm font-bold text-white shadow-xs hover:bg-[#B86E04] transition-all"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="h-4 w-4" />
@@ -346,13 +235,13 @@ export function CartView({ initialCart }: CartViewProps) {
           </div>
 
           {/* Ethical Commerce Trust Banner */}
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/70 p-4 space-y-2 text-xs text-gray-600">
-            <div className="flex items-center gap-2 font-bold text-gray-800">
-              <ShieldCheck className="h-4 w-4 text-[#5B46F6]" />
-              <span>Direct Artisan Marketplace</span>
+          <div className="rounded-2xl border border-[#5B9891]/20 bg-[#5B9891]/10 p-4 space-y-2 text-xs text-stone-700">
+            <div className="flex items-center gap-2 font-bold text-[#111E28]">
+              <ShieldCheck className="h-4 w-4 text-[#5B9891]" />
+              <span>Direct Sisterhood Marketplace</span>
             </div>
-            <p className="text-[11px] leading-relaxed">
-              100% of product proceeds go directly to Bangladeshi female artisans. All payments are verified via ZiniPay.
+            <p className="text-[11px] leading-relaxed text-stone-600">
+              100% of product proceeds go directly to verified sister entrepreneurs. All transactions are held in escrow via ZiniPay until successful delivery.
             </p>
           </div>
         </div>

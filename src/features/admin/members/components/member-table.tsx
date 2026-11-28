@@ -158,8 +158,8 @@ export function MemberTable({
                     </td>
 
                     {/* Actions */}
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center justify-end gap-1.5">
+                    <td className="py-3.5 px-4 whitespace-nowrap shrink-0">
+                      <div className="flex items-center justify-end gap-1.5 whitespace-nowrap shrink-0">
                         <Link
                           href={`/admin/members/${member._id}`}
                           title="Inspect profile & NID/Passport"

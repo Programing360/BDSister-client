@@ -26,8 +26,8 @@ async function ensureIndex() {
   if (indexEnsured) return;
   try {
     const db = await getDatabase();
-    await db.collection(COLLECTION_NAME).createIndex({ id: 1 }, { unique: true });
-    await db.collection(COLLECTION_NAME).createIndex({ slug: 1 }, { unique: true });
+    // MongoDB documents already use _id as unique identifier. Do not enforce unique index on optional 'id' field
+    await db.collection(COLLECTION_NAME).createIndex({ slug: 1 });
     await db.collection(COLLECTION_NAME).createIndex({ ownerId: 1 });
     await db.collection(COLLECTION_NAME).createIndex({ businessId: 1 });
     await db.collection(COLLECTION_NAME).createIndex({ status: 1, visibility: 1 });

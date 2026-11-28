@@ -30,7 +30,8 @@ export function BusinessVerificationDetailsView({ verification: initialRecord }:
 
   const handleUpdateStatus = (newStatus: BusinessVerificationStatus) => {
     if (newStatus === "REJECTED" && !rejectionReason.trim()) {
-      alert("Please provide a rejection reason.");
+      setToastMessage("Please provide a rejection reason.");
+      setTimeout(() => setToastMessage(null), 3500);
       return;
     }
 

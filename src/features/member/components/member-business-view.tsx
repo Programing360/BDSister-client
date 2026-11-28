@@ -118,14 +118,15 @@ export function MemberBusinessView() {
         e.preventDefault();
         if (!brandName.trim()) return;
 
-        const finalRole =
-            selectedRole === "OTHER"
-                ? customRoleInput.trim() || "Business Owner"
-                : selectedRole;
+        const isOther = selectedRole === "OTHER" || selectedRole === "Other";
+        const finalRole = isOther
+            ? customRoleInput.trim() || "Founder"
+            : selectedRole;
 
         const newBrand: BrandEntry = {
             brandName: brandName.trim(),
-            roleInBusiness: finalRole,
+            roleInBusiness: isOther ? "Other" : selectedRole,
+            customRole: isOther ? finalRole : undefined,
             category: category.trim() || "General",
             websiteUrl: websiteUrl.trim(),
             isPublished: business.subscriptionStatus === "Paid",
@@ -144,27 +145,46 @@ export function MemberBusinessView() {
     };
 
     // Synchronized with POST /api/business/create (createOrUpdateBusiness)
-    const handleSaveBusiness = async () => {
+    const handleSaveBusiness = async (): Promise<MyBusinessProfile | null> => {
         setIsSaving(true);
         setError(null);
         try {
+            const summary = business.businessSummary || "BDSisters registered brand & business";
             const payload = {
-                businessSummary: business.businessSummary,
+                businessSummary: summary,
                 brands: business.brands.map((b) => ({
                     _id: b._id,
                     brandName: b.brandName,
-                    roleInBusiness: b.roleInBusiness,
-                    category: b.category,
+                    roleInBusiness: b.roleInBusiness || "Founder",
+                    customRoleTitle: b.customRole || (b as any).customRoleTitle,
+                    category: b.category || "General",
+                    businessSummary: summary,
+                    servicesOrProducts: [b.category || "General Services"],
                     websiteUrl: b.websiteUrl,
+                    websiteLinks: b.websiteUrl ? [b.websiteUrl] : [],
                 })),
             };
 
-            await apiClient.post(API_ENDPOINTS.business.create, payload);
+            const res = await apiClient.post<{ data?: MyBusinessProfile }>(API_ENDPOINTS.business.create, payload);
+            const raw = res as unknown as { data?: MyBusinessProfile };
+            const savedData = raw?.data;
 
             showToast("Business & Brands profile saved successfully!");
+            if (savedData && savedData._id) {
+                setBusiness((prev) => ({
+                    ...prev,
+                    _id: savedData._id,
+                    businessSummary: savedData.businessSummary || prev.businessSummary,
+                    subscriptionStatus: savedData.subscriptionStatus || prev.subscriptionStatus,
+                    brands: Array.isArray(savedData.brands) ? savedData.brands : prev.brands,
+                }));
+                return savedData;
+            }
             await loadBusinessAndRoles();
+            return null;
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to save business profile.");
+            return null;
         } finally {
             setIsSaving(false);
         }
@@ -196,15 +216,31 @@ export function MemberBusinessView() {
         setIsPaying(true);
         setError(null);
         try {
-            if (!business._id) {
-                await handleSaveBusiness();
+            let currentBusinessId = business._id;
+            if (!currentBusinessId) {
+                const saved = await handleSaveBusiness();
+                currentBusinessId = saved?._id;
             }
+
+            if (!currentBusinessId) {
+                const myBizRes = await apiClient.get<{ data?: MyBusinessProfile }>(API_ENDPOINTS.business.my);
+                const rawMy = myBizRes as unknown as { data?: MyBusinessProfile };
+                currentBusinessId = rawMy.data?._id;
+            }
+
+            if (!currentBusinessId) {
+                throw new Error("Please add at least one brand and save your business profile first.");
+            }
+
             const res = await apiClient.post<{
                 paymentUrl?: string;
                 data?: { paymentUrl?: string };
             }>(API_ENDPOINTS.payment.zinipayInit, {
                 paymentType: "BusinessSubscription",
+                referenceId: currentBusinessId,
+                businessId: currentBusinessId,
                 amount: 500,
+                totalAmount: 500,
             });
             const raw = res as unknown as {
                 paymentUrl?: string;
@@ -380,11 +416,11 @@ export function MemberBusinessView() {
                                     {role}
                                 </option>
                             ))}
-                            <option value="OTHER">Other (Specify Role)</option>
+                            <option value="Other">Other (Specify Custom Role)</option>
                         </select>
                     </div>
 
-                    {selectedRole === "OTHER" && (
+                    {(selectedRole === "OTHER" || selectedRole === "Other") && (
                         <div>
                             <label className="block font-bold text-[#D98408] mb-1">
                                 Custom Role Title *
@@ -452,7 +488,9 @@ export function MemberBusinessView() {
                                     <div>
                                         <h4 className="text-sm font-bold text-gray-900">{brand.brandName}</h4>
                                         <p className="text-xs text-[#D98408] font-bold mt-0.5">
-                                            {brand.roleInBusiness} •{" "}
+                                            {brand.roleInBusiness === "Other" && (brand.customRole || (brand as any).customRoleTitle)
+                                                ? (brand.customRole || (brand as any).customRoleTitle)
+                                                : brand.roleInBusiness} •{" "}
                                             <span className="text-gray-500 font-normal">{brand.category}</span>
                                         </p>
                                     </div>

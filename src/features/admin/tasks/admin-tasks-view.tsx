@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CheckSquare, Plus, Trash2, CheckCircle2, RefreshCw } from "lucide-react";
+import { CheckSquare, Plus, Trash2, CheckCircle2, RefreshCw, AlertCircle } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
 import { API_ENDPOINTS } from "@/lib/api/endpoints";
 
@@ -22,6 +22,7 @@ export function AdminTasksView() {
     const [priority, setPriority] = useState<"Low" | "Medium" | "High">("Medium");
     const [isLoading, setIsLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const fetchTasks = useCallback(async () => {
         setIsLoading(true);
@@ -46,6 +47,7 @@ export function AdminTasksView() {
         e.preventDefault();
         if (!title.trim()) return;
         setIsCreating(true);
+        setError(null);
         try {
             await apiClient.post(API_ENDPOINTS.admin.tasks, {
                 title: title.trim(),
@@ -55,7 +57,7 @@ export function AdminTasksView() {
             setTitle("");
             await fetchTasks();
         } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to assign task.");
+            setError(err instanceof Error ? err.message : "Failed to assign task.");
         } finally {
             setIsCreating(false);
         }
@@ -102,6 +104,13 @@ export function AdminTasksView() {
                     <span>Refresh</span>
                 </button>
             </div>
+
+            {error && (
+                <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700 animate-in fade-in">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    <span>{error}</span>
+                </div>
+            )}
 
             {/* Assign Task Form */}
             <form

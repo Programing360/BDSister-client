@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useSession } from "@/lib/auth/auth-client";
+import { useAuth } from "@/hooks/use-auth";
 import { forumService } from "@/lib/services/forum-service";
 import type { ForumPost, ForumCategory } from "@/types/forum";
 import { CreateTopicModal } from "./create-topic-modal";
@@ -38,7 +38,7 @@ export function CommunityFeedView({ myPostsOnly = false }: CommunityFeedViewProp
   const [loading, setLoading] = useState(true);
 
   // Modals state
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [upgradePromptOpen, setUpgradePromptOpen] = useState(false);
   const [selectedPost, setSelectedPost] = useState<ForumPost | null>(null);
@@ -47,10 +47,10 @@ export function CommunityFeedView({ myPostsOnly = false }: CommunityFeedViewProp
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const handleOpenCreateTopic = () => {
-    const role = (session?.user as any)?.role || "MEMBER";
-    const tier = (session?.user as any)?.membershipTier;
+    const role = (user as any)?.role || "MEMBER";
+    const tier = (user as any)?.membershipTier;
     const isAdmin = ["SUPER_ADMIN", "ADMIN", "MODERATOR", "CONTENT_MANAGER"].includes(role);
-    const isPaid = ["BASIC", "PREMIUM", "ENTERPRISE"].includes(tier);
+    const isPaid = ["BASIC", "PREMIUM", "ENTERPRISE", "PAIDMEMBER"].includes(String(tier || "").toUpperCase());
 
     if (!isAdmin && tier === "FREE") {
       setUpgradePromptOpen(true);

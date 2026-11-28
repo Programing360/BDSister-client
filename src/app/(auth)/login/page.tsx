@@ -14,17 +14,24 @@ export const metadata: Metadata = {
 interface LoginPageProps {
   searchParams: Promise<{
     callbackUrl?: string;
+    expired?: string;
   }>;
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const session = await getServerSession();
   const resolvedSearchParams = await searchParams;
+  const isExpired =
+    resolvedSearchParams.expired === "true" ||
+    (resolvedSearchParams.callbackUrl && resolvedSearchParams.callbackUrl.includes("expired=true"));
 
-  if (session?.user) {
-    const defaultRoute = getDefaultDashboardRoute(session.user.role);
-    const target = getSafeRedirectUrl(resolvedSearchParams.callbackUrl, defaultRoute);
-    redirect(target);
+  // Only auto-redirect if not marked expired
+  if (!isExpired) {
+    const session = await getServerSession();
+    if (session?.user) {
+      const defaultRoute = getDefaultDashboardRoute(session.user.role);
+      const target = getSafeRedirectUrl(resolvedSearchParams.callbackUrl, defaultRoute);
+      redirect(target);
+    }
   }
 
   return (

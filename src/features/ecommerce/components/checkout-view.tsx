@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -21,6 +21,12 @@ import {
 } from "lucide-react";
 import { CartDocument } from "@/types/cart";
 import { checkoutOrderCreateSchema, CheckoutOrderCreateInput } from "@/lib/validations/checkout";
+import { useCart } from "@/context/cart-context";
+import { apiClient } from "@/lib/api/client";
+import { API_ENDPOINTS } from "@/lib/api/endpoints";
+
+const DEFAULT_FALLBACK_SVG =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300' viewBox='0 0 400 300' fill='%23FAF8F5'><rect width='400' height='300' fill='%23FAF8F5'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%239CA3AF' font-weight='600'>BDSisters Product</text></svg>";
 
 const BD_DIVISIONS = [
   "Dhaka",
@@ -46,8 +52,9 @@ const POPULAR_DISTRICTS: Record<string, string[]> = {
 
 export function CheckoutView() {
   const router = useRouter();
-  const [cart, setCart] = useState<CartDocument | null>(null);
-  const [isLoadingCart, setIsLoadingCart] = useState(true);
+  const searchParams = useSearchParams();
+  const isPaymentCancelled = searchParams.get("payment") === "cancelled";
+  const { items: cartContextItems, subtotal: cartContextSubtotal } = useCart();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -78,29 +85,6 @@ export function CheckoutView() {
 
   const selectedDivision = watch("shippingAddress.division");
 
-  useEffect(() => {
-    async function loadCart() {
-      setIsLoadingCart(true);
-      try {
-        const res = await fetch("/api/cart");
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data) {
-            setCart(json.data);
-            if (!json.data.items || json.data.items.length === 0) {
-              router.push("/cart");
-            }
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load cart for checkout:", err);
-      } finally {
-        setIsLoadingCart(false);
-      }
-    }
-    loadCart();
-  }, [router]);
-
   // Handle division change to reset district if not in division
   useEffect(() => {
     const districts = (selectedDivision && POPULAR_DISTRICTS[selectedDivision]) || [];
@@ -109,7 +93,7 @@ export function CheckoutView() {
     }
   }, [selectedDivision, setValue]);
 
-  const subtotal = cart?.subtotal || 0;
+  const subtotal = cartContextSubtotal || 0;
   // Shipping calculation: ৳60 Inside Dhaka, ৳120 Outside Dhaka
   const shippingFee = selectedDivision === "Dhaka" ? 60 : 120;
   const grandTotal = subtotal + shippingFee;
@@ -119,61 +103,117 @@ export function CheckoutView() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch("/api/checkout/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const orderPayload = {
+        shippingAddress: {
+          district: data.shippingAddress.district,
+          state: data.shippingAddress.division,
+          addressDetails: `${data.shippingAddress.streetAddress || ""}, ${data.shippingAddress.city || ""}, ${data.shippingAddress.division}`.trim(),
+          phone: data.shippingAddress.phone,
+        },
+        orderItems: cartContextItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          isWholesale: !!item.isWholesale,
+        })),
+      };
 
-      const json = await res.json();
+      // Call backend createOrder endpoint directly or through Next.js proxy
+      let paymentUrl: string | undefined = undefined;
 
-      if (!res.ok || !json.success) {
-        setErrorMessage(json.message || "Failed to create order. Please check your items and try again.");
-        setIsSubmitting(false);
-        return;
+      try {
+        const orderRes = await apiClient.post<any>(
+          API_ENDPOINTS.ecommerce.createOrder,
+          orderPayload
+        );
+        const orderData = (orderRes as any)?.data || orderRes;
+        paymentUrl =
+          orderData?.paymentUrl ||
+          orderData?.payment_url ||
+          orderData?.GatewayPageURL ||
+          (orderRes as any)?.paymentUrl ||
+          (orderRes as any)?.payment_url ||
+          (orderRes as any)?.GatewayPageURL;
+
+        // If paymentUrl wasn't in createOrder response, fallback to initiating payment directly via zinipayInit
+        const orderId =
+          orderData?._id ||
+          orderData?.id ||
+          (orderRes as any)?._id ||
+          (orderRes as any)?.id;
+
+        if (!paymentUrl && orderId) {
+          try {
+            const payRes = await apiClient.post<any>(
+              API_ENDPOINTS.payment.zinipayInit,
+              {
+                paymentType: "Order",
+                referenceId: orderId,
+                amount: grandTotal,
+                customerName: data.shippingAddress.fullName,
+                customerEmail: data.shippingAddress.email,
+                customerPhone: data.shippingAddress.phone,
+              }
+            );
+            const payData = (payRes as any)?.data || payRes;
+            paymentUrl =
+              payData?.paymentUrl ||
+              payData?.payment_url ||
+              payData?.GatewayPageURL ||
+              (payRes as any)?.paymentUrl ||
+              (payRes as any)?.payment_url ||
+              (payRes as any)?.GatewayPageURL;
+          } catch (initErr) {
+            console.warn("ZiniPay payment initiation fallback failed:", initErr);
+          }
+        }
+      } catch (backendErr: any) {
+        console.warn("Primary backend createOrder error:", backendErr);
+        // Fallback to Next.js checkout create-order route if needed
+        try {
+          const res = await fetch("/api/checkout/create-order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          const json = await res.json();
+          if (json.success) {
+            paymentUrl = json.data?.paymentUrl || json.data?.GatewayPageURL;
+          } else {
+            throw new Error(json.message || backendErr.message || "Failed to process order.");
+          }
+        } catch (fbErr: any) {
+          throw new Error(backendErr?.message || fbErr?.message || "Failed to process order.");
+        }
       }
 
-      // If ZiniPay invoice was generated successfully, redirect user to the hosted payment URL
-      const paymentUrl = json.data?.GatewayPageURL || json.data?.paymentUrl;
       if (paymentUrl) {
         window.location.href = paymentUrl;
       } else {
-        setErrorMessage("Payment gateway URL was not generated. Please try again.");
+        setErrorMessage("Order created, but payment gateway redirect was not returned. Please check My Orders.");
         setIsSubmitting(false);
       }
     } catch (err: any) {
       console.error("Order submission error:", err);
-      setErrorMessage("Network error occurred during checkout. Please try again.");
+      setErrorMessage(err.message || "Network error occurred during checkout. Please try again.");
       setIsSubmitting(false);
     }
   };
 
-  if (isLoadingCart) {
+  if (!cartContextItems || cartContextItems.length === 0) {
     return (
-      <div className="flex min-h-[450px] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#5B46F6]" />
-          <p className="text-sm font-medium text-gray-500">Preparing your secure checkout...</p>
+      <div className="rounded-3xl border border-[#F7DFC7] bg-white p-12 text-center shadow-xs max-w-2xl mx-auto my-12">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-[#FAF8F5] text-[#5B9891] border border-[#F7DFC7] mb-4">
+          <ShoppingBag className="h-10 w-10" />
         </div>
-      </div>
-    );
-  }
-
-  if (!cart || cart.items.length === 0) {
-    return (
-      <div className="rounded-2xl border border-gray-200/80 bg-white p-12 text-center shadow-lg">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-purple-50 text-[#5B46F6]">
-          <ShoppingBag className="h-8 w-8" />
-        </div>
-        <h2 className="mt-4 text-xl font-bold text-[#111827]">Your cart is empty</h2>
-        <p className="mt-2 text-sm text-gray-500">
-          Add items to your cart from our women-led marketplace before proceeding to checkout.
+        <h2 className="font-serif text-2xl font-bold text-[#111E28] tracking-tight">Your cart is empty</h2>
+        <p className="mt-2 text-sm text-stone-600 max-w-md mx-auto">
+          Add items to your cart from our sister-led shops before proceeding to checkout.
         </p>
         <Link
-          href="/marketplace"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#5B46F6] px-6 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-[#4a36e2]"
+          href="/shops"
+          className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#5B9891] px-6 py-3 text-sm font-bold text-white shadow-xs hover:bg-[#467A74] transition-all"
         >
-          Explore Marketplace <ChevronRight className="h-4 w-4" />
+          Explore Shops <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
     );
@@ -195,6 +235,18 @@ export function CheckoutView() {
           <span>256-Bit SSL Encrypted Checkout</span>
         </div>
       </div>
+
+      {isPaymentCancelled && (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 shadow-sm">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-semibold">Payment Cancelled</p>
+            <p className="mt-0.5">
+              Your payment process on ZiniPay was cancelled. Your items remain safely preserved in your cart. You can review your details and proceed to payment whenever you are ready.
+            </p>
+          </div>
+        </div>
+      )}
 
       {errorMessage && (
         <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm">
@@ -447,41 +499,44 @@ export function CheckoutView() {
             <div className="sticky top-24 rounded-2xl border border-gray-200/80 bg-white p-6 shadow-xl sm:p-7">
               <h2 className="text-lg font-bold text-[#111827]">Order Summary</h2>
               <p className="text-xs text-gray-500">
-                {cart.items.length} {cart.items.length === 1 ? "item" : "items"} in your order
+                {cartContextItems.length} {cartContextItems.length === 1 ? "item" : "items"} in your order
               </p>
 
               {/* Mini Item List */}
               <div className="mt-4 max-h-[280px] divide-y divide-gray-100 overflow-y-auto pr-1">
-                {cart.items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 py-3">
-                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200/80 shadow-sm">
-                      {item.productImage ? (
-                        <Image
-                          src={item.productImage}
-                          alt={item.productName}
-                          fill
-                          className="object-cover"
+                {cartContextItems.map((item) => {
+                  const lineTotal = item.price * item.quantity;
+                  return (
+                    <div key={item.productId} className="flex items-center gap-3 py-3">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200/80 shadow-sm">
+                        <img
+                          src={item.image || DEFAULT_FALLBACK_SVG}
+                          alt={item.title}
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            target.onerror = null;
+                            target.src = DEFAULT_FALLBACK_SVG;
+                          }}
+                          className="w-full h-full object-cover"
                         />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
-                          Item
-                        </div>
-                      )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-[#111827]">{item.title}</p>
+                        <p className="text-xs text-gray-500">
+                          Qty: {item.quantity} × ৳{item.price.toLocaleString("en-BD")}
+                        </p>
+                        {item.brandName && (
+                          <p className="text-[11px] text-[#5B9891] font-medium">By {item.brandName}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-gray-900">
+                          ৳{lineTotal.toLocaleString("en-BD")}
+                        </span>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-[#111827]">{item.productName}</p>
-                      <p className="text-xs text-gray-500">
-                        Qty: {item.quantity} × ৳{item.price.toLocaleString("en-BD")}
-                      </p>
-                      <p className="text-[11px] text-purple-700 font-medium">By {item.businessName}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-gray-900">
-                        ৳{item.lineTotal.toLocaleString("en-BD")}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Cost Calculations */}

@@ -22,15 +22,14 @@ async function ensureIndex() {
   if (indexEnsured) return;
   try {
     const db = await getDatabase();
-    await db.collection(ORDERS_COLLECTION).createIndex({ id: 1 }, { unique: true });
-    await db.collection(ORDERS_COLLECTION).createIndex({ orderNumber: 1 }, { unique: true });
+    // Do not create unique index on 'id' since MongoDB uses _id and Mongoose orders don't have 'id'
+    await db.collection(ORDERS_COLLECTION).createIndex({ orderNumber: 1 });
     await db.collection(ORDERS_COLLECTION).createIndex({ customerId: 1 });
     await db.collection(ORDERS_COLLECTION).createIndex({ sellerBusinessIds: 1 });
     await db.collection(ORDERS_COLLECTION).createIndex({ paymentStatus: 1, orderStatus: 1 });
     await db.collection(ORDERS_COLLECTION).createIndex({ createdAt: -1 });
 
-    await db.collection(TRANSACTIONS_COLLECTION).createIndex({ id: 1 }, { unique: true });
-    await db.collection(TRANSACTIONS_COLLECTION).createIndex({ invoiceId: 1 }, { unique: true });
+    await db.collection(TRANSACTIONS_COLLECTION).createIndex({ invoiceId: 1 });
     await db.collection(TRANSACTIONS_COLLECTION).createIndex({ orderId: 1 });
     indexEnsured = true;
   } catch (err) {
